@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../models/ocr_result.dart';
 import '../screens/analysis_loading_screen.dart';
 import '../screens/create_account_screen.dart';
 import '../screens/home_dashboard_screen.dart';
@@ -44,7 +45,11 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: AppRoutes.analysisLoading,
-        builder: (context, state) => const AnalysisLoadingScreen(),
+        builder: (context, state) => AnalysisLoadingScreen(
+          ocrResult: state.extra is OcrExtractResult
+              ? state.extra as OcrExtractResult
+              : null,
+        ),
       ),
       GoRoute(
         path: AppRoutes.homeDashboard,

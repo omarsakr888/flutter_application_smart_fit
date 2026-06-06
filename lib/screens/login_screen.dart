@@ -7,6 +7,7 @@ import '../app/app_scope.dart';
 import '../config/oauth_config.dart';
 import '../localization/login_strings.dart';
 import '../router/app_routes.dart';
+import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/smart_fit_theme.dart';
@@ -60,11 +61,16 @@ class _LoginScreenState extends State<LoginScreen> {
       _snack(_isAr(l) ? 'أدخل البريد وكلمة المرور' : 'Enter email and password');
       return;
     }
-    _snack(
-      _isAr(l)
-          ? 'تم قبول الطلب محليًا فقط — اربط دخلك بخلفية لاحقًا.'
-          : 'Submitted locally — connect this to your backend next.',
-    );
+    await _runGuarded(() async {
+      try {
+        await AuthService.instance.login(email, pass);
+      } catch (e) {
+        _snack('$e');
+        return;
+      }
+      if (!mounted) return;
+      context.go(AppRoutes.homeDashboard);
+    });
   }
 
   bool _isAr(Locale l) => l.languageCode.toLowerCase() == 'ar';
@@ -203,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             );
                           },
-                          errorBuilder: (_, __, ___) => ColoredBox(
+                          errorBuilder: (_, _, _) => ColoredBox(
                             color: ext.inactiveTint,
                             child: Icon(
                               Icons.fitness_center_rounded,

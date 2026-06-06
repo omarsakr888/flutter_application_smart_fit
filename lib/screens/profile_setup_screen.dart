@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../app/app_scope.dart';
 import '../localization/profile_setup_strings.dart';
 import '../router/app_routes.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/smart_fit_theme.dart';
 
@@ -63,7 +64,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     return d == 0 ? null : d;
   }
 
-  void _continue(Locale l) {
+  Future<void> _continue(Locale l) async {
     final age = int.tryParse(_age.text.trim());
     if (age == null || age < 13 || age > 120) {
       _snack(l, ProfileSetupStrings.badAge(l));
@@ -84,6 +85,25 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       _snack(l, ProfileSetupStrings.badWeight(l));
       return;
     }
+    final genderStr = switch (_gender) {
+      _Gender.male => 'Male',
+      _Gender.female => 'Female',
+      _Gender.other => 'Other',
+    };
+    final goalStr = switch (_goal) {
+      _FitnessGoal.loseFat => 'Lose Fat',
+      _FitnessGoal.buildMuscle => 'Build Muscle',
+      _FitnessGoal.maintain => 'Balanced/Recovery',
+    };
+    UserService.instance.saveProfile(
+      age: age.toDouble(),
+      gender: genderStr,
+      height: h,
+      weight: wt,
+      targetWeight: tgt,
+      goal: goalStr,
+    ).ignore();
+    if (!mounted) return;
     context.push(AppRoutes.profileSetupStep2);
   }
 

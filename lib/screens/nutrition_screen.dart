@@ -2,20 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app/app_scope.dart';
+import '../models/plan_result.dart';
 import '../router/app_routes.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 
-class NutritionScreen extends StatelessWidget {
+class NutritionScreen extends StatefulWidget {
   const NutritionScreen({super.key});
 
-  static const _lightMeals = [
+  @override
+  State<NutritionScreen> createState() => _NutritionScreenState();
+}
+
+class _NutritionScreenState extends State<NutritionScreen> {
+  PlanResult? _plan;
+
+  static const _fallbackLight = [
     _Meal('Breakfast', 'Oatmeal with Berries - 320 kcal', 'Fiber', Icons.rice_bowl_rounded, true),
     _Meal('Lunch', 'Grilled Chicken Salad - 450 kcal', 'High Protein', Icons.local_dining_rounded, true),
     _Meal('Dinner', 'Salmon & Asparagus - 580 kcal', 'Keto Friendly', Icons.set_meal_rounded, false),
     _Meal('Snack', 'Apple & Almond Butter - 180 kcal', 'Low Carb', Icons.eco_rounded, false),
   ];
 
-  static const _darkMeals = [
+  static const _fallbackDark = [
     _Meal('Breakfast', 'Berry Protein Oatmeal', '420 kcal', Icons.rice_bowl_rounded, true),
     _Meal('Lunch', 'Grilled Chicken Power Bowl', '580 kcal', Icons.local_dining_rounded, true),
     _Meal('Dinner', 'Lemon Herb Salmon', '450 kcal', Icons.set_meal_rounded, false),
@@ -23,11 +32,42 @@ class NutritionScreen extends StatelessWidget {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final plan = await UserService.instance.getPlan();
+      if (mounted && plan != null) setState(() => _plan = plan);
+    } catch (_) {}
+  }
+
+  List<_Meal> _buildMeals(bool isDark) {
+    final plan = _plan;
+    if (plan == null || plan.dailyMeals.isEmpty) {
+      return isDark ? _fallbackDark : _fallbackLight;
+    }
+    return plan.dailyMeals.map((m) {
+      final kcal = m.caloriesPerServing.round();
+      final subtitle = isDark ? m.recipeName : '${m.recipeName} - $kcal kcal';
+      final badge = isDark ? '$kcal kcal' : '${m.proteinG.round()}g protein';
+      return _Meal(m.displayName, subtitle, badge, Icons.restaurant_rounded, false);
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scope = AppScope.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final meals = isDark ? _darkMeals : _lightMeals;
+    final meals = _buildMeals(isDark);
+    final caloriesConsumed = 0;
+    final caloriesTarget = _plan?.targetCaloriesKcal.round() ?? 2240;
+    final proteinG = _plan?.macros.proteinG.round() ?? 160;
+    final carbsG = _plan?.macros.carbsG.round() ?? 224;
+    final fatG = _plan?.macros.fatG.round() ?? 75;
 
     return Scaffold(
       backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF4F4F4),
@@ -69,7 +109,13 @@ class NutritionScreen extends StatelessWidget {
                         ],
                       ),
                     if (!isDark) const SizedBox(height: 54),
-                    const _MacrosCard(),
+                    _MacrosCard(
+                      caloriesConsumed: caloriesConsumed,
+                      caloriesTarget: caloriesTarget,
+                      proteinG: proteinG,
+                      carbsG: carbsG,
+                      fatG: fatG,
+                    ),
                     SizedBox(height: isDark ? 48 : 54),
                     Row(
                       children: [
@@ -251,11 +297,26 @@ class _ThemeButton extends StatelessWidget {
 }
 
 class _MacrosCard extends StatelessWidget {
-  const _MacrosCard();
+  const _MacrosCard({
+    required this.caloriesConsumed,
+    required this.caloriesTarget,
+    required this.proteinG,
+    required this.carbsG,
+    required this.fatG,
+  });
+
+  final int caloriesConsumed;
+  final int caloriesTarget;
+  final int proteinG;
+  final int carbsG;
+  final int fatG;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fraction = caloriesTarget > 0
+        ? (caloriesConsumed / caloriesTarget).clamp(0.0, 1.0)
+        : 0.0;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -274,17 +335,54 @@ class _MacrosCard extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(isDark ? 30 : 38, isDark ? 28 : 38, isDark ? 30 : 38, 32),
-        child: isDark ? const _DarkMacros() : const _LightMacros(),
+        child: isDark
+            ? _DarkMacros(
+                consumed: caloriesConsumed,
+                target: caloriesTarget,
+                fraction: fraction,
+                proteinG: proteinG,
+                carbsG: carbsG,
+                fatG: fatG,
+              )
+            : _LightMacros(
+                consumed: caloriesConsumed,
+                target: caloriesTarget,
+                fraction: fraction,
+                proteinG: proteinG,
+                carbsG: carbsG,
+                fatG: fatG,
+              ),
       ),
     );
   }
 }
 
 class _LightMacros extends StatelessWidget {
-  const _LightMacros();
+  const _LightMacros({
+    required this.consumed,
+    required this.target,
+    required this.fraction,
+    required this.proteinG,
+    required this.carbsG,
+    required this.fatG,
+  });
+
+  final int consumed;
+  final int target;
+  final double fraction;
+  final int proteinG;
+  final int carbsG;
+  final int fatG;
 
   @override
   Widget build(BuildContext context) {
+    final proteinTarget = (target * 0.30 / 4).round();
+    final carbsTarget = (target * 0.40 / 4).round();
+    final fatTarget = (target * 0.30 / 9).round();
+    final proteinProgress = proteinTarget > 0 ? (proteinG / proteinTarget).clamp(0.0, 1.0) : 0.0;
+    final carbsProgress = carbsTarget > 0 ? (carbsG / carbsTarget).clamp(0.0, 1.0) : 0.0;
+    final fatProgress = fatTarget > 0 ? (fatG / fatTarget).clamp(0.0, 1.0) : 0.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -303,7 +401,7 @@ class _LightMacros extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    '1,642 / 2,240 kcal',
+                    '$consumed / $target kcal',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: AppColors.teal,
                       fontWeight: FontWeight.w800,
@@ -316,7 +414,7 @@ class _LightMacros extends StatelessWidget {
               width: 74,
               height: 74,
               child: CircularProgressIndicator(
-                value: 0.73,
+                value: fraction,
                 strokeWidth: 7,
                 color: AppColors.teal,
                 backgroundColor: const Color(0xFFE9FFF5),
@@ -325,21 +423,42 @@ class _LightMacros extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 42),
-        const _MacroLine(label: 'Protein', value: '120g / 160g', progress: 0.75, color: AppColors.teal),
+        _MacroLine(label: 'Protein', value: '${proteinG}g / ${proteinTarget}g', progress: proteinProgress, color: AppColors.teal),
         const SizedBox(height: 28),
-        const _MacroLine(label: 'Carbs', value: '180g / 250g', progress: 0.72, color: Color(0xFFFFA414)),
+        _MacroLine(label: 'Carbs', value: '${carbsG}g / ${carbsTarget}g', progress: carbsProgress, color: const Color(0xFFFFA414)),
         const SizedBox(height: 28),
-        const _MacroLine(label: 'Fat', value: '42g / 70g', progress: 0.6, color: Color(0xFFFF3E68)),
+        _MacroLine(label: 'Fat', value: '${fatG}g / ${fatTarget}g', progress: fatProgress, color: const Color(0xFFFF3E68)),
       ],
     );
   }
 }
 
 class _DarkMacros extends StatelessWidget {
-  const _DarkMacros();
+  const _DarkMacros({
+    required this.consumed,
+    required this.target,
+    required this.fraction,
+    required this.proteinG,
+    required this.carbsG,
+    required this.fatG,
+  });
+
+  final int consumed;
+  final int target;
+  final double fraction;
+  final int proteinG;
+  final int carbsG;
+  final int fatG;
 
   @override
   Widget build(BuildContext context) {
+    final proteinTarget = (target * 0.30 / 4).round();
+    final carbsTarget = (target * 0.40 / 4).round();
+    final fatTarget = (target * 0.30 / 9).round();
+    final proteinProgress = proteinTarget > 0 ? (proteinG / proteinTarget).clamp(0.0, 1.0) : 0.0;
+    final carbsProgress = carbsTarget > 0 ? (carbsG / carbsTarget).clamp(0.0, 1.0) : 0.0;
+    final fatProgress = fatTarget > 0 ? (fatG / fatTarget).clamp(0.0, 1.0) : 0.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -371,8 +490,8 @@ class _DarkMacros extends StatelessWidget {
             Text.rich(
               TextSpan(
                 children: [
-                  const TextSpan(text: '1,642', style: TextStyle(fontSize: 38, color: Color(0xFF31D39E))),
-                  const TextSpan(text: ' / 2,240\n'),
+                  TextSpan(text: '$consumed', style: const TextStyle(fontSize: 38, color: Color(0xFF31D39E))),
+                  TextSpan(text: ' / $target\n'),
                   TextSpan(
                     text: 'kcal',
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
@@ -388,11 +507,11 @@ class _DarkMacros extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 28),
-        const _MacroLine(label: 'Protein', value: '128g / 180g', progress: 0.71, color: Color(0xFF31D39E)),
+        _MacroLine(label: 'Protein', value: '${proteinG}g / ${proteinTarget}g', progress: proteinProgress, color: const Color(0xFF31D39E)),
         const SizedBox(height: 18),
-        const _MacroLine(label: 'Carbs', value: '142g / 220g', progress: 0.65, color: Color(0xFFFFA414)),
+        _MacroLine(label: 'Carbs', value: '${carbsG}g / ${carbsTarget}g', progress: carbsProgress, color: const Color(0xFFFFA414)),
         const SizedBox(height: 18),
-        const _MacroLine(label: 'Fat', value: '54g / 75g', progress: 0.72, color: Color(0xFFFF4F58)),
+        _MacroLine(label: 'Fat', value: '${fatG}g / ${fatTarget}g', progress: fatProgress, color: const Color(0xFFFF4F58)),
       ],
     );
   }

@@ -1,14 +1,16 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app/app_scope.dart';
+import '../models/ocr_result.dart';
 import '../router/app_routes.dart';
+import '../services/scan_service.dart';
 import '../theme/app_colors.dart';
 
 class AnalysisLoadingScreen extends StatefulWidget {
-  const AnalysisLoadingScreen({super.key});
+  const AnalysisLoadingScreen({super.key, this.ocrResult});
+
+  final OcrExtractResult? ocrResult;
 
   static const _steps = [
     _AnalysisStep('Reading InBody metrics', _StepState.done),
@@ -24,20 +26,24 @@ class AnalysisLoadingScreen extends StatefulWidget {
 }
 
 class _AnalysisLoadingScreenState extends State<AnalysisLoadingScreen> {
-  Timer? _timer;
-
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(seconds: 4), () {
-      if (mounted) context.go(AppRoutes.homeDashboard);
-    });
+    _startAnalysis();
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+  Future<void> _startAnalysis() async {
+    final ocr = widget.ocrResult;
+    if (ocr == null) {
+      await Future<void>.delayed(const Duration(seconds: 4));
+    } else {
+      try {
+        await ScanService.instance.generatePlan(ocr);
+      } catch (_) {
+        // Navigate to home even on error; home dashboard uses its own data
+      }
+    }
+    if (mounted) context.go(AppRoutes.homeDashboard);
   }
 
   @override

@@ -7,6 +7,7 @@ import '../app/app_scope.dart';
 import '../config/oauth_config.dart';
 import '../localization/signup_strings.dart';
 import '../router/app_routes.dart';
+import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/smart_fit_theme.dart';
@@ -62,9 +63,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     final pass2 = _confirm.text;
 
     if (email.isEmpty || pass.isEmpty || pass2.isEmpty) {
-      _snack(_isAr(l)
-          ? 'أكمل كل الحقول'
-          : 'Fill in email and both passwords');
+      _snack(_isAr(l) ? 'أكمل كل الحقول' : 'Fill in email and both passwords');
       return;
     }
     if (!_agreePrivacy) {
@@ -75,8 +74,16 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       _snack(SignupStrings.passwordsMismatch(l));
       return;
     }
-    if (!mounted) return;
-    context.push(AppRoutes.profileSetup);
+    await _runGuarded(() async {
+      try {
+        await AuthService.instance.register(email, pass);
+      } catch (e) {
+        _snack('$e');
+        return;
+      }
+      if (!mounted) return;
+      context.push(AppRoutes.profileSetup);
+    });
   }
 
   Future<void> _onGoogle(Locale l) async {

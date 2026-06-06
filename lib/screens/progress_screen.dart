@@ -2,17 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app/app_scope.dart';
+import '../models/user_profile.dart';
 import '../router/app_routes.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 
-class ProgressScreen extends StatelessWidget {
+class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
+
+  @override
+  State<ProgressScreen> createState() => _ProgressScreenState();
+}
+
+class _ProgressScreenState extends State<ProgressScreen> {
+  ProgressData? _progress;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final data = await UserService.instance.getProgress();
+      if (mounted && data != null) setState(() => _progress = data);
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
     final scope = AppScope.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final p = _progress;
+
+    final fatLost = p?.fatLostKg ?? -2.3;
+    final muscleGained = p?.muscleGainedKg ?? 1.1;
 
     return Scaffold(
       backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF4F4F4),
@@ -55,11 +81,11 @@ class ProgressScreen extends StatelessWidget {
                     ],
                     const _TransformationCard(),
                     SizedBox(height: isDark ? 30 : 42),
-                    const Row(
+                    Row(
                       children: [
-                        Expanded(child: _StatCard.fatLost()),
-                        SizedBox(width: 20),
-                        Expanded(child: _StatCard.muscleGained()),
+                        Expanded(child: _StatCard.fatLost(value: fatLost)),
+                        const SizedBox(width: 20),
+                        Expanded(child: _StatCard.muscleGained(value: muscleGained)),
                       ],
                     ),
                     SizedBox(height: isDark ? 30 : 42),
@@ -330,20 +356,20 @@ class _CurvePainter extends CustomPainter {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard.fatLost()
+  _StatCard.fatLost({double? value})
       : label = 'FAT LOST',
-        value = '-2.3 kg',
+        displayValue = '${(value ?? -2.3).toStringAsFixed(1)} kg',
         color = const Color(0xFFB80000),
         icon = Icons.show_chart_rounded;
 
-  const _StatCard.muscleGained()
+  _StatCard.muscleGained({double? value})
       : label = 'MUSCLE\nGAINED',
-        value = '+1.1 kg',
+        displayValue = '+${(value ?? 1.1).toStringAsFixed(1)} kg',
         color = AppColors.teal,
         icon = Icons.trending_up_rounded;
 
   final String label;
-  final String value;
+  final String displayValue;
   final Color color;
   final IconData icon;
 
@@ -385,7 +411,7 @@ class _StatCard extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          value,
+                          displayValue,
                           maxLines: 1,
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             color: color,
@@ -423,7 +449,7 @@ class _StatCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 22),
                         Text(
-                          value,
+                          displayValue,
                           maxLines: 1,
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             color: color,

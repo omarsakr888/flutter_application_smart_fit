@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../app/app_scope.dart';
 import '../router/app_routes.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/smart_fit_theme.dart';
 
@@ -33,6 +34,18 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   }
 
   void _finish() {
+    final dietStr = switch (_diet) {
+      _DietType.omnivore => 'Omnivore',
+      _DietType.vegetarian => 'Vegetarian',
+      _DietType.vegan => 'Vegan',
+    };
+    UserService.instance.savePreferences(
+      dietType: dietStr,
+      preferredDays: _workoutDays.length.clamp(1, 7),
+      hydration: _hydration,
+      sleep: _sleep,
+      recovery: _recovery,
+    ).ignore();
     context.push(AppRoutes.inBodyScan);
   }
 

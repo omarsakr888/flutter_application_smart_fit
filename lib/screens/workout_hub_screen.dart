@@ -2,36 +2,77 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app/app_scope.dart';
+import '../models/plan_result.dart';
 import '../router/app_routes.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 
-class WorkoutHubScreen extends StatelessWidget {
+class WorkoutHubScreen extends StatefulWidget {
   const WorkoutHubScreen({super.key});
 
-  static const _exercises = [
-    _Exercise('Bench Press', '4 x 8 - 80kg', 'CHEST', Icons.fitness_center_rounded, true),
-    _Exercise('Incline Press', '3 x 12 - 60kg', 'CHEST', Icons.downhill_skiing_rounded, true),
-    _Exercise('Cable Fly', '3 x 15 - 15kg', 'CHEST', Icons.flutter_dash_rounded, false),
-    _Exercise('Shoulder Press', '3 x 10 - 20kg', 'SHOULDERS', Icons.fitness_center_rounded, false),
-    _Exercise('Lateral Raises', '4 x 15 - 8kg', 'SHOULDERS', Icons.waving_hand_rounded, false),
-    _Exercise('Tricep Extension', '3 x 12 - 25kg', 'TRICEPS', Icons.bolt_rounded, false),
+  @override
+  State<WorkoutHubScreen> createState() => _WorkoutHubScreenState();
+}
+
+class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
+  PlanResult? _plan;
+
+  static const _fallbackDark = [
+    _Exercise('Bench Press', '4 x 8–10 reps', 'CHEST', Icons.fitness_center_rounded, true),
+    _Exercise('Incline Press', '3 x 10–12 reps', 'CHEST', Icons.downhill_skiing_rounded, true),
+    _Exercise('Cable Fly', '3 x 12–15 reps', 'CHEST', Icons.flutter_dash_rounded, false),
+    _Exercise('Shoulder Press', '3 x 8–10 reps', 'SHOULDERS', Icons.fitness_center_rounded, false),
+    _Exercise('Lateral Raises', '4 x 12–15 reps', 'SHOULDERS', Icons.waving_hand_rounded, false),
+    _Exercise('Tricep Extension', '3 x 10–12 reps', 'TRICEPS', Icons.bolt_rounded, false),
   ];
 
-  static const _lightExercises = [
-    _Exercise('Bench Press', '3 sets - 10 reps - 80kg', 'CHEST', Icons.fitness_center_rounded, true),
-    _Exercise('Incline Press', '3 sets - 12 reps - 60kg', 'CHEST', Icons.trending_up_rounded, true),
-    _Exercise('Cable Fly', '3 sets - 15 reps - 20kg', 'CHEST', Icons.flutter_dash_rounded, false),
-    _Exercise('Overhead Press', '4 sets - 8 reps - 45kg', 'SHOULDERS', Icons.upload_rounded, false),
-    _Exercise('Lateral Raises', '3 sets - 20 reps - 10kg', 'SHOULDERS', Icons.waving_hand_rounded, false),
-    _Exercise('Tricep Pushdown', '3 sets - 12 reps - 30kg', 'ARMS', Icons.fitness_center_rounded, false),
+  static const _fallbackLight = [
+    _Exercise('Bench Press', '3 sets - 10 reps', 'CHEST', Icons.fitness_center_rounded, true),
+    _Exercise('Incline Press', '3 sets - 12 reps', 'CHEST', Icons.trending_up_rounded, true),
+    _Exercise('Cable Fly', '3 sets - 15 reps', 'CHEST', Icons.flutter_dash_rounded, false),
+    _Exercise('Overhead Press', '4 sets - 8 reps', 'SHOULDERS', Icons.upload_rounded, false),
+    _Exercise('Lateral Raises', '3 sets - 20 reps', 'SHOULDERS', Icons.waving_hand_rounded, false),
+    _Exercise('Tricep Pushdown', '3 sets - 12 reps', 'ARMS', Icons.fitness_center_rounded, false),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final plan = await UserService.instance.getPlan();
+      if (mounted && plan != null) setState(() => _plan = plan);
+    } catch (_) {}
+  }
+
+  List<_Exercise> _buildExercises() {
+    final plan = _plan;
+    if (plan == null || plan.workoutSplit.isEmpty) return [];
+    final day = plan.workoutSplit.first;
+    return day.exercises.map((e) {
+      final subtitle = '${e.sets} × ${e.repsMin}–${e.repsMax} reps';
+      return _Exercise(e.name, subtitle, e.bodyPart.toUpperCase(),
+          Icons.fitness_center_rounded, false);
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     final scope = AppScope.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final exercises = isDark ? _exercises : _lightExercises;
+
+    final planExercises = _buildExercises();
+    final exercises = planExercises.isNotEmpty
+        ? planExercises
+        : (isDark ? _fallbackDark : _fallbackLight);
+
+    final dayLabel = _plan?.workoutSplit.firstOrNull?.dayLabel ?? 'Push Day';
+    final intensity = _plan?.intensityMultiplier ?? 0.85;
+    final completed = exercises.where((e) => e.done).length;
 
     return Scaffold(
       backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF7FCF8),
@@ -55,7 +96,20 @@ class WorkoutHubScreen extends StatelessWidget {
                   children: [
                     const _DateStrip(),
                     SizedBox(height: isDark ? 60 : 72),
-                    if (isDark) const _WorkoutSummaryCard() else const _LightTitleBlock(),
+                    if (isDark)
+                      _WorkoutSummaryCard(
+                        dayLabel: dayLabel,
+                        completed: completed,
+                        total: exercises.length,
+                        intensityMultiplier: intensity,
+                      )
+                    else
+                      _LightTitleBlock(
+                        dayLabel: dayLabel,
+                        completed: completed,
+                        total: exercises.length,
+                        intensityMultiplier: intensity,
+                      ),
                     SizedBox(height: isDark ? 34 : 30),
                     for (var i = 0; i < exercises.length; i++) ...[
                       _ExerciseTile(exercise: exercises[i], focused: i == 2),
@@ -358,7 +412,17 @@ class _LightDay extends StatelessWidget {
 }
 
 class _LightTitleBlock extends StatelessWidget {
-  const _LightTitleBlock();
+  const _LightTitleBlock({
+    required this.dayLabel,
+    required this.completed,
+    required this.total,
+    required this.intensityMultiplier,
+  });
+
+  final String dayLabel;
+  final int completed;
+  final int total;
+  final double intensityMultiplier;
 
   @override
   Widget build(BuildContext context) {
@@ -370,7 +434,7 @@ class _LightTitleBlock extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Push Day',
+                dayLabel,
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   height: 1,
@@ -382,7 +446,7 @@ class _LightTitleBlock extends StatelessWidget {
                   const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF676C72), size: 28),
                   const SizedBox(width: 10),
                   Text(
-                    '2/6 completed - ~55 min',
+                    '$completed/$total completed',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: const Color(0xFF60656C),
                       fontWeight: FontWeight.w700,
@@ -393,17 +457,28 @@ class _LightTitleBlock extends StatelessWidget {
             ],
           ),
         ),
-        const _IntensityPill(),
+        _IntensityPill(multiplier: intensityMultiplier),
       ],
     );
   }
 }
 
 class _WorkoutSummaryCard extends StatelessWidget {
-  const _WorkoutSummaryCard();
+  const _WorkoutSummaryCard({
+    required this.dayLabel,
+    required this.completed,
+    required this.total,
+    required this.intensityMultiplier,
+  });
+
+  final String dayLabel;
+  final int completed;
+  final int total;
+  final double intensityMultiplier;
 
   @override
   Widget build(BuildContext context) {
+    final progress = total > 0 ? completed / total : 0.0;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0xFF151517),
@@ -419,14 +494,14 @@ class _WorkoutSummaryCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Push Day',
+                    dayLabel,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
-                const _IntensityPill(),
+                _IntensityPill(multiplier: intensityMultiplier),
               ],
             ),
             const SizedBox(height: 14),
@@ -435,7 +510,7 @@ class _WorkoutSummaryCard extends StatelessWidget {
                 const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF9CA3AF), size: 22),
                 const SizedBox(width: 12),
                 Text(
-                  '2/6 completed - ~55 min',
+                  '$completed/$total completed',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: const Color(0xFF9CA3AF),
                     fontWeight: FontWeight.w700,
@@ -447,7 +522,7 @@ class _WorkoutSummaryCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
-                value: 2 / 6,
+                value: progress,
                 minHeight: 8,
                 color: const Color(0xFF31D39E),
                 backgroundColor: const Color(0xFF2A2A2D),
@@ -461,12 +536,13 @@ class _WorkoutSummaryCard extends StatelessWidget {
 }
 
 class _IntensityPill extends StatelessWidget {
-  const _IntensityPill();
+  const _IntensityPill({required this.multiplier});
+
+  final double multiplier;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return DecoratedBox(
       decoration: BoxDecoration(
         color: isDark ? AppColors.teal.withValues(alpha: 0.14) : AppColors.teal.withValues(alpha: 0.12),
@@ -478,7 +554,7 @@ class _IntensityPill extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: isDark ? 18 : 24, vertical: isDark ? 8 : 14),
         child: Text(
-          '0.85x Intensity',
+          '${multiplier.toStringAsFixed(2)}x Intensity',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: isDark ? const Color(0xFF31D39E) : AppColors.teal,
             fontWeight: FontWeight.w800,

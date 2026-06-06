@@ -2,17 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app/app_scope.dart';
+import '../models/user_profile.dart';
 import '../router/app_routes.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 
-class HomeDashboardScreen extends StatelessWidget {
+class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({super.key});
+
+  @override
+  State<HomeDashboardScreen> createState() => _HomeDashboardScreenState();
+}
+
+class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
+  DashboardData? _data;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final data = await UserService.instance.getDashboard();
+      if (mounted && data != null) setState(() => _data = data);
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
     final scope = AppScope.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final d = _data;
 
     return Scaffold(
       body: SafeArea(
@@ -20,6 +43,8 @@ class HomeDashboardScreen extends StatelessWidget {
           children: [
             _DashboardHeader(
               isDark: isDark,
+              userName: d?.userName ?? 'Omar',
+              streak: d?.streak ?? 5,
               onLight: () => scope.setThemeBrightness(Brightness.light),
               onDark: () => scope.setThemeBrightness(Brightness.dark),
             ),
@@ -33,29 +58,55 @@ class HomeDashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Expanded(child: _CaloriesCard()),
-                        SizedBox(width: 18),
-                        Expanded(child: _HydrationCard()),
+                        Expanded(
+                          child: _CaloriesCard(
+                            fraction: d?.caloriesFraction ?? 0.73,
+                            consumed: d?.caloriesConsumedInt ?? 1642,
+                            target: d?.caloriesTargetInt ?? 2240,
+                          ),
+                        ),
+                        const SizedBox(width: 18),
+                        Expanded(
+                          child: _HydrationCard(
+                            cups: d?.hydrationCups ?? 5,
+                            total: d?.hydrationTarget ?? 8,
+                          ),
+                        ),
                       ],
                     ),
                     SizedBox(height: isDark ? 28 : 32),
                     if (isDark)
-                      const Row(
+                      Row(
                         children: [
-                          Expanded(child: _ActionCard.workoutDark()),
-                          SizedBox(width: 18),
-                          Expanded(child: _ActionCard.mealDark()),
+                          Expanded(
+                            child: _ActionCard.workoutDark(
+                              subtitle: d?.todayWorkoutLabel ?? 'Push Day',
+                            ),
+                          ),
+                          const SizedBox(width: 18),
+                          Expanded(
+                            child: _ActionCard.mealDark(
+                              subtitle: d?.nextMeal ?? 'Lunch',
+                            ),
+                          ),
                         ],
                       )
                     else ...[
-                      const _ActionCard.workoutLight(),
+                      _ActionCard.workoutLight(
+                        subtitle: d?.todayWorkoutLabel ?? 'Push Day',
+                      ),
                       const SizedBox(height: 16),
-                      const _ActionCard.mealLight(),
+                      _ActionCard.mealLight(subtitle: d?.nextMeal ?? 'Lunch'),
                     ],
                     SizedBox(height: isDark ? 28 : 34),
-                    const _RecoveryCard(),
+                    _RecoveryCard(
+                      insight: d?.recoveryInsight ??
+                          (isDark
+                              ? 'Your ECW Ratio is slightly elevated today. Prioritize hydration and consider an extra 500ml of water before your session.'
+                              : 'Your current ECW Ratio suggests mild inflammation. Increase water intake by 2 cups today to optimize recovery.'),
+                    ),
                     SizedBox(height: isDark ? 48 : 34),
                     Row(
                       children: [
@@ -94,11 +145,15 @@ class HomeDashboardScreen extends StatelessWidget {
 class _DashboardHeader extends StatelessWidget {
   const _DashboardHeader({
     required this.isDark,
+    required this.userName,
+    required this.streak,
     required this.onLight,
     required this.onDark,
   });
 
   final bool isDark;
+  final String userName;
+  final int streak;
   final VoidCallback onLight;
   final VoidCallback onDark;
 
@@ -128,7 +183,7 @@ class _DashboardHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Omar',
+                    userName.isEmpty ? 'there' : userName,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       color: isDark ? Colors.white : AppColors.teal,
                       fontWeight: FontWeight.w800,
@@ -142,15 +197,11 @@ class _DashboardHeader extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: Row(
                 children: [
-                  const _StreakPill(),
+                  _StreakPill(days: streak),
                   const SizedBox(width: 18),
-                  _ThemeSegment(
-                    isDark: isDark,
-                    onLight: onLight,
-                    onDark: onDark,
-                  ),
+                  _ThemeSegment(isDark: isDark, onLight: onLight, onDark: onDark),
                   const SizedBox(width: 18),
-                  const _AvatarCircle(),
+                  _AvatarCircle(initial: userName.isNotEmpty ? userName[0].toUpperCase() : 'U'),
                 ],
               ),
             ),
@@ -162,7 +213,9 @@ class _DashboardHeader extends StatelessWidget {
 }
 
 class _StreakPill extends StatelessWidget {
-  const _StreakPill();
+  const _StreakPill({required this.days});
+
+  final int days;
 
   @override
   Widget build(BuildContext context) {
@@ -185,15 +238,16 @@ class _StreakPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.local_fire_department_rounded, color: Colors.orange, size: isDark ? 28 : 30),
+            Icon(Icons.local_fire_department_rounded,
+                color: Colors.orange, size: isDark ? 28 : 30),
             const SizedBox(width: 8),
             Text(
-              '5 Day\nStreak',
+              '$days Day\nStreak',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: isDark ? const Color(0xFFFFB04A) : const Color(0xFFA64724),
-                fontWeight: FontWeight.w500,
-                height: 1.15,
-              ),
+                    color: isDark ? const Color(0xFFFFB04A) : const Color(0xFFA64724),
+                    fontWeight: FontWeight.w500,
+                    height: 1.15,
+                  ),
             ),
           ],
         ),
@@ -225,17 +279,9 @@ class _ThemeSegment extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _ThemeButton(
-              selected: !isDark,
-              icon: Icons.wb_sunny_outlined,
-              onTap: onLight,
-            ),
+            _ThemeButton(selected: !isDark, icon: Icons.wb_sunny_outlined, onTap: onLight),
             const SizedBox(width: 4),
-            _ThemeButton(
-              selected: isDark,
-              icon: Icons.dark_mode_rounded,
-              onTap: onDark,
-            ),
+            _ThemeButton(selected: isDark, icon: Icons.dark_mode_rounded, onTap: onDark),
           ],
         ),
       ),
@@ -277,28 +323,40 @@ class _ThemeButton extends StatelessWidget {
 }
 
 class _AvatarCircle extends StatelessWidget {
-  const _AvatarCircle();
+  const _AvatarCircle({required this.initial});
+
+  final String initial;
 
   @override
   Widget build(BuildContext context) {
-    return const CircleAvatar(
+    return CircleAvatar(
       radius: 31,
       backgroundColor: AppColors.teal,
       child: Text(
-        'O',
-        style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700),
+        initial,
+        style: const TextStyle(
+            color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700),
       ),
     );
   }
 }
 
 class _CaloriesCard extends StatelessWidget {
-  const _CaloriesCard();
+  const _CaloriesCard({
+    required this.fraction,
+    required this.consumed,
+    required this.target,
+  });
+
+  final double fraction;
+  final int consumed;
+  final int target;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final titleColor = isDark ? const Color(0xFF8B8E8E) : const Color(0xFF333A3C);
+    final pct = (fraction * 100).round();
 
     return _MetricShell(
       child: Column(
@@ -311,17 +369,19 @@ class _CaloriesCard extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 CircularProgressIndicator(
-                  value: 0.73,
+                  value: fraction,
                   strokeWidth: isDark ? 14 : 11,
                   strokeCap: StrokeCap.butt,
                   color: isDark ? const Color(0xFF2DB994) : AppColors.teal,
-                  backgroundColor: isDark ? const Color(0xFF303030) : const Color(0xFFE4ECE8),
+                  backgroundColor:
+                      isDark ? const Color(0xFF303030) : const Color(0xFFE4ECE8),
                 ),
                 Text(
-                  '73%',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  '$pct%',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ],
             ),
@@ -330,36 +390,49 @@ class _CaloriesCard extends StatelessWidget {
           Text(
             isDark ? 'Calories' : 'CALORIES',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: titleColor,
-              fontWeight: FontWeight.w400,
-              letterSpacing: isDark ? 0 : 0.4,
-            ),
+                  color: titleColor,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: isDark ? 0 : 0.4,
+                ),
           ),
           const SizedBox(height: 10),
           Text(
-            '1,642 / 2,240',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w500),
+            '${_fmt(consumed)} / ${_fmt(target)}',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 6),
           Text(
             isDark ? 'kcal remaining' : 'kcal',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: isDark ? const Color(0xFF7F807F) : Colors.black,
-            ),
+                  color:
+                      isDark ? const Color(0xFF7F807F) : Colors.black,
+                ),
           ),
         ],
       ),
     );
   }
+
+  static String _fmt(int n) {
+    if (n >= 1000) {
+      return '${(n / 1000).toStringAsFixed(n % 1000 == 0 ? 0 : 1)}k';
+    }
+    return '$n';
+  }
 }
 
 class _HydrationCard extends StatelessWidget {
-  const _HydrationCard();
+  const _HydrationCard({required this.cups, required this.total});
+
+  final int cups;
+  final int total;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final filled = isDark ? 5 : 5;
 
     return _MetricShell(
       child: Column(
@@ -370,12 +443,14 @@ class _HydrationCard extends StatelessWidget {
             spacing: isDark ? 18 : 14,
             runSpacing: 14,
             children: [
-              for (var i = 0; i < 8; i++)
+              for (var i = 0; i < total; i++)
                 Icon(
                   Icons.water_drop_outlined,
-                  color: i < filled
+                  color: i < cups
                       ? (isDark ? const Color(0xFF2DB994) : AppColors.teal)
-                      : (isDark ? const Color(0xFF333333) : const Color(0xFFDDE2DF)),
+                      : (isDark
+                          ? const Color(0xFF333333)
+                          : const Color(0xFFDDE2DF)),
                   size: isDark ? 37 : 35,
                 ),
             ],
@@ -384,22 +459,25 @@ class _HydrationCard extends StatelessWidget {
           Text(
             isDark ? 'Hydration' : 'HYDRATION',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: isDark ? const Color(0xFF8B8E8E) : const Color(0xFF333A3C),
-              fontWeight: FontWeight.w400,
-            ),
+                  color: isDark ? const Color(0xFF8B8E8E) : const Color(0xFF333A3C),
+                  fontWeight: FontWeight.w400,
+                ),
           ),
           const SizedBox(height: 10),
           Text(
-            isDark ? '5 / 8' : '5 / 8 cups',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w500),
+            isDark ? '$cups / $total' : '$cups / $total cups',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w500),
           ),
           if (isDark) ...[
             const SizedBox(height: 8),
             Text(
               'cups today',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF7F807F),
-              ),
+                    color: const Color(0xFF7F807F),
+                  ),
             ),
           ],
         ],
@@ -421,7 +499,8 @@ class _MetricShell extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(isDark ? 14 : 15),
-        border: Border.all(color: isDark ? const Color(0xFF343434) : const Color(0xFFE2E5E5)),
+        border:
+            Border.all(color: isDark ? const Color(0xFF343434) : const Color(0xFFE2E5E5)),
         boxShadow: isDark
             ? null
             : [
@@ -438,40 +517,40 @@ class _MetricShell extends StatelessWidget {
 }
 
 class _ActionCard extends StatelessWidget {
-  const _ActionCard.workoutLight()
+  const _ActionCard.workoutLight({String? subtitle})
       : title = 'Start Workout',
-        subtitle = 'Push Day',
+        _subtitle = subtitle ?? 'Push Day',
         compact = false,
         selected = true,
         light = true,
         icon = Icons.fitness_center_rounded;
 
-  const _ActionCard.mealLight()
+  const _ActionCard.mealLight({String? subtitle})
       : title = 'Next Meal',
-        subtitle = 'Lunch',
+        _subtitle = subtitle ?? 'Lunch',
         compact = false,
         selected = false,
         light = true,
         icon = Icons.restaurant_rounded;
 
-  const _ActionCard.workoutDark()
+  const _ActionCard.workoutDark({String? subtitle})
       : title = 'START\nWORKOUT',
-        subtitle = 'Push Day',
+        _subtitle = subtitle ?? 'Push Day',
         compact = true,
         selected = true,
         light = false,
         icon = Icons.fitness_center_rounded;
 
-  const _ActionCard.mealDark()
+  const _ActionCard.mealDark({String? subtitle})
       : title = 'NEXT MEAL',
-        subtitle = 'Lunch',
+        _subtitle = subtitle ?? 'Lunch',
         compact = true,
         selected = false,
         light = false,
         icon = Icons.restaurant_rounded;
 
   final String title;
-  final String subtitle;
+  final String _subtitle;
   final bool compact;
   final bool selected;
   final bool light;
@@ -516,24 +595,29 @@ class _ActionCard extends StatelessWidget {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: compact ? (selected ? Colors.white : muted) : Colors.white,
-                      fontWeight: compact ? FontWeight.w800 : FontWeight.w400,
-                      height: 1.2,
-                    ),
+                          color: compact
+                              ? (selected ? Colors.white : muted)
+                              : Colors.white,
+                          fontWeight:
+                              compact ? FontWeight.w800 : FontWeight.w400,
+                          height: 1.2,
+                        ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    subtitle,
+                    _subtitle,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: compact ? FontWeight.w400 : FontWeight.w300,
-                    ),
+                          color: Colors.white,
+                          fontWeight:
+                              compact ? FontWeight.w400 : FontWeight.w300,
+                        ),
                   ),
                 ],
               ),
             ),
             if (!compact)
-              const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 38),
+              const Icon(Icons.chevron_right_rounded,
+                  color: Colors.white, size: 38),
           ],
         ),
       ),
@@ -542,7 +626,9 @@ class _ActionCard extends StatelessWidget {
 }
 
 class _RecoveryCard extends StatelessWidget {
-  const _RecoveryCard();
+  const _RecoveryCard({required this.insight});
+
+  final String insight;
 
   @override
   Widget build(BuildContext context) {
@@ -552,7 +638,8 @@ class _RecoveryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF2C260A) : const Color(0xFFFFFCED),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? const Color(0xFF5D4B12) : const Color(0xFFF7DF6E)),
+        border: Border.all(
+            color: isDark ? const Color(0xFF5D4B12) : const Color(0xFFF7DF6E)),
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(28, isDark ? 30 : 24, 28, isDark ? 30 : 26),
@@ -567,7 +654,8 @@ class _RecoveryCard extends StatelessWidget {
               child: const SizedBox(
                 width: 76,
                 height: 76,
-                child: Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFE8D11A), size: 38),
+                child: Icon(Icons.lightbulb_outline_rounded,
+                    color: Color(0xFFE8D11A), size: 38),
               ),
             ),
             const SizedBox(width: 24),
@@ -576,24 +664,26 @@ class _RecoveryCard extends StatelessWidget {
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: isDark ? 'Recovery Insight\n' : 'Smart Tip: Recovery Alert\n',
+                      text: isDark
+                          ? 'Recovery Insight\n'
+                          : 'Smart Tip: Recovery Alert\n',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: isDark ? const Color(0xFFE4D419) : const Color(0xFF7A2E1C),
+                        color: isDark
+                            ? const Color(0xFFE4D419)
+                            : const Color(0xFF7A2E1C),
                       ),
                     ),
-                    TextSpan(
-                      text: isDark
-                          ? 'Your ECW Ratio is slightly elevated today. Prioritize hydration and consider an extra 500ml of water before your Push Day session to maintain peak muscle performance.'
-                          : 'Your current ECW (Extracellular Water) Ratio suggests mild inflammation. Increase water intake by 2 cups today to optimize muscle recovery and reduce fatigue.',
-                    ),
+                    TextSpan(text: insight),
                   ],
                 ),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: isDark ? const Color(0xFFE4D419) : const Color(0xFF7A2E1C),
-                  height: 1.5,
-                  fontWeight: FontWeight.w400,
-                ),
+                      color: isDark
+                          ? const Color(0xFFE4D419)
+                          : const Color(0xFF7A2E1C),
+                      height: 1.5,
+                      fontWeight: FontWeight.w400,
+                    ),
               ),
             ),
           ],
@@ -611,29 +701,25 @@ class _AchievementRow extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = [
       _Achievement(
-        label: 'First Scan',
-        icon: Icons.emoji_events_rounded,
-        color: AppColors.teal,
-        unlocked: true,
-      ),
+          label: 'First Scan',
+          icon: Icons.emoji_events_rounded,
+          color: AppColors.teal,
+          unlocked: true),
       _Achievement(
-        label: '5-Day Streak',
-        icon: Icons.local_fire_department_rounded,
-        color: const Color(0xFFFF7A2A),
-        unlocked: true,
-      ),
+          label: '5-Day Streak',
+          icon: Icons.local_fire_department_rounded,
+          color: const Color(0xFFFF7A2A),
+          unlocked: true),
       _Achievement(
-        label: 'Muscle Gainer',
-        icon: Icons.lock_outline_rounded,
-        color: isDark ? const Color(0xFF202020) : const Color(0xFFF7F7F7),
-        unlocked: false,
-      ),
+          label: 'Muscle Gainer',
+          icon: Icons.lock_outline_rounded,
+          color: isDark ? const Color(0xFF202020) : const Color(0xFFF7F7F7),
+          unlocked: false),
       _Achievement(
-        label: isDark ? 'Meal Maste' : '',
-        icon: Icons.lock_outline_rounded,
-        color: isDark ? const Color(0xFF202020) : const Color(0xFFF7F7F7),
-        unlocked: false,
-      ),
+          label: isDark ? 'Meal Master' : '',
+          icon: Icons.lock_outline_rounded,
+          color: isDark ? const Color(0xFF202020) : const Color(0xFFF7F7F7),
+          unlocked: false),
     ];
 
     return SingleChildScrollView(
@@ -672,9 +758,13 @@ class _AchievementBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = item.unlocked ? item.color : (isDark ? const Color(0xFF242424) : const Color(0xFFF2F2F2));
+    final color = item.unlocked
+        ? item.color
+        : (isDark ? const Color(0xFF242424) : const Color(0xFFF2F2F2));
     final iconColor = item.unlocked
-        ? (item.color == AppColors.teal ? const Color(0xFFE9D25B) : Colors.orange)
+        ? (item.color == AppColors.teal
+            ? const Color(0xFFE9D25B)
+            : Colors.orange)
         : (isDark ? const Color(0xFF444444) : const Color(0xFFD4D4D4));
 
     return SizedBox(
@@ -690,7 +780,9 @@ class _AchievementBadge extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF111514) : color.withValues(alpha: 0.12),
+                  color: isDark
+                      ? const Color(0xFF111514)
+                      : color.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: SizedBox(
@@ -708,10 +800,12 @@ class _AchievementBadge extends StatelessWidget {
             overflow: TextOverflow.clip,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: item.unlocked
-                  ? Theme.of(context).colorScheme.onSurface
-                  : (isDark ? const Color(0xFF535353) : const Color(0xFFC8C8C8)),
-            ),
+                  color: item.unlocked
+                      ? Theme.of(context).colorScheme.onSurface
+                      : (isDark
+                          ? const Color(0xFF535353)
+                          : const Color(0xFFC8C8C8)),
+                ),
           ),
         ],
       ),
@@ -727,16 +821,23 @@ class _BottomNav extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = [
       _NavSpec(Icons.home_outlined, 'Home', true, () {}),
-      _NavSpec(Icons.fitness_center_rounded, 'Workout', false, () => context.go(AppRoutes.workoutHub)),
-      _NavSpec(Icons.restaurant_rounded, 'Nutrition', false, () => context.go(AppRoutes.nutrition)),
-      _NavSpec(Icons.trending_up_rounded, 'Progress', false, () => context.go(AppRoutes.progress)),
+      _NavSpec(Icons.fitness_center_rounded, 'Workout', false,
+          () => context.go(AppRoutes.workoutHub)),
+      _NavSpec(Icons.restaurant_rounded, 'Nutrition', false,
+          () => context.go(AppRoutes.nutrition)),
+      _NavSpec(Icons.trending_up_rounded, 'Progress', false,
+          () => context.go(AppRoutes.progress)),
       _NavSpec(Icons.smart_toy_outlined, 'Coach', false, () {}),
     ];
 
     return DecoratedBox(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1B1B1B) : Colors.white,
-        border: Border(top: BorderSide(color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEDEFF0))),
+        border: Border(
+            top: BorderSide(
+                color: isDark
+                    ? const Color(0xFF2A2A2A)
+                    : const Color(0xFFEDEFF0))),
       ),
       child: SafeArea(
         top: false,
@@ -745,8 +846,7 @@ class _BottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              for (final item in items)
-                _NavItem(item: item),
+              for (final item in items) _NavItem(item: item),
             ],
           ),
         ),
@@ -777,7 +877,9 @@ class _NavItem extends StatelessWidget {
     final color = item.selected ? active : idle;
 
     return Material(
-      color: item.selected ? active.withValues(alpha: isDark ? 0.12 : 0.08) : Colors.transparent,
+      color: item.selected
+          ? active.withValues(alpha: isDark ? 0.12 : 0.08)
+          : Colors.transparent,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: item.onTap,
@@ -793,9 +895,9 @@ class _NavItem extends StatelessWidget {
               Text(
                 item.label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                ),
+                      color: color,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ],
           ),

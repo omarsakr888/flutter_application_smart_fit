@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../app/app_scope.dart';
+import '../models/ocr_result.dart';
 import '../router/app_routes.dart';
+import '../services/scan_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/smart_fit_theme.dart';
 
@@ -14,36 +19,92 @@ class InBodyScanScreen extends StatefulWidget {
 }
 
 class _InBodyScanScreenState extends State<InBodyScanScreen> {
-  bool _uploaded = false;
+  OcrExtractResult? _ocrResult;
+  bool _uploading = false;
+  String? _pickedImagePath;
 
-  static const _metrics = [
-    _Metric('Age', '28', 'yrs'),
-    _Metric('Weight', '78.4', 'kg'),
-    _Metric('Skeletal Muscle Mass', '38.2', 'kg'),
-    _Metric('Body Fat Mass', '14.1', 'kg'),
-    _Metric('Body Mass Index (BMI)', '25.2', 'kg/m2'),
-    _Metric('Percent Body Fat (PBF)', '18.0', '%'),
-    _Metric('Basal Metabolic Rate', '1842', 'kcal'),
-    _Metric('Visceral Fat Level', '7', 'lvl'),
-    _Metric('Total Body Water', '46.8', 'L'),
-    _Metric('Lean Body Mass', '64.3', 'kg'),
-    _Metric('Height', '176', 'cm'),
-    _Metric('Protein', '12.4', 'kg'),
-  ];
+  // Maps field key → (display label, unit)
+  static const _fieldDisplay = {
+    'Age': ('Age', 'yrs'),
+    'Gender': ('Gender', ''),
+    'Height': ('Height', 'cm'),
+    'Weight': ('Weight', 'kg'),
+    'SMM_(Skeletal_Muscle_Mass)': ('Skeletal Muscle Mass', 'kg'),
+    'BMR_(Basal_Metabolic_Rate)': ('Basal Metabolic Rate', 'kcal'),
+    'FFM_of_Trunk': ('FFM of Trunk', 'kg'),
+    'TBW_(Total_Body_Water)': ('Total Body Water', 'L'),
+    'ECW/TBW': ('ECW/TBW', 'ratio'),
+    '50kHz-Whole_Body_Phase_Angle': ('Phase Angle', 'deg'),
+    'BFM_(Body_Fat_Mass)': ('Body Fat Mass', 'kg'),
+    'PBF_(Percent_Body_Fat)': ('% Body Fat', '%'),
+  };
 
-  void _markUploaded() => setState(() => _uploaded = true);
+  bool get _uploaded => _ocrResult != null;
+
+  List<_Metric> get _metrics {
+    final result = _ocrResult;
+    if (result == null) return const [];
+    final list = <_Metric>[];
+    for (final entry in _fieldDisplay.entries) {
+      final field = result.fields[entry.key];
+      if (field == null || field.value == null) continue;
+      final v = field.value!;
+      final String display;
+      if (entry.key == 'Gender') {
+        display = v == 1.0 ? 'Male' : 'Female';
+      } else if (entry.key == 'Age' ||
+          entry.key == 'BMR_(Basal_Metabolic_Rate)') {
+        display = v.toInt().toString();
+      } else {
+        display = v.toStringAsFixed(1);
+      }
+      list.add(_Metric(entry.value.$1, display, entry.value.$2));
+    }
+    return list;
+  }
+
+  Future<void> _pickAndUpload(ImageSource source) async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: source, imageQuality: 85);
+    if (file == null || !mounted) return;
+
+    setState(() {
+      _uploading = true;
+      _pickedImagePath = file.path;
+      _ocrResult = null;
+    });
+
+    try {
+      final result = await ScanService.instance.uploadScan(file);
+      if (!mounted) return;
+      setState(() {
+        _ocrResult = result;
+        _uploading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _uploading = false;
+        _pickedImagePath = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload failed: $e')),
+      );
+    }
+  }
 
   void _confirm() {
-    if (!_uploaded) return;
-    context.push(AppRoutes.analysisLoading);
+    final ocr = _ocrResult;
+    if (ocr == null) return;
+    context.push(AppRoutes.analysisLoading, extra: ocr);
   }
 
   @override
   Widget build(BuildContext context) {
     final scope = AppScope.of(context);
     final theme = Theme.of(context);
-    final ext = context.smartFitExt;
     final isDark = theme.brightness == Brightness.dark;
+    final metrics = _metrics;
 
     return Scaffold(
       body: SafeArea(
@@ -88,19 +149,31 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
                       ),
                     ),
                     const SizedBox(height: 36),
-                    if (_uploaded)
-                      const _UploadedState()
+                    if (_uploading)
+                      const SizedBox(
+                        height: 330,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_uploaded)
+                      _UploadedState(
+                        metricsCount: metrics.length,
+                        imagePath: _pickedImagePath,
+                        warnings: _ocrResult?.warnings ?? const [],
+                      )
                     else
-                      _UploadState(onUpload: _markUploaded),
-                    if (_uploaded) ...[
+                      _UploadState(
+                        onCamera: () => _pickAndUpload(ImageSource.camera),
+                        onGallery: () => _pickAndUpload(ImageSource.gallery),
+                      ),
+                    if (_uploaded && !_uploading) ...[
                       const SizedBox(height: 34),
-                      _MetricsHeader(count: _metrics.length),
+                      _MetricsHeader(count: metrics.length),
                       const SizedBox(height: 14),
-                      for (final metric in _metrics) ...[
+                      for (final metric in metrics) ...[
                         _MetricTile(metric: metric),
                         const SizedBox(height: 8),
                       ],
-                    ] else ...[
+                    ] else if (!_uploading) ...[
                       const SizedBox(height: 78),
                       const _TipsCard(),
                     ],
@@ -132,7 +205,8 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
                       backgroundColor: _uploaded
                           ? const Color(0xFF2DB994)
                           : AppColors.teal.withValues(alpha: 0.55),
-                      disabledBackgroundColor: AppColors.teal.withValues(alpha: 0.55),
+                      disabledBackgroundColor:
+                          AppColors.teal.withValues(alpha: 0.55),
                       disabledForegroundColor: Colors.white,
                       foregroundColor: Colors.white,
                       elevation: _uploaded ? 8 : 0,
@@ -141,7 +215,7 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
                         borderRadius: BorderRadius.circular(isDark ? 8 : 7),
                       ),
                     ),
-                    onPressed: _uploaded ? _confirm : null,
+                    onPressed: (_uploaded && !_uploading) ? _confirm : null,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -321,9 +395,10 @@ class _ThemeSegmentButton extends StatelessWidget {
 }
 
 class _UploadState extends StatelessWidget {
-  const _UploadState({required this.onUpload});
+  const _UploadState({required this.onCamera, required this.onGallery});
 
-  final VoidCallback onUpload;
+  final VoidCallback onCamera;
+  final VoidCallback onGallery;
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +412,7 @@ class _UploadState extends StatelessWidget {
           color: const Color(0xFFF2F8F4),
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
-            onTap: onUpload,
+            onTap: onCamera,
             borderRadius: BorderRadius.circular(8),
             child: CustomPaint(
               painter: _DashedBorderPainter(),
@@ -392,7 +467,7 @@ class _UploadState extends StatelessWidget {
         ),
         const SizedBox(height: 34),
         TextButton.icon(
-          onPressed: onUpload,
+          onPressed: onGallery,
           style: TextButton.styleFrom(
             foregroundColor: AppColors.teal,
             textStyle: theme.textTheme.titleMedium?.copyWith(fontSize: 20),
@@ -407,7 +482,15 @@ class _UploadState extends StatelessWidget {
 }
 
 class _UploadedState extends StatelessWidget {
-  const _UploadedState();
+  const _UploadedState({
+    required this.metricsCount,
+    this.imagePath,
+    this.warnings = const [],
+  });
+
+  final int metricsCount;
+  final String? imagePath;
+  final List<String> warnings;
 
   @override
   Widget build(BuildContext context) {
@@ -443,7 +526,9 @@ class _UploadedState extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    'Scan uploaded successfully\nOCR extracted 12 metrics -\nplease verify below',
+                    'Scan uploaded successfully\n'
+                    'OCR extracted $metricsCount metrics —\n'
+                    'please verify below',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.white,
                           height: 1.5,
@@ -462,49 +547,39 @@ class _UploadedState extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                CustomPaint(painter: _ScanPreviewPainter()),
+                if (imagePath != null)
+                  Image.file(File(imagePath!), fit: BoxFit.cover)
+                else
+                  CustomPaint(painter: _ScanPreviewPainter()),
                 DecoratedBox(
                   decoration: BoxDecoration(
                     border: Border.all(color: const Color(0xFF576160)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                Positioned(
-                  left: 16,
-                  bottom: 14,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.52),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                      child: Text(
-                        'PREVIEW_SCAN_01.JPG',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                            ),
+                if (imagePath != null)
+                  Positioned(
+                    left: 16,
+                    bottom: 14,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.52),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 5),
+                        child: Text(
+                          imagePath!.split(Platform.pathSeparator).last,
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Positioned(
-                  right: 14,
-                  bottom: 16,
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search_rounded, color: Color(0xFF2DB994), size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        'View Original',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF2DB994),
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
@@ -706,7 +781,8 @@ class _ScanPreviewPainter extends CustomPainter {
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, bg);
 
-    final paper = Paint()..color = const Color(0xFF103B36).withValues(alpha: 0.82);
+    final paper =
+        Paint()..color = const Color(0xFF103B36).withValues(alpha: 0.82);
     final paperRect = Rect.fromLTWH(
       size.width * 0.23,
       size.height * 0.14,
