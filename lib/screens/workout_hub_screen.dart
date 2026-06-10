@@ -16,6 +16,8 @@ class WorkoutHubScreen extends StatefulWidget {
 
 class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
   PlanResult? _plan;
+  final _checkedExercises = <int>{};
+  bool _completing = false;
 
   static const _fallbackDark = [
     _Exercise('Bench Press', '4 x 8–10 reps', 'CHEST', Icons.fitness_center_rounded, true),
@@ -48,6 +50,44 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
     } catch (_) {}
   }
 
+  Future<void> _completeWorkout(List<_Exercise> exercises) async {
+    if (_completing) return;
+    setState(() => _completing = true);
+    try {
+      final names = _checkedExercises.map((i) => exercises[i].title).toList();
+      final dayNumber = _plan?.workoutSplit.firstOrNull?.dayNumber ?? 1;
+      final newAchievements = await UserService.instance.logWorkout(
+        dayNumber: dayNumber,
+        exercisesCompleted: names,
+        durationMinutes: names.length * 7,
+        planId: _plan?.planId,
+      );
+      if (mounted) {
+        if (newAchievements.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Achievement unlocked: ${newAchievements.join(', ')}!'),
+              backgroundColor: AppColors.teal,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Workout logged!')),
+          );
+        }
+        setState(() => _checkedExercises.clear());
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to log workout. Try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _completing = false);
+    }
+  }
+
   List<_Exercise> _buildExercises() {
     final plan = _plan;
     if (plan == null || plan.workoutSplit.isEmpty) return [];
@@ -72,7 +112,7 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
 
     final dayLabel = _plan?.workoutSplit.firstOrNull?.dayLabel ?? 'Push Day';
     final intensity = _plan?.intensityMultiplier ?? 0.85;
-    final completed = exercises.where((e) => e.done).length;
+    final completed = _checkedExercises.length;
 
     return Scaffold(
       backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF7FCF8),
@@ -112,11 +152,26 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
                       ),
                     SizedBox(height: isDark ? 34 : 30),
                     for (var i = 0; i < exercises.length; i++) ...[
-                      _ExerciseTile(exercise: exercises[i], focused: i == 2),
+                      _ExerciseTile(
+                        exercise: exercises[i],
+                        focused: !_checkedExercises.contains(i) &&
+                            _checkedExercises.length == i,
+                        isChecked: _checkedExercises.contains(i),
+                        onToggle: () => setState(() {
+                          if (!_checkedExercises.remove(i)) {
+                            _checkedExercises.add(i);
+                          }
+                        }),
+                      ),
                       const SizedBox(height: 16),
                     ],
                     const SizedBox(height: 20),
-                    const _FeedbackButton(),
+                    _CompleteWorkoutButton(
+                      completing: _completing,
+                      checkedCount: _checkedExercises.length,
+                      total: exercises.length,
+                      onPressed: () => _completeWorkout(exercises),
+                    ),
                   ],
                 ),
               ),
@@ -264,36 +319,39 @@ class _ProfilePainter extends CustomPainter {
 class _DateStrip extends StatelessWidget {
   const _DateStrip();
 
+  static const _dayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  static const _dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  static DateTime _monday(DateTime d) =>
+      d.subtract(Duration(days: d.weekday - 1));
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final today = DateTime.now();
+    final monday = _monday(today);
+    final todayIndex = today.weekday - 1; // 0 = Mon
 
     if (isDark) {
-      const days = ['M', 'T', 'W', 'T', 'F', 'S'];
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          for (var i = 0; i < days.length; i++)
-            _DarkDay(label: days[i], selected: i == 1),
+          for (var i = 0; i < 6; i++)
+            _DarkDay(label: _dayLetters[i], selected: i == todayIndex),
         ],
       );
     }
 
-    const days = [
-      ('Mon', '12'),
-      ('Tue', '13'),
-      ('Wed', '14'),
-      ('Thu', '15'),
-      ('Fri', '16'),
-      ('Sat', '17'),
-      ('Sun', '18'),
-    ];
     return Row(
       children: [
-        for (var i = 0; i < days.length; i++) ...[
+        for (var i = 0; i < 7; i++) ...[
           if (i > 0) const SizedBox(width: 10),
           Expanded(
-            child: _LightDay(day: days[i].$1, date: days[i].$2, selected: i == 1),
+            child: _LightDay(
+              day: _dayNames[i],
+              date: monday.add(Duration(days: i)).day.toString(),
+              selected: i == todayIndex,
+            ),
           ),
         ],
       ],
@@ -569,32 +627,43 @@ class _ExerciseTile extends StatelessWidget {
   const _ExerciseTile({
     required this.exercise,
     required this.focused,
+    required this.isChecked,
+    required this.onToggle,
   });
 
   final _Exercise exercise;
   final bool focused;
+  final bool isChecked;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF121212) : Colors.white,
-        borderRadius: BorderRadius.circular(isDark ? 14 : 16),
-        border: Border.all(
-          color: focused
-              ? (isDark ? AppColors.teal.withValues(alpha: 0.55) : AppColors.teal.withValues(alpha: 0.35))
-              : (isDark ? const Color(0xFF2B2B2D) : const Color(0xFFE8ECEB)),
-          width: focused ? 1.4 : 1,
+    return GestureDetector(
+      onTap: onToggle,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF121212) : Colors.white,
+          borderRadius: BorderRadius.circular(isDark ? 14 : 16),
+          border: Border.all(
+            color: isChecked
+                ? AppColors.teal.withValues(alpha: isDark ? 0.55 : 0.35)
+                : focused
+                    ? (isDark ? AppColors.teal.withValues(alpha: 0.35) : AppColors.teal.withValues(alpha: 0.2))
+                    : (isDark ? const Color(0xFF2B2B2D) : const Color(0xFFE8ECEB)),
+            width: isChecked || focused ? 1.4 : 1,
+          ),
         ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: isDark ? 24 : 26,
-          vertical: isDark ? 24 : 26,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isDark ? 24 : 26,
+            vertical: isDark ? 24 : 26,
+          ),
+          child: isDark
+              ? _DarkExerciseContent(exercise: exercise, focused: focused, isChecked: isChecked)
+              : _LightExerciseContent(exercise: exercise, isChecked: isChecked),
         ),
-        child: isDark ? _DarkExerciseContent(exercise: exercise, focused: focused) : _LightExerciseContent(exercise: exercise),
       ),
     );
   }
@@ -604,10 +673,12 @@ class _DarkExerciseContent extends StatelessWidget {
   const _DarkExerciseContent({
     required this.exercise,
     required this.focused,
+    required this.isChecked,
   });
 
   final _Exercise exercise;
   final bool focused;
+  final bool isChecked;
 
   @override
   Widget build(BuildContext context) {
@@ -625,7 +696,7 @@ class _DarkExerciseContent extends StatelessWidget {
             height: 68,
             child: Icon(
               exercise.icon,
-              color: focused ? const Color(0xFFFF8C34) : (exercise.done ? Colors.amber : Colors.white70),
+              color: focused ? const Color(0xFFFF8C34) : (isChecked ? Colors.amber : Colors.white70),
               size: 34,
             ),
           ),
@@ -638,9 +709,9 @@ class _DarkExerciseContent extends StatelessWidget {
               Text(
                 exercise.title,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: exercise.done ? muted : Colors.white,
+                  color: isChecked ? muted : Colors.white,
                   fontWeight: FontWeight.w800,
-                  decoration: exercise.done ? TextDecoration.lineThrough : null,
+                  decoration: isChecked ? TextDecoration.lineThrough : null,
                   decorationColor: muted,
                 ),
               ),
@@ -663,8 +734,8 @@ class _DarkExerciseContent extends StatelessWidget {
           ),
         ),
         Icon(
-          exercise.done ? Icons.check_circle_outline_rounded : Icons.circle_outlined,
-          color: exercise.done ? const Color(0xFF31D39E) : const Color(0xFF4A4B55),
+          isChecked ? Icons.check_circle_outline_rounded : Icons.circle_outlined,
+          color: isChecked ? const Color(0xFF31D39E) : const Color(0xFF4A4B55),
           size: 34,
         ),
       ],
@@ -673,9 +744,10 @@ class _DarkExerciseContent extends StatelessWidget {
 }
 
 class _LightExerciseContent extends StatelessWidget {
-  const _LightExerciseContent({required this.exercise});
+  const _LightExerciseContent({required this.exercise, required this.isChecked});
 
   final _Exercise exercise;
+  final bool isChecked;
 
   @override
   Widget build(BuildContext context) {
@@ -683,14 +755,14 @@ class _LightExerciseContent extends StatelessWidget {
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
-            color: exercise.done ? const Color(0xFF68B9A8) : Colors.transparent,
+            color: isChecked ? const Color(0xFF68B9A8) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            border: exercise.done ? null : Border.all(color: const Color(0xFFB6C3BE), width: 2.5),
+            border: isChecked ? null : Border.all(color: const Color(0xFFB6C3BE), width: 2.5),
           ),
           child: SizedBox(
             width: 40,
             height: 40,
-            child: exercise.done
+            child: isChecked
                 ? const Icon(Icons.check_rounded, color: Colors.white, size: 26)
                 : const SizedBox.shrink(),
           ),
@@ -705,9 +777,9 @@ class _LightExerciseContent extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: exercise.done ? const Color(0xFF7C8083) : Colors.black,
+                  color: isChecked ? const Color(0xFF7C8083) : Colors.black,
                   fontWeight: FontWeight.w700,
-                  decoration: exercise.done ? TextDecoration.lineThrough : null,
+                  decoration: isChecked ? TextDecoration.lineThrough : null,
                 ),
               ),
               const SizedBox(height: 4),
@@ -761,12 +833,25 @@ class _Tag extends StatelessWidget {
   }
 }
 
-class _FeedbackButton extends StatelessWidget {
-  const _FeedbackButton();
+class _CompleteWorkoutButton extends StatelessWidget {
+  const _CompleteWorkoutButton({
+    required this.completing,
+    required this.checkedCount,
+    required this.total,
+    required this.onPressed,
+  });
+
+  final bool completing;
+  final int checkedCount;
+  final int total;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final label = checkedCount == 0
+        ? 'Complete Workout'
+        : 'Complete Workout ($checkedCount/$total)';
 
     return SizedBox(
       height: isDark ? 82 : 88,
@@ -778,25 +863,32 @@ class _FeedbackButton extends StatelessWidget {
           shadowColor: AppColors.teal.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-        onPressed: () {},
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(isDark ? Icons.rate_review_outlined : Icons.send_rounded, size: 31),
-            const SizedBox(width: 14),
-            Flexible(
-              child: Text(
-                'Submit Workout Feedback (RPE)',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
+        onPressed: completing ? null : onPressed,
+        child: completing
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2.5, color: Colors.white),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle_outline_rounded, size: 28),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -813,7 +905,7 @@ class _BottomNav extends StatelessWidget {
       _NavSpec(Icons.fitness_center_rounded, 'Workout', true, () {}),
       _NavSpec(Icons.restaurant_rounded, 'Nutrition', false, () => context.go(AppRoutes.nutrition)),
       _NavSpec(Icons.trending_up_rounded, 'Progress', false, () => context.go(AppRoutes.progress)),
-      _NavSpec(Icons.smart_toy_outlined, 'Coach', false, () {}),
+      _NavSpec(Icons.smart_toy_outlined, 'Coach', false, () => context.push(AppRoutes.aiCoach)),
     ];
 
     return DecoratedBox(

@@ -12,4 +12,7 @@ abstract final class AppRoutes {
   static const nutrition = '/nutrition';
   static const recipeDetail = '/recipe-detail';
   static const progress = '/progress';
+  static const aiCoach = '/ai-coach';
+  static const achievements = '/achievements';
+  static const settings = '/settings';
 }

@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app/app_scope.dart';
-import '../config/oauth_config.dart';
 import '../localization/login_strings.dart';
 import '../router/app_routes.dart';
 import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/smart_fit_theme.dart';
+import '../widgets/google_sign_in_helper.dart';
 
 /// Login (page 2). Theme mirrors [LandingScreen]; routes from landing "Log In".
 class LoginScreen extends StatefulWidget {
@@ -77,25 +76,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _onGoogle(Locale l) async {
     await _runGuarded(() async {
-      try {
-        final account = await _auth.signInWithGoogle();
-        if (account == null) {
-          _snack(_isAr(l) ? 'تم الإلغاء' : 'Canceled');
-          return;
-        }
-        final email = account.email.trim();
-        final label = email.isNotEmpty ? email : account.id;
-        _snack(_isAr(l) ? 'Google: $label' : 'Signed in as $label');
-      } on GoogleSignInException catch (e) {
-        final hint = OAuthConfig.googleServerClientId.isEmpty
-            ? ' Add GOOGLE_WEB_CLIENT_ID dart-define + Google OAuth (and iOS GIDClientID in Info.plist).'
-            : '';
-        _snack(
-          '${e.description ?? e.code.name}$hint',
-        );
-      } catch (e) {
-        _snack('$e');
-      }
+      final ok = await googleSignInWithFallback(context, isAr: _isAr(l));
+      if (!ok || !mounted) return;
+      context.go(AppRoutes.homeDashboard);
     });
   }
 
@@ -104,14 +87,22 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         final cred = await _auth.signInWithAppleNative();
         final mail = cred.email?.trim() ?? '';
-        final fallback =
-            cred.userIdentifier ?? (_isAr(l) ? 'مستخدم Apple' : 'Apple user');
-        final label = mail.isNotEmpty ? mail : fallback;
-        _snack(_isAr(l) ? 'Apple: $label' : 'Apple: $label');
+        final name = [cred.givenName, cred.familyName]
+            .where((s) => s != null && s.isNotEmpty)
+            .join(' ');
+        if (mail.isNotEmpty) {
+          await AuthService.instance.socialLogin(mail, name, 'apple');
+          if (!mounted) return;
+          context.go(AppRoutes.homeDashboard);
+        } else {
+          _snack(_isAr(l) ? 'Apple: تم تسجيل الدخول' : 'Apple: signed in');
+        }
       } on StateError catch (e) {
         _snack(e.message);
-      } on UnsupportedError catch (e) {
-        _snack('$e');
+      } on UnsupportedError {
+        _snack(_isAr(l)
+            ? 'Apple غير متاح على المتصفح — استخدم Google أو البريد الإلكتروني.'
+            : 'Apple Sign-In is not available on web. Use Google or email.');
       } catch (e) {
         _snack('$e');
       }

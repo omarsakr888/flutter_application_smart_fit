@@ -1,26 +1,51 @@
-# Build outputs
+# ─── Secrets & credentials — NEVER commit these ──────────────────────────────
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
+android/key.properties
+ios/Runner/GoogleService-Info.plist
+
+# ─── Flutter ──────────────────────────────────────────────────────────────────
 build/
 .dart_tool/
 .dart_appdata/
-
-# IDE
-.idea/
-.vscode/
-
-# Flutter generated
 *.g.dart
 *.freezed.dart
 
-# Large ML / dataset files (>100 MB — use cloud storage or LFS)
-recommendation_datasets/advanced_foodcom_labeled_dataset.csv
-recommendation_datasets/cleaned_intermediate_dataset.csv
+# ─── IDE ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
 
-# Python cache
+# ─── Python / backend ─────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
-smart_fit_backend/data/uploads/
+*.pyd
+.Python
+*.egg-info/
+dist/
+*.egg
+.venv/
+venv/
+env/
+.cache/
 
-# OS
+# ─── Large ML / dataset files (use cloud storage or Git LFS) ─────────────────
+recommendation_datasets/advanced_foodcom_labeled_dataset.csv
+recommendation_datasets/cleaned_intermediate_dataset.csv
+smart_fit_backend/data/uploads/
+*.pkl
+*.model
+*.bin
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db

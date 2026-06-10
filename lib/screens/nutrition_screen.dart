@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,6 +18,11 @@ class NutritionScreen extends StatefulWidget {
 
 class _NutritionScreenState extends State<NutritionScreen> {
   PlanResult? _plan;
+  final _loggedMeals = <int, double>{};
+  int _hydrationCups = 0;
+  static const _hydrationTarget = 8;
+  Timer? _countdownTimer;
+  Duration _nextMealIn = Duration.zero;
 
   static const _fallbackLight = [
     _Meal('Breakfast', 'Oatmeal with Berries - 320 kcal', 'Fiber', Icons.rice_bowl_rounded, true),
@@ -35,12 +42,108 @@ class _NutritionScreenState extends State<NutritionScreen> {
   void initState() {
     super.initState();
     _fetch();
+    _loadHydration();
+    _updateCountdown();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() => _updateCountdown());
+    });
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  // Standard meal times (24h): breakfast 8h, lunch 13h, snack 16h, dinner 20h
+  static const _mealHours = [8, 13, 16, 20];
+
+  void _updateCountdown() {
+    final now = DateTime.now();
+    for (final h in _mealHours) {
+      final meal = DateTime(now.year, now.month, now.day, h);
+      if (meal.isAfter(now)) {
+        _nextMealIn = meal.difference(now);
+        return;
+      }
+    }
+    // All meals passed — next is breakfast tomorrow
+    final tomorrow = DateTime(now.year, now.month, now.day + 1, _mealHours.first);
+    _nextMealIn = tomorrow.difference(now);
+  }
+
+  String get _countdownText {
+    final h = _nextMealIn.inHours.toString().padLeft(2, '0');
+    final m = (_nextMealIn.inMinutes % 60).toString().padLeft(2, '0');
+    final s = (_nextMealIn.inSeconds % 60).toString().padLeft(2, '0');
+    return '$h:$m:$s';
   }
 
   Future<void> _fetch() async {
     try {
       final plan = await UserService.instance.getPlan();
       if (mounted && plan != null) setState(() => _plan = plan);
+    } catch (_) {}
+  }
+
+  Future<void> _loadHydration() async {
+    try {
+      final cups = await UserService.instance.getTodayHydrationCups();
+      if (mounted) setState(() => _hydrationCups = cups);
+    } catch (_) {}
+  }
+
+  Future<void> _addHydration() async {
+    if (_hydrationCups >= _hydrationTarget) return;
+    setState(() => _hydrationCups++);
+    try {
+      await UserService.instance.logHydration();
+    } catch (_) {}
+  }
+
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  static String _formatHeaderDate(DateTime d) =>
+      '${_months[d.month - 1]} ${d.day}, ${d.year}';
+
+  Future<void> _logMeal(BuildContext ctx, int index, _Meal meal) async {
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: ctx,
+      builder: (dlg) => AlertDialog(
+        title: Text('Log ${meal.title}'),
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Calories consumed (optional)',
+            suffixText: 'kcal',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dlg, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dlg, true),
+            child: const Text('Log'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final calories = double.tryParse(controller.text) ?? 0;
+    setState(() => _loggedMeals[index] = calories);
+    try {
+      await UserService.instance.logMeal(
+        meal.title,
+        planId: _plan?.planId,
+        caloriesConsumed: calories,
+      );
     } catch (_) {}
   }
 
@@ -63,7 +166,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final meals = _buildMeals(isDark);
-    final caloriesConsumed = 0;
+    final caloriesConsumed =
+        _loggedMeals.values.fold(0.0, (a, b) => a + b).round();
     final caloriesTarget = _plan?.targetCaloriesKcal.round() ?? 2240;
     final proteinG = _plan?.macros.proteinG.round() ?? 160;
     final carbsG = _plan?.macros.carbsG.round() ?? 224;
@@ -101,7 +205,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                             ),
                           ),
                           Text(
-                            'May 24, 2024',
+                            _formatHeaderDate(DateTime.now()),
                             style: theme.textTheme.titleMedium?.copyWith(
                               color: const Color(0xFF60666A),
                             ),
@@ -132,14 +236,23 @@ class _NutritionScreenState extends State<NutritionScreen> {
                     ),
                     const SizedBox(height: 22),
                     for (var i = 0; i < meals.length; i++) ...[
-                      _MealTile(meal: meals[i], focused: !isDark && i == 2),
+                      _MealTile(
+                        meal: meals[i],
+                        focused: !isDark && i == 2,
+                        isLogged: _loggedMeals.containsKey(i),
+                        onLog: () => _logMeal(context, i, meals[i]),
+                      ),
                       const SizedBox(height: 16),
                     ],
                     if (isDark) ...[
                       const SizedBox(height: 22),
-                      const _HydrationPanel(),
+                      _HydrationPanel(
+                        cups: _hydrationCups,
+                        target: _hydrationTarget,
+                        onAdd: _addHydration,
+                      ),
                       const SizedBox(height: 20),
-                      const _NextMealPanel(),
+                      _NextMealPanel(countdown: _countdownText),
                     ],
                     const SizedBox(height: 24),
                   ],
@@ -573,8 +686,16 @@ class _MacroLine extends StatelessWidget {
 class _TodayPill extends StatelessWidget {
   const _TodayPill();
 
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final label = '${_months[now.month - 1]} ${now.day}, Today';
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.teal.withValues(alpha: 0.12),
@@ -583,7 +704,7 @@ class _TodayPill extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         child: Text(
-          'August 24, Today',
+          label,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: const Color(0xFF31D39E),
           ),
@@ -597,10 +718,14 @@ class _MealTile extends StatelessWidget {
   const _MealTile({
     required this.meal,
     required this.focused,
+    required this.isLogged,
+    required this.onLog,
   });
 
   final _Meal meal;
   final bool focused;
+  final bool isLogged;
+  final VoidCallback onLog;
 
   @override
   Widget build(BuildContext context) {
@@ -618,7 +743,7 @@ class _MealTile extends StatelessWidget {
             border: Border.all(
               color: focused
                   ? AppColors.teal
-                  : (isDark ? (meal.done ? AppColors.teal.withValues(alpha: 0.18) : const Color(0xFF2B2B2D)) : const Color(0xFFF0F1F1)),
+                  : (isDark ? (isLogged ? AppColors.teal.withValues(alpha: 0.18) : const Color(0xFF2B2B2D)) : const Color(0xFFF0F1F1)),
               width: focused ? 2 : 1,
             ),
           ),
@@ -626,7 +751,7 @@ class _MealTile extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(isDark ? 20 : 24, isDark ? 18 : 26, 22, isDark ? 18 : 26),
             child: Row(
               children: [
-                _MealIcon(icon: meal.icon, done: meal.done),
+                _MealIcon(icon: meal.icon, done: isLogged),
                 SizedBox(width: isDark ? 22 : 26),
                 Expanded(
                   child: Column(
@@ -645,7 +770,7 @@ class _MealTile extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (isDark && meal.done) ...[
+                          if (isDark && isLogged) ...[
                             const SizedBox(width: 8),
                             const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF31D39E), size: 20),
                           ],
@@ -665,7 +790,7 @@ class _MealTile extends StatelessWidget {
                         Text(
                           meal.badge,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: meal.done ? const Color(0xFF31D39E) : const Color(0xFF777A80),
+                            color: isLogged ? const Color(0xFF31D39E) : const Color(0xFF777A80),
                           ),
                         )
                       else
@@ -673,10 +798,10 @@ class _MealTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (meal.done && !isDark)
+                if (isLogged)
                   const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF31B690), size: 30)
-                else if (!meal.done)
-                  _SwapButton(compact: isDark),
+                else
+                  _LogButton(compact: isDark, onTap: onLog),
               ],
             ),
           ),
@@ -750,40 +875,52 @@ class _MealBadge extends StatelessWidget {
   }
 }
 
-class _SwapButton extends StatelessWidget {
-  const _SwapButton({required this.compact});
+class _LogButton extends StatelessWidget {
+  const _LogButton({required this.compact, required this.onTap});
 
   final bool compact;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     if (compact) {
       return OutlinedButton(
-        onPressed: () {},
+        onPressed: onTap,
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF31D39E),
           side: const BorderSide(color: Color(0xFF31D39E)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
         ),
-        child: const Text('Swap'),
+        child: const Text('Log'),
       );
     }
 
     return TextButton.icon(
-      onPressed: () {},
+      onPressed: onTap,
       style: TextButton.styleFrom(foregroundColor: AppColors.teal),
-      icon: const Icon(Icons.cached_rounded, size: 19),
-      label: const Text('Swap', style: TextStyle(fontWeight: FontWeight.w800)),
+      icon: const Icon(Icons.add_circle_outline_rounded, size: 19),
+      label: const Text('Log', style: TextStyle(fontWeight: FontWeight.w800)),
     );
   }
 }
 
 class _HydrationPanel extends StatelessWidget {
-  const _HydrationPanel();
+  const _HydrationPanel({
+    required this.cups,
+    required this.target,
+    required this.onAdd,
+  });
+
+  final int cups;
+  final int target;
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
+    final fraction = target > 0 ? (cups / target).clamp(0.0, 1.0) : 0.0;
+    final litres = (cups * 0.25).toStringAsFixed(1);
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0xFF101C18),
@@ -807,7 +944,7 @@ class _HydrationPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Drink 2.5L daily for optimal\nmetabolism',
+                    'Drink ${(target * 0.25).toStringAsFixed(1)}L daily for optimal\nmetabolism',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: const Color(0xFF31D39E),
                       height: 1.35,
@@ -817,7 +954,7 @@ class _HydrationPanel extends StatelessWidget {
                   Row(
                     children: [
                       OutlinedButton(
-                        onPressed: () {},
+                        onPressed: cups < target ? onAdd : null,
                         style: OutlinedButton.styleFrom(
                           shape: const CircleBorder(),
                           side: BorderSide(color: AppColors.teal.withValues(alpha: 0.45)),
@@ -829,8 +966,14 @@ class _HydrationPanel extends StatelessWidget {
                       Text.rich(
                         TextSpan(
                           children: [
-                            const TextSpan(text: '1.8L\n', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w800)),
-                            TextSpan(text: 'CURRENT', style: TextStyle(fontSize: 11, color: AppColors.teal.withValues(alpha: 0.9))),
+                            TextSpan(
+                              text: '${litres}L\n',
+                              style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w800),
+                            ),
+                            TextSpan(
+                              text: '$cups / $target cups',
+                              style: TextStyle(fontSize: 11, color: AppColors.teal.withValues(alpha: 0.9)),
+                            ),
                           ],
                         ),
                         style: const TextStyle(color: Color(0xFF31D39E), height: 1.25),
@@ -845,14 +988,20 @@ class _HydrationPanel extends StatelessWidget {
               height: 112,
               child: Stack(
                 alignment: Alignment.center,
-                children: const [
+                children: [
                   CircularProgressIndicator(
-                    value: 0.72,
+                    value: fraction,
                     strokeWidth: 10,
-                    color: Color(0xFF31D39E),
-                    backgroundColor: Color(0xFF333236),
+                    color: const Color(0xFF31D39E),
+                    backgroundColor: const Color(0xFF333236),
                   ),
-                  Icon(Icons.water_drop_outlined, color: Color(0xFF31D39E), size: 32),
+                  Icon(
+                    cups >= target
+                        ? Icons.water_drop_rounded
+                        : Icons.water_drop_outlined,
+                    color: const Color(0xFF31D39E),
+                    size: 32,
+                  ),
                 ],
               ),
             ),
@@ -864,7 +1013,9 @@ class _HydrationPanel extends StatelessWidget {
 }
 
 class _NextMealPanel extends StatelessWidget {
-  const _NextMealPanel();
+  const _NextMealPanel({required this.countdown});
+
+  final String countdown;
 
   @override
   Widget build(BuildContext context) {
@@ -883,8 +1034,18 @@ class _NextMealPanel extends StatelessWidget {
             Text.rich(
               TextSpan(
                 children: [
-                  TextSpan(text: 'Next Meal in\n', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 16)),
-                  const TextSpan(text: '02:15:00', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800)),
+                  TextSpan(
+                    text: 'Next Meal in\n',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 16),
+                  ),
+                  TextSpan(
+                    text: countdown,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
             ),

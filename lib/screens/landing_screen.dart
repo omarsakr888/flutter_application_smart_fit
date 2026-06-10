@@ -258,7 +258,7 @@ class _LogoBubble extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppColors.teal.withOpacity(isDark ? 0.35 : 0.22),
+            color: AppColors.teal.withValues(alpha: isDark ? 0.35 : 0.22),
             blurRadius: 22,
             offset: const Offset(0, 10),
           ),

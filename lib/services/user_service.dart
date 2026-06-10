@@ -23,14 +23,12 @@ class UserService {
     required double? targetWeight,
     required String? goal,
   }) async {
-    final userId = await AuthService.instance.currentUserId;
     final uri = Uri.parse('${BackendConfig.baseUrl}/users/profile');
     await _client
         .post(
           uri,
-          headers: {'Content-Type': 'application/json'},
+          headers: await AuthService.instance.authHeaders,
           body: jsonEncode({
-            'user_id': userId,
             'age': age,
             'gender': gender,
             'height': height,
@@ -51,14 +49,12 @@ class UserService {
     required bool sleep,
     required bool recovery,
   }) async {
-    final userId = await AuthService.instance.currentUserId;
     final uri = Uri.parse('${BackendConfig.baseUrl}/users/preferences');
     await _client
         .post(
           uri,
-          headers: {'Content-Type': 'application/json'},
+          headers: await AuthService.instance.authHeaders,
           body: jsonEncode({
-            'user_id': userId,
             'diet_type': dietType,
             'preferred_days': preferredDays,
             'hydration_enabled': hydration,
@@ -72,11 +68,10 @@ class UserService {
   // ── Dashboard ─────────────────────────────────────────────────────────────
 
   Future<DashboardData?> getDashboard() async {
-    final userId = await AuthService.instance.currentUserId;
-    final uri =
-        Uri.parse('${BackendConfig.baseUrl}/users/dashboard?user_id=$userId');
-    final response =
-        await _client.get(uri).timeout(const Duration(seconds: 15));
+    final uri = Uri.parse('${BackendConfig.baseUrl}/users/dashboard');
+    final response = await _client
+        .get(uri, headers: await AuthService.instance.authHeaders)
+        .timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) return null;
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final dashboard = body['dashboard'] as Map<String, dynamic>?;
@@ -87,11 +82,10 @@ class UserService {
   // ── Plan ──────────────────────────────────────────────────────────────────
 
   Future<PlanResult?> getPlan() async {
-    final userId = await AuthService.instance.currentUserId;
-    final uri =
-        Uri.parse('${BackendConfig.baseUrl}/users/plan?user_id=$userId');
-    final response =
-        await _client.get(uri).timeout(const Duration(seconds: 20));
+    final uri = Uri.parse('${BackendConfig.baseUrl}/users/plan');
+    final response = await _client
+        .get(uri, headers: await AuthService.instance.authHeaders)
+        .timeout(const Duration(seconds: 20));
     if (response.statusCode != 200) return null;
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final planJson = body['plan'] as Map<String, dynamic>?;
@@ -101,38 +95,50 @@ class UserService {
 
   // ── Activity Logs ─────────────────────────────────────────────────────────
 
-  Future<void> logWorkout({
+  Future<List<String>> logWorkout({
     required int dayNumber,
-    required int rpe,
+    int rpe = 5,
     String? planId,
+    List<String> exercisesCompleted = const [],
+    int durationMinutes = 0,
   }) async {
-    final userId = await AuthService.instance.currentUserId;
-    final uri = Uri.parse('${BackendConfig.baseUrl}/users/plan/workout-log');
-    await _client
+    final uri = Uri.parse('${BackendConfig.baseUrl}/users/log-workout');
+    final response = await _client
         .post(
           uri,
-          headers: {'Content-Type': 'application/json'},
+          headers: await AuthService.instance.authHeaders,
           body: jsonEncode({
-            'user_id': userId,
             'plan_id': planId,
             'day_number': dayNumber,
             'rpe': rpe,
+            'exercises_completed': exercisesCompleted,
+            'duration_minutes': durationMinutes,
           }),
         )
-        .timeout(const Duration(seconds: 10));
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) return [];
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final newAchievements = body['new_achievements'] as List? ?? [];
+    return newAchievements
+        .map((a) => (a as Map<String, dynamic>)['name'] as String? ?? '')
+        .where((n) => n.isNotEmpty)
+        .toList();
   }
 
-  Future<void> logMeal(String slotName, {String? planId}) async {
-    final userId = await AuthService.instance.currentUserId;
-    final uri = Uri.parse('${BackendConfig.baseUrl}/users/plan/meal-log');
+  Future<void> logMeal(
+    String slotName, {
+    String? planId,
+    double caloriesConsumed = 0,
+  }) async {
+    final uri = Uri.parse('${BackendConfig.baseUrl}/users/log-meal');
     await _client
         .post(
           uri,
-          headers: {'Content-Type': 'application/json'},
+          headers: await AuthService.instance.authHeaders,
           body: jsonEncode({
-            'user_id': userId,
             'plan_id': planId,
             'slot_name': slotName,
+            'calories_consumed': caloriesConsumed,
           }),
         )
         .timeout(const Duration(seconds: 10));
@@ -141,15 +147,84 @@ class UserService {
   // ── Progress ──────────────────────────────────────────────────────────────
 
   Future<ProgressData?> getProgress() async {
-    final userId = await AuthService.instance.currentUserId;
-    final uri =
-        Uri.parse('${BackendConfig.baseUrl}/users/progress?user_id=$userId');
-    final response =
-        await _client.get(uri).timeout(const Duration(seconds: 15));
+    final uri = Uri.parse('${BackendConfig.baseUrl}/users/progress');
+    final response = await _client
+        .get(uri, headers: await AuthService.instance.authHeaders)
+        .timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) return null;
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final progressJson = body['progress'] as Map<String, dynamic>?;
     if (progressJson == null) return null;
     return ProgressData.fromJson(progressJson);
+  }
+
+  // ── Daily Progress ────────────────────────────────────────────────────────
+
+  Future<DailyProgress?> getDailyProgress(String date) async {
+    final uri = Uri.parse(
+      '${BackendConfig.baseUrl}/users/daily-progress?date=$date',
+    );
+    final response = await _client
+        .get(uri, headers: await AuthService.instance.authHeaders)
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) return null;
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return DailyProgress.fromJson(body);
+  }
+
+  // ── Achievements ──────────────────────────────────────────────────────────
+
+  Future<List<AchievementData>> getAchievements() async {
+    final uri = Uri.parse('${BackendConfig.baseUrl}/achievements');
+    final response = await _client
+        .get(uri, headers: await AuthService.instance.authHeaders)
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) return [];
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final list = (body['achievements'] as List?) ?? [];
+    return list
+        .map((a) => AchievementData.fromJson(a as Map<String, dynamic>))
+        .toList();
+  }
+
+  // ── Hydration ──────────────────────────────────────────────────────────────
+
+  Future<int> getTodayHydrationCups() async {
+    final uri = Uri.parse('${BackendConfig.baseUrl}/users/hydration');
+    final response = await _client
+        .get(uri, headers: await AuthService.instance.authHeaders)
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) return 0;
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return (body['cups'] as int?) ?? 0;
+  }
+
+  Future<void> logHydration({int cups = 1}) async {
+    final uri = Uri.parse('${BackendConfig.baseUrl}/users/log-hydration');
+    await _client
+        .post(
+          uri,
+          headers: await AuthService.instance.authHeaders,
+          body: jsonEncode({'cups': cups}),
+        )
+        .timeout(const Duration(seconds: 10));
+  }
+
+  Future<List<String>> checkAchievements() async {
+    final uri = Uri.parse('${BackendConfig.baseUrl}/achievements/check');
+    final response = await _client
+        .post(
+          uri,
+          headers: await AuthService.instance.authHeaders,
+          body: jsonEncode({}),
+        )
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) return [];
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final newList = body['new_achievements'] as List? ?? [];
+    return newList
+        .map((a) => (a as Map<String, dynamic>)['name'] as String? ?? '')
+        .where((n) => n.isNotEmpty)
+        .toList();
   }
 }

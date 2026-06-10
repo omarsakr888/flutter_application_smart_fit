@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app/app_scope.dart';
-import '../config/oauth_config.dart';
 import '../localization/signup_strings.dart';
 import '../router/app_routes.dart';
 import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/smart_fit_theme.dart';
+import '../widgets/google_sign_in_helper.dart';
 
 /// Create account (page 3): links from landing **Get Started** and login **Sign Up**.
 class CreateAccountScreen extends StatefulWidget {
@@ -88,22 +87,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   Future<void> _onGoogle(Locale l) async {
     await _runGuarded(() async {
-      try {
-        final account = await _auth.signInWithGoogle();
-        if (account == null) {
-          _snack(_isAr(l) ? 'تم الإلغاء' : 'Canceled');
-          return;
-        }
-        if (!mounted) return;
-        context.push(AppRoutes.profileSetup);
-      } on GoogleSignInException catch (e) {
-        final hint = OAuthConfig.googleServerClientId.isEmpty
-            ? ' Add GOOGLE_WEB_CLIENT_ID dart-define + Google OAuth (and iOS GIDClientID in Info.plist).'
-            : '';
-        _snack('${e.description ?? e.code.name}$hint');
-      } catch (e) {
-        _snack('$e');
-      }
+      final ok = await googleSignInWithFallback(context, isAr: _isAr(l));
+      if (!ok || !mounted) return;
+      context.push(AppRoutes.profileSetup);
     });
   }
 

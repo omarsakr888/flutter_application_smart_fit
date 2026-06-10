@@ -15,16 +15,25 @@ class ScanService {
   final _client = http.Client();
 
   Future<OcrExtractResult> uploadScan(XFile image) async {
-    final userId = await AuthService.instance.currentUserId;
+    final token = await AuthService.instance.getAuthToken();
     final uri = Uri.parse('${BackendConfig.baseUrl}/ocr/extract');
+
+    // fromBytes works on all platforms (web + native).
+    // fromPath uses dart:io and fails on web (XFile.path is a blob URL there).
+    final imageBytes = await image.readAsBytes();
     final request = http.MultipartRequest('POST', uri)
-      ..fields['user_id'] = userId
       ..fields['include_blocks'] = 'false'
-      ..files.add(await http.MultipartFile.fromPath(
+      ..files.add(http.MultipartFile.fromBytes(
         'file',
-        image.path,
+        imageBytes,
+        filename: image.name,
         contentType: MediaType('image', _subtype(image.name)),
       ));
+
+    // Attach Bearer token for the multipart upload.
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
 
     final streamed = await _client
         .send(request)
@@ -50,11 +59,9 @@ class ScanService {
     String dietType = 'Omnivore',
     int preferredDays = 4,
   }) async {
-    final userId = await AuthService.instance.currentUserId;
     final uri = Uri.parse('${BackendConfig.baseUrl}/api/v1/generate-plan');
     final payload = <String, dynamic>{
       'User_Goal': goal,
-      'user_id': userId,
       'Age': ocr.fieldValue('Age'),
       'Gender': ocr.fieldValue('Gender'),
       'Height': ocr.fieldValue('Height'),
@@ -75,7 +82,7 @@ class ScanService {
     final response = await _client
         .post(
           uri,
-          headers: {'Content-Type': 'application/json'},
+          headers: await AuthService.instance.authHeaders,
           body: jsonEncode(payload),
         )
         .timeout(const Duration(seconds: 90));

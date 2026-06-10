@@ -6,13 +6,19 @@ from contextlib import asynccontextmanager
 from dataclasses import asdict
 from typing import Any, Literal
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic import ValidationError
 
+from auth.jwt import create_access_token, verify_token
 from core import REQUIRED_INPUT_FEATURES, configure_logging
+
+load_dotenv()
 from inbody_extractor import InBodyExtractor
 from math_engine import MathEngine
 from matching_engine import MatchingEngine
@@ -72,6 +78,31 @@ app.add_middleware(
 )
 
 
+# ─── JWT authentication dependency ───────────────────────────────────────────
+
+_bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> str:
+    """Extract and verify the Bearer JWT; return the user_id (sub claim)."""
+    if credentials is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required. Include 'Authorization: Bearer <token>' header.",
+        )
+    try:
+        return verify_token(credentials.credentials)
+    except JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token. Please log in again.",
+        )
+
+
+# ─── Exception handlers ───────────────────────────────────────────────────────
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
     return JSONResponse(
@@ -117,8 +148,8 @@ def predict(payload: PredictionRequest) -> dict[str, str | float]:
 @app.post("/ocr/extract")
 async def extract_inbody_scan(
     file: UploadFile = File(...),
-    user_id: str = Form("local-user"),
     include_blocks: bool = Form(False),
+    user_id: str = Depends(get_current_user),
 ) -> dict[str, object]:
     try:
         image_bytes = await file.read()
@@ -139,13 +170,16 @@ async def extract_inbody_scan(
 
 
 @app.post("/ocr/confirm")
-def confirm_inbody_scan(payload: ConfirmScanRequest) -> dict[str, object]:
+def confirm_inbody_scan(
+    payload: ConfirmScanRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
     try:
         features = payload.normalized_features()
         prediction = prediction_service.predict_features(features)
         scan_id = scan_storage.confirm_scan(
             extraction_id=payload.extraction_id,
-            user_id=payload.user_id,
+            user_id=user_id,  # from JWT, not body
             features=features,
             prediction=prediction,
         )
@@ -166,15 +200,18 @@ def confirm_inbody_scan(payload: ConfirmScanRequest) -> dict[str, object]:
 
 @app.get("/ocr/history")
 def scan_history(
-    user_id: str = Query("local-user"),
     limit: int = Query(20, ge=1, le=100),
+    user_id: str = Depends(get_current_user),
 ) -> dict[str, object]:
     scans = scan_storage.list_history(user_id=user_id, limit=limit)
     return {"status": "success", "scans": scans}
 
 
 @app.get("/ocr/history/{scan_id}")
-def scan_history_detail(scan_id: str, user_id: str = Query("local-user")) -> dict[str, object]:
+def scan_history_detail(
+    scan_id: str,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
     scan = scan_storage.get_scan(scan_id=scan_id, user_id=user_id)
     if scan is None:
         raise HTTPException(status_code=404, detail="Scan not found.")
@@ -230,13 +267,16 @@ _FIELD_UNITS = {
 
 
 @app.post("/api/v1/process-inbody-mlkit")
-def process_inbody_mlkit(payload: MlKitInBodyRequest) -> dict[str, object]:
+def process_inbody_mlkit(
+    payload: MlKitInBodyRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
     try:
         features, field_metadata = _normalize_and_impute_mlkit_features(payload.features)
         prediction = prediction_service.predict_features(features)
         scan_id = scan_storage.confirm_scan(
             extraction_id=payload.extraction_id,
-            user_id=payload.user_id,
+            user_id=user_id,  # from JWT, not body
             features=features,
             prediction=prediction,
             imputation_metadata=field_metadata,
@@ -430,7 +470,10 @@ class GeneratePlanRequest(BaseModel):
 
 
 @app.post("/api/v1/generate-plan")
-def generate_plan(payload: GeneratePlanRequest) -> dict[str, object]:
+def generate_plan(
+    payload: GeneratePlanRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
     """Generate a personalised workout + nutrition plan.
 
     Pipeline:
@@ -519,9 +562,9 @@ def generate_plan(payload: GeneratePlanRequest) -> dict[str, object]:
 
         # Persist plan so dashboard / workout / nutrition screens can retrieve it
         try:
-            user_storage.save_plan(user_id=payload.user_id, plan=response)
+            user_storage.save_plan(user_id=user_id, plan=response)
         except Exception:
-            logger.warning("Failed to persist plan for user %s (non-fatal)", payload.user_id)
+            logger.warning("Failed to persist plan for user %s (non-fatal)", user_id)
 
         return response
 
@@ -570,7 +613,27 @@ def login(payload: LoginRequest) -> dict[str, object]:
     result = user_storage.login_user(payload.email, payload.password)
     if result is None:
         raise HTTPException(status_code=401, detail="Invalid email or password.")
-    return {"status": "success", **result}
+    access_token = create_access_token(result["user_id"])
+    return {"status": "success", "access_token": access_token, **result}
+
+
+class SocialLoginRequest(BaseModel):
+    email: str
+    name: str = ""
+    provider: str  # "google" | "apple"
+
+
+@app.post("/auth/social-login")
+def social_login(payload: SocialLoginRequest) -> dict[str, object]:
+    if not payload.email or "@" not in payload.email:
+        raise HTTPException(status_code=422, detail="Valid email is required.")
+    result = user_storage.social_login_or_create(
+        email=payload.email,
+        name=payload.name,
+        provider=payload.provider,
+    )
+    access_token = create_access_token(result["user_id"])
+    return {"status": "success", "access_token": access_token, **result}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -597,31 +660,37 @@ class SavePreferencesRequest(BaseModel):
 
 
 @app.post("/users/profile")
-def save_profile(payload: SaveProfileRequest) -> dict[str, object]:
+def save_profile(
+    payload: SaveProfileRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
     user_storage.save_profile(
-        payload.user_id, payload.age, payload.gender,
+        user_id, payload.age, payload.gender,
         payload.height, payload.weight, payload.target_weight, payload.goal,
     )
     return {"status": "success"}
 
 
 @app.get("/users/profile")
-def get_profile(user_id: str = Query("local-user")) -> dict[str, object]:
+def get_profile(user_id: str = Depends(get_current_user)) -> dict[str, object]:
     profile = user_storage.get_profile(user_id)
     return {"status": "success", "profile": profile}
 
 
 @app.post("/users/preferences")
-def save_preferences(payload: SavePreferencesRequest) -> dict[str, object]:
+def save_preferences(
+    payload: SavePreferencesRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
     user_storage.save_preferences(
-        payload.user_id, payload.diet_type, payload.preferred_days,
+        user_id, payload.diet_type, payload.preferred_days,
         payload.hydration_enabled, payload.sleep_enabled, payload.recovery_enabled,
     )
     return {"status": "success"}
 
 
 @app.get("/users/preferences")
-def get_preferences(user_id: str = Query("local-user")) -> dict[str, object]:
+def get_preferences(user_id: str = Depends(get_current_user)) -> dict[str, object]:
     prefs = user_storage.get_preferences(user_id)
     return {"status": "success", "preferences": prefs}
 
@@ -644,7 +713,7 @@ class MealLogRequest(BaseModel):
 
 
 @app.get("/users/plan")
-def get_plan(user_id: str = Query("local-user")) -> dict[str, object]:
+def get_plan(user_id: str = Depends(get_current_user)) -> dict[str, object]:
     plan = user_storage.get_latest_plan(user_id)
     if plan is None:
         raise HTTPException(
@@ -655,17 +724,50 @@ def get_plan(user_id: str = Query("local-user")) -> dict[str, object]:
 
 
 @app.post("/users/plan/workout-log")
-def log_workout(payload: WorkoutLogRequest) -> dict[str, object]:
+def log_workout(
+    payload: WorkoutLogRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
     log_id = user_storage.log_workout(
-        payload.user_id, payload.plan_id, payload.day_number, payload.rpe
+        user_id, payload.plan_id, payload.day_number, payload.rpe
     )
     return {"status": "success", "log_id": log_id}
 
 
 @app.post("/users/plan/meal-log")
-def log_meal(payload: MealLogRequest) -> dict[str, object]:
-    log_id = user_storage.log_meal(payload.user_id, payload.plan_id, payload.slot_name)
+def log_meal(
+    payload: MealLogRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
+    log_id = user_storage.log_meal(user_id, payload.plan_id, payload.slot_name)
     return {"status": "success", "log_id": log_id}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Hydration
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class HydrationLogRequest(BaseModel):
+    cups: int = Field(default=1, ge=1, le=20)
+
+
+@app.post("/users/log-hydration")
+def log_hydration(
+    payload: HydrationLogRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
+    log_id = user_storage.log_hydration(user_id, payload.cups)
+    return {
+        "status": "success",
+        "log_id": log_id,
+        "cups": payload.cups,
+    }
+
+
+@app.get("/users/hydration")
+def get_hydration(user_id: str = Depends(get_current_user)) -> dict[str, object]:
+    cups = user_storage.get_today_hydration_cups(user_id)
+    return {"status": "success", "cups": cups, "target": 8}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -673,7 +775,7 @@ def log_meal(payload: MealLogRequest) -> dict[str, object]:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/users/dashboard")
-def get_dashboard(user_id: str = Query("local-user")) -> dict[str, object]:
+def get_dashboard(user_id: str = Depends(get_current_user)) -> dict[str, object]:
     plan = user_storage.get_latest_plan(user_id)
     name = user_storage.get_user_name(user_id) or "there"
 
@@ -718,13 +820,15 @@ def get_dashboard(user_id: str = Query("local-user")) -> dict[str, object]:
         if next_slot:
             next_meal = next_slot["slot_name"].replace("_", " ").title()
 
+    hydration_cups = user_storage.get_today_hydration_cups(user_id)
+
     return {
         "status": "success",
         "dashboard": {
             "user_name": name,
             "calories_target": target_calories,
             "calories_consumed": calories_consumed,
-            "hydration_cups": 5,
+            "hydration_cups": hydration_cups,
             "hydration_target": 8,
             "streak": streak,
             "recovery_insight": intensity_reason,
@@ -739,6 +843,100 @@ def get_dashboard(user_id: str = Query("local-user")) -> dict[str, object]:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/users/progress")
-def get_progress(user_id: str = Query("local-user")) -> dict[str, object]:
+def get_progress(user_id: str = Depends(get_current_user)) -> dict[str, object]:
     progress = user_storage.get_progress(user_id)
     return {"status": "success", "progress": progress}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Daily progress (Feature 5)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/users/daily-progress")
+def get_daily_progress(
+    date: str = Query(..., description="YYYY-MM-DD"),
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
+    try:
+        progress = user_storage.get_daily_progress(user_id, date)
+        return {"status": "success", **progress}
+    except Exception as exc:
+        logger.exception("daily-progress failed")
+        raise HTTPException(status_code=500, detail="Unable to fetch daily progress.") from exc
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Extended workout / meal log endpoints (Feature 5)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class ExtendedWorkoutLogRequest(BaseModel):
+    user_id: str = "local-user"
+    plan_id: str | None = None
+    day_number: int
+    rpe: int = Field(default=5, ge=1, le=10)
+    exercises_completed: list[str] = Field(default_factory=list)
+    duration_minutes: int = Field(default=0, ge=0)
+
+
+class ExtendedMealLogRequest(BaseModel):
+    user_id: str = "local-user"
+    plan_id: str | None = None
+    slot_name: str
+    calories_consumed: float = Field(default=0.0, ge=0)
+
+
+@app.post("/users/log-workout")
+def log_workout_extended(
+    payload: ExtendedWorkoutLogRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
+    log_id = user_storage.log_workout(
+        user_id,
+        payload.plan_id,
+        payload.day_number,
+        payload.rpe,
+        payload.exercises_completed,
+        payload.duration_minutes,
+    )
+    newly_earned = user_storage.check_and_award_achievements(user_id)
+    return {"status": "success", "log_id": log_id, "new_achievements": newly_earned}
+
+
+@app.post("/users/log-meal")
+def log_meal_extended(
+    payload: ExtendedMealLogRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
+    log_id = user_storage.log_meal(
+        user_id,
+        payload.plan_id,
+        payload.slot_name,
+        payload.calories_consumed,
+    )
+    return {"status": "success", "log_id": log_id}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Achievements (Feature 3)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/achievements/check")
+def check_achievements(
+    user_id: str = Depends(get_current_user),
+) -> dict[str, object]:
+    try:
+        newly_earned = user_storage.check_and_award_achievements(user_id)
+        return {"status": "success", "new_achievements": newly_earned}
+    except Exception as exc:
+        logger.exception("achievement check failed")
+        raise HTTPException(status_code=500, detail="Unable to check achievements.") from exc
+
+
+@app.get("/achievements")
+def get_achievements(user_id: str = Depends(get_current_user)) -> dict[str, object]:
+    try:
+        achievements = user_storage.get_achievements(user_id)
+        return {"status": "success", "achievements": achievements}
+    except Exception as exc:
+        logger.exception("get achievements failed")
+        raise HTTPException(status_code=500, detail="Unable to fetch achievements.") from exc

@@ -105,8 +105,9 @@ This project addresses three research questions:
 │  ┌─────────────────────────┐    │  └───────────────────────┘    │   │
 │  │  LOCAL OCR (FALLBACK)   │    │  ┌───────────────────────┐    │   │
 │  │  Google ML Kit          │    │  │  PERSISTENCE          │    │   │
-│  │  (Android / iOS native) │    │  │  SQLite3 Scan History │    │   │
-│  └─────────────────────────┘    │  └───────────────────────┘    │   │
+│  │  (Android / iOS native) │    │  │  SQLite3 ScanStorage  │    │   │
+│  └─────────────────────────┘    │  │  SQLite3 UserStorage  │    │   │
+│                                 │  └───────────────────────┘    │   │
 │                                 └───────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -263,9 +264,14 @@ lib/
 │   └── placeholder_screen.dart
 ├── models/
 │   ├── extracted_metric.dart    # Single OCR metric + confidence
-│   └── inbody_prediction.dart   # Request/response + scan types
+│   ├── inbody_prediction.dart   # Request/response + scan types
+│   ├── plan_result.dart         # WorkoutDay, MealSlot, NutritionMacros, PlanResult
+│   └── user_profile.dart        # DashboardData, ProgressData
 ├── services/
 │   ├── api_service.dart         # HTTP client → FastAPI backend
+│   ├── auth_service.dart        # Register/login + SharedPreferences persistence
+│   ├── user_service.dart        # Dashboard, plan, profile, preferences, progress
+│   ├── scan_service.dart        # OCR upload + plan generation (user_id aware)
 │   ├── social_auth_service.dart # Google + Apple OAuth
 │   └── ml_kit_text_recognition_service.dart
 ├── parsers/
@@ -352,7 +358,8 @@ smart_fit_backend/
 ├── document_analyser.py         # Layout detection + InBody model ID
 ├── field_extractor.py           # Field-specific value extraction
 ├── response_builder.py          # Unit conversion + response formatting
-├── scan_storage.py              # SQLite3 scan persistence layer
+├── scan_storage.py              # SQLite3 — InBody scan persistence (scan_extractions table)
+├── user_storage.py              # SQLite3 — user data (users, profiles, plans, logs tables)
 └── network_exception_io.dart    # (copied from frontend for reference)
 ```
 
@@ -384,7 +391,28 @@ smart_fit_backend/
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/generate-plan` | Generate full personalized meal + workout plan |
+| `POST` | `/api/v1/generate-plan` | Generate full personalized meal + workout plan (stores under `user_id`) |
+
+#### Authentication
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/auth/register` | Create account — hashed password stored in `users` table |
+| `POST` | `/auth/login` | Validate credentials — returns `user_id`, `name`, `email` |
+
+#### User Data
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/users/profile` | Save age, gender, height, weight, goal from onboarding |
+| `GET` | `/users/profile` | Fetch saved profile |
+| `POST` | `/users/preferences` | Save diet type, workout days, notification preferences |
+| `GET` | `/users/preferences` | Fetch saved preferences |
+| `GET` | `/users/dashboard` | Computed: streak, calories consumed today, next workout/meal, recovery insight |
+| `GET` | `/users/plan` | Fetch the latest AI-generated plan for the user |
+| `POST` | `/users/log-workout` | Log a completed workout day with RPE score |
+| `POST` | `/users/log-meal` | Log an eaten meal slot |
+| `GET` | `/users/progress` | Weight/fat/muscle history from confirmed scans |
 
 ### 7.3 Request/Response Schemas
 
@@ -692,6 +720,43 @@ class OcrExtractionResult {
 }
 ```
 
+**`PlanResult`** (lib/models/plan_result.dart)
+```dart
+class PlanResult {
+  final String focusZone;
+  final double intensityMultiplier;
+  final NutritionMacros macros;
+  final List<WorkoutDay> workoutSplit;
+  final List<MealSlot> dailyMeals;
+}
+```
+
+**`DashboardData`** (lib/models/user_profile.dart)
+```dart
+class DashboardData {
+  final String userName;
+  final int streak;
+  final double caloriesConsumed;   // today's logged calories
+  final double caloriesTarget;     // from current plan
+  final int hydrationCups;
+  final String nextWorkout;        // e.g. "Day 2 — Upper Body"
+  final String nextMeal;           // e.g. "Lunch"
+  final String recoveryInsight;    // from plan (intensity note)
+}
+```
+
+**`ProgressData`** (lib/models/user_profile.dart)
+```dart
+class ProgressData {
+  final List<double> weightHistory;
+  final List<double> fatHistory;
+  final List<double> muscleHistory;
+  final List<String> scanDates;
+  final double? fatLostKg;
+  final double? muscleGainedKg;
+}
+```
+
 ### 11.2 API Service Configuration
 
 ```dart
@@ -709,17 +774,20 @@ static const String _baseUrl = kIsWeb
 
 | Area | Current Implementation | Risk Level |
 |---|---|---|
-| Authentication | OAuth (Google/Apple) token-based | Low |
+| Authentication | Email/password register+login (SHA-256 hash) + Google/Apple OAuth | Medium |
 | API security | No API key or JWT on backend routes | **HIGH** |
 | Data at rest | SQLite plaintext | Medium |
 | Image transmission | HTTP (not HTTPS) to localhost | Low (localhost only) |
 | Secret management | `dart-define` for OAuth IDs | Low |
+| Session persistence | `SharedPreferences` stores `user_id` across restarts | Low (grad demo) |
 
 ### 12.2 Critical Security Gaps (Must Fix for Production)
 
-1. **Backend has no authentication middleware.** Any user on the network can call `/predict`, `/ocr/extract`, and `/api/v1/generate-plan`. This must be protected with JWT tokens verified against a user store.
+1. **No JWT middleware on backend routes.** The `/auth/register` and `/auth/login` endpoints create/validate users, but the returned `user_id` is not verified on subsequent API calls — any caller who knows a valid `user_id` UUID can access that user's data. Production fix: issue signed JWT tokens and verify them on every protected route.
 
-2. **SQLite scan storage has no per-user access control.** A user could theoretically query another user's scan history if they guess their `user_id`.
+2. **SHA-256 password hashing (no salt/bcrypt).** SHA-256 without a per-user salt is vulnerable to rainbow table attacks. Production fix: replace with `bcrypt` or `argon2`.
+
+3. **SQLite scan storage has no per-user row-level security.** A user could query another user's scan history if they guess their `user_id`.
 
 3. **HTTP instead of HTTPS.** Production deployment must use TLS with a reverse proxy (nginx + Let's Encrypt).
 
@@ -834,7 +902,7 @@ For production, the recommended stack is:
 | 1 | No backend authentication | Critical for production | Add JWT middleware to FastAPI |
 | 2 | Localhost-only API URL | Cannot demo on real device without network config | Use environment-based URL config |
 | 3 | Stale recommendation data (CSV) | Meals/exercises may lack variety over time | Integrate live recipe API (Spoonacular, Edamam) |
-| 4 | No real user auth system | Login works locally but no user database | Integrate Firebase Auth or Supabase |
+| 4 | No JWT auth middleware | `user_id` passed but not cryptographically verified on protected routes | Add `python-jose` JWT middleware |
 | 5 | AI Coach screen is placeholder | Listed as feature but not implemented | See roadmap below |
 | 6 | Progress screen has no charts | Charts are not rendered | Integrate fl_chart or syncfusion |
 | 7 | Single language OCR | PaddleOCR Arabic support is limited | Fine-tune PaddleOCR on Arabic InBody scans |
@@ -937,11 +1005,11 @@ The following table is a phased plan organized by priority and effort, suitable 
 | 1 | Implement AI Coach screen with Claude/GPT API | Critical | 2–3 days | Placeholder only |
 | 2 | Add progress charts (fl_chart) | High | 1–2 days | Not implemented |
 | 3 | Fix API URL to be environment-configurable | Critical | 2 hours | Hardcoded |
-| 4 | Demo-safe backend (JWT auth or API key) | High | 1 day | Not implemented |
+| 4 | Add JWT auth middleware to backend | High | 1 day | SHA-256 auth done; JWT pending |
 | 5 | Populate scan history view with graphs | High | 1–2 days | Partial |
-| 6 | Finalize workout hub screen content | Medium | 1 day | Partial |
-| 7 | Finalize nutrition screen content | Medium | 1 day | Partial |
-| 8 | Connect generate-plan endpoint to frontend | Critical | 1–2 days | Backend done |
+| 6 | Finalize workout hub screen content | Medium | 1 day | **Done — live from plan** |
+| 7 | Finalize nutrition screen content | Medium | 1 day | **Done — live from plan** |
+| 8 | Connect generate-plan + all screens to backend | Critical | 1–2 days | **Done — fully wired** |
 
 ### Phase 2 — Academic Rigor (For Defense)
 
@@ -995,15 +1063,21 @@ The following table is a phased plan organized by priority and effort, suitable 
 |---|---|
 | [lib/main.dart](flutter_application_smart_fit/lib/main.dart) | App entry point |
 | [lib/router/app_router.dart](flutter_application_smart_fit/lib/router/app_router.dart) | All named routes |
-| [lib/services/api_service.dart](flutter_application_smart_fit/lib/services/api_service.dart) | HTTP calls to backend |
-| [lib/models/inbody_prediction.dart](flutter_application_smart_fit/lib/models/inbody_prediction.dart) | Core data models |
+| [lib/services/auth_service.dart](flutter_application_smart_fit/lib/services/auth_service.dart) | Register/login + SharedPreferences session |
+| [lib/services/user_service.dart](flutter_application_smart_fit/lib/services/user_service.dart) | Dashboard, plan, profile, progress API calls |
+| [lib/services/scan_service.dart](flutter_application_smart_fit/lib/services/scan_service.dart) | OCR upload + plan generation |
+| [lib/services/api_service.dart](flutter_application_smart_fit/lib/services/api_service.dart) | Base HTTP client |
+| [lib/models/plan_result.dart](flutter_application_smart_fit/lib/models/plan_result.dart) | WorkoutDay, MealSlot, NutritionMacros, PlanResult |
+| [lib/models/user_profile.dart](flutter_application_smart_fit/lib/models/user_profile.dart) | DashboardData, ProgressData |
+| [lib/models/inbody_prediction.dart](flutter_application_smart_fit/lib/models/inbody_prediction.dart) | OCR request/response models |
 | [lib/app_scope.dart](flutter_application_smart_fit/lib/app_scope.dart) | Global state (theme, locale) |
-| [smart_fit_backend/main.py](smart_fit_backend/main.py) | All API endpoints |
+| [smart_fit_backend/main.py](smart_fit_backend/main.py) | All API endpoints (auth + OCR + plan + user data) |
+| [smart_fit_backend/user_storage.py](smart_fit_backend/user_storage.py) | SQLite — users, profiles, plans, workout/meal logs |
+| [smart_fit_backend/scan_storage.py](smart_fit_backend/scan_storage.py) | SQLite — InBody scan extractions |
 | [smart_fit_backend/math_engine.py](smart_fit_backend/math_engine.py) | TDEE + macro calculator |
 | [smart_fit_backend/ml_service.py](smart_fit_backend/ml_service.py) | Persona classifier |
 | [smart_fit_backend/inbody_extractor.py](smart_fit_backend/inbody_extractor.py) | 4-stage OCR orchestrator |
 | [smart_fit_backend/matching_engine.py](smart_fit_backend/matching_engine.py) | Meal + workout recommender |
-| [smart_fit_backend/scan_storage.py](smart_fit_backend/scan_storage.py) | SQLite persistence |
 
 ---
 

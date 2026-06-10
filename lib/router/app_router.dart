@@ -10,8 +10,11 @@ import '../screens/login_screen.dart';
 import '../screens/nutrition_screen.dart';
 import '../screens/preferences_screen.dart';
 import '../screens/profile_setup_screen.dart';
+import '../screens/achievements_screen.dart';
+import '../screens/ai_coach_screen.dart';
 import '../screens/progress_screen.dart';
 import '../screens/recipe_detail_screen.dart';
+import '../screens/settings_screen.dart';
 import '../screens/workout_hub_screen.dart';
 import 'app_routes.dart';
 
@@ -70,6 +73,18 @@ GoRouter createAppRouter() {
       GoRoute(
         path: AppRoutes.progress,
         builder: (context, state) => const ProgressScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.aiCoach,
+        builder: (context, state) => const AiCoachScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.achievements,
+        builder: (context, state) => const AchievementsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
   );
