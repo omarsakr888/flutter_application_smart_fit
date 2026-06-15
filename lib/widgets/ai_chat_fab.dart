@@ -68,7 +68,7 @@ class _AiChatSheetState extends State<_AiChatSheet> {
           'Missing API key.\n\nRun with:\n  flutter run --dart-define=GEMINI_API_KEY=your_key\n\nGet a free key at aistudio.google.com');
       return;
     }
-    _model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: _apiKey);
+    _model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: _apiKey);
   }
 
   Future<void> _loadContext() async {

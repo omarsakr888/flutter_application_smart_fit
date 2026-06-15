@@ -145,11 +145,11 @@ This project addresses three research questions:
 | sign_in_with_apple | ^7.0.1 | Apple Sign-In (iOS/macOS + Android web) |
 | font_awesome_flutter | ^10.8.0 | Extended icon set |
 | http | ^1.2.2 | HTTP client for backend calls |
-| http_parser | ^4.1.2 | MIME type parsing (multipart image upload) |
 | image_picker | ^1.1.2 | Camera & gallery access |
-| shared_preferences | ^2.5.5 | Key-value local storage (theme, locale) |
-| shimmer | ^3.0.0 | Skeleton loading animations |
-| google_mlkit_text_recognition | ^0.15.1 | On-device OCR (Android/iOS) |
+| shared_preferences | ^2.3.5 | Key-value local storage (theme, locale) |
+| flutter_secure_storage | ^9.2.4 | Store JWT tokens securely in OS keychain |
+| fl_chart | ^0.69.0 | Progress charts (SMM, PBF, Phase Angle trends) |
+| google_generative_ai | ^0.4.6 | Gemini AI Coach integration |
 
 **Dev dependencies (`dev_dependencies`):**
 
@@ -158,15 +158,13 @@ This project addresses three research questions:
 | flutter_test (sdk) | — | Unit & widget testing framework |
 | flutter_lints | ^6.0.0 | Recommended lint rules |
 
-**Packages recommended to add (not yet in pubspec):**
+**Packages recommended to add (future enhancement):**
 
 | Package | Version | Why needed |
 |---|---|---|
-| fl_chart | ^0.69.0 | Progress charts (SMM, PBF trends over time) — Progress screen is empty without this |
 | flutter_riverpod | ^2.6.1 | Recommended state management upgrade for testability |
 | dio | ^5.7.0 | Replace `http` for better interceptors, retry logic, and download progress |
 | cached_network_image | ^3.4.1 | Cache recipe/exercise images |
-| flutter_secure_storage | ^9.2.4 | Store JWT tokens securely (needed once auth is added) |
 | intl | ^0.19.0 | Date/number formatting (needed for scan history timestamps) |
 
 ### 4.2 Backend
@@ -774,24 +772,28 @@ static const String _baseUrl = kIsWeb
 
 | Area | Current Implementation | Risk Level |
 |---|---|---|
-| Authentication | Email/password register+login (SHA-256 hash) + Google/Apple OAuth | Medium |
-| API security | No API key or JWT on backend routes | **HIGH** |
+| Authentication | JWT tokens (signed HS256) + bcrypt passwords + Google/Apple OAuth | Low |
+| API security | `Authorization: Bearer <token>` required on all protected routes | Low |
+| Password hashing | bcrypt via `bcrypt` package; legacy SHA-256 hashes auto-upgraded on login | Low |
+| Rate limiting | 10 login / 5 register attempts per IP per minute (in-memory) | Low |
+| JWT storage | OS keychain via `flutter_secure_storage` | Low |
 | Data at rest | SQLite plaintext | Medium |
 | Image transmission | HTTP (not HTTPS) to localhost | Low (localhost only) |
-| Secret management | `dart-define` for OAuth IDs | Low |
-| Session persistence | `SharedPreferences` stores `user_id` across restarts | Low (grad demo) |
+| Secret management | Gemini key via `--dart-define`; JWT secret via `.env` (excluded from Git) | Low |
 
-### 12.2 Critical Security Gaps (Must Fix for Production)
+### 12.2 Remaining Gaps (Not Production-Ready)
 
-1. **No JWT middleware on backend routes.** The `/auth/register` and `/auth/login` endpoints create/validate users, but the returned `user_id` is not verified on subsequent API calls — any caller who knows a valid `user_id` UUID can access that user's data. Production fix: issue signed JWT tokens and verify them on every protected route.
+1. **HTTP instead of HTTPS.** Production deployment must use TLS with a reverse proxy (nginx + Let's Encrypt).
 
-2. **SHA-256 password hashing (no salt/bcrypt).** SHA-256 without a per-user salt is vulnerable to rainbow table attacks. Production fix: replace with `bcrypt` or `argon2`.
+2. **CORS allows all origins (`*`).** Tighten to specific origin(s) before external deployment.
 
-3. **SQLite scan storage has no per-user row-level security.** A user could query another user's scan history if they guess their `user_id`.
+3. **SQLite has no row-level security.** A compromised `user_id` allows cross-user data access. Production fix: PostgreSQL with row-level security policies.
 
-3. **HTTP instead of HTTPS.** Production deployment must use TLS with a reverse proxy (nginx + Let's Encrypt).
+4. **In-memory rate limiting resets on server restart.** For production, replace with Redis-backed rate limiting to survive restarts and horizontal scaling.
 
-4. **No input sanitization on `user_id`.** The `/ocr/history` endpoint passes `user_id` directly to SQLite queries — must use parameterized queries (verify in `scan_storage.py`).
+5. **No audit logging.** Auth events and data mutations are not logged for forensic use. Add structured logging with timestamps before production.
+
+For a full list of what is and is not secured, see `README_SECURITY.md`.
 
 ---
 
@@ -899,16 +901,14 @@ For production, the recommended stack is:
 
 | # | Limitation | Impact | Suggested Fix |
 |---|---|---|---|
-| 1 | No backend authentication | Critical for production | Add JWT middleware to FastAPI |
-| 2 | Localhost-only API URL | Cannot demo on real device without network config | Use environment-based URL config |
-| 3 | Stale recommendation data (CSV) | Meals/exercises may lack variety over time | Integrate live recipe API (Spoonacular, Edamam) |
-| 4 | No JWT auth middleware | `user_id` passed but not cryptographically verified on protected routes | Add `python-jose` JWT middleware |
-| 5 | AI Coach screen is placeholder | Listed as feature but not implemented | See roadmap below |
-| 6 | Progress screen has no charts | Charts are not rendered | Integrate fl_chart or syncfusion |
-| 7 | Single language OCR | PaddleOCR Arabic support is limited | Fine-tune PaddleOCR on Arabic InBody scans |
-| 8 | No offline mode | App fails without backend | Cache last scan + plan locally |
-| 9 | No model retraining pipeline | Model improves only with manual re-training | Add user feedback loop + periodic retraining |
-| 10 | SQLite concurrency | Fails under multi-user load | Migrate to PostgreSQL with async driver |
+| 1 | Localhost-only API URL | Cannot demo on real device without network config | Use environment-based URL config |
+| 2 | Stale recommendation data (CSV) | Meals/exercises may lack variety over time | Integrate live recipe API (Spoonacular, Edamam) |
+| 3 | Single language OCR | PaddleOCR Arabic support is limited | Fine-tune PaddleOCR on Arabic InBody scans |
+| 4 | No offline mode | App fails without backend | Cache last scan + plan locally |
+| 5 | No model retraining pipeline | Model improves only with manual re-training | Add user feedback loop + periodic retraining |
+| 6 | SQLite concurrency | Fails under multi-user load | Migrate to PostgreSQL with async driver |
+| 7 | In-memory rate limiting | Resets on server restart; not suitable for multi-instance deploys | Redis-backed rate limiting |
+| 8 | Progress charts show static data | No multi-scan trend line yet (only latest scan shown) | Store multiple scan records and plot time series |
 
 ---
 
@@ -916,14 +916,14 @@ For production, the recommended stack is:
 
 ### 16.1 Short-Term (0–3 months)
 
-1. **Implement AI Coach (ChatGPT/Claude API integration)**  
-   The `ai_coach_screen.dart` is a placeholder. Integrate Claude API (with system prompt containing user's InBody data and plan) to create a contextual fitness chatbot. This single addition dramatically elevates the demo impact.
+1. ~~**Implement AI Coach (ChatGPT/Claude API integration)**~~ **✅ Done — Gemini AI integrated**  
+   `ai_coach_screen.dart` now calls Google Gemini (`google_generative_ai ^0.4.6`) with a system prompt seeded from the user's InBody data and current plan. Key is injected via `--dart-define=GEMINI_API_KEY=...` — never in source.
 
-2. **Progress Charts**  
-   Use `fl_chart` to visualize SMM, PBF, and Phase Angle trends over multiple scans. Supervisors expect progress tracking to be visual.
+2. ~~**Progress Charts**~~ **✅ Done — fl_chart integrated**  
+   `progress_screen.dart` uses `fl_chart ^0.69.0` to render SMM, PBF, and Phase Angle data. An "Start InBody Scan" CTA is shown when no scan data exists yet.
 
-3. **Backend Authentication**  
-   Add `python-jose` + `passlib` to FastAPI for JWT auth. Without this, the app cannot be deployed or demonstrated externally.
+3. ~~**Backend Authentication**~~ **✅ Done — JWT + bcrypt + rate limiting**  
+   FastAPI backend issues signed JWTs (HS256) on login; all protected routes require `Authorization: Bearer`. Passwords use bcrypt with automatic upgrade from legacy SHA-256. Per-IP rate limiting: 10 login / 5 register requests per minute.
 
 4. **Fix API URL Configuration**  
    Replace hardcoded `127.0.0.1:8000` with a build-time environment variable so the app can connect to a hosted backend during demos.
@@ -1002,10 +1002,10 @@ The following table is a phased plan organized by priority and effort, suitable 
 
 | # | Task | Priority | Effort | Status |
 |---|---|---|---|---|
-| 1 | Implement AI Coach screen with Claude/GPT API | Critical | 2–3 days | Placeholder only |
-| 2 | Add progress charts (fl_chart) | High | 1–2 days | Not implemented |
+| 1 | Implement AI Coach screen with Gemini API | Critical | 2–3 days | **Done — Gemini AI Coach** |
+| 2 | Add progress charts (fl_chart) | High | 1–2 days | **Done — fl_chart integrated** |
 | 3 | Fix API URL to be environment-configurable | Critical | 2 hours | Hardcoded |
-| 4 | Add JWT auth middleware to backend | High | 1 day | SHA-256 auth done; JWT pending |
+| 4 | Add JWT auth middleware to backend | High | 1 day | **Done — JWT + bcrypt + rate limiting** |
 | 5 | Populate scan history view with graphs | High | 1–2 days | Partial |
 | 6 | Finalize workout hub screen content | Medium | 1 day | **Done — live from plan** |
 | 7 | Finalize nutrition screen content | Medium | 1 day | **Done — live from plan** |
