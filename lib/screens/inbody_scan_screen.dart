@@ -9,6 +9,7 @@ import '../models/ocr_result.dart';
 import '../router/app_routes.dart';
 import '../services/scan_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/ai_chat_fab.dart';
 import '../theme/smart_fit_theme.dart';
 
 class InBodyScanScreen extends StatefulWidget {
@@ -107,6 +108,7 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
     final metrics = _metrics;
 
     return Scaffold(
+      floatingActionButton: const AiChatFab(),
       body: SafeArea(
         child: Column(
           children: [

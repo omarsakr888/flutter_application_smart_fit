@@ -8,6 +8,7 @@ import '../models/plan_result.dart';
 import '../router/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/ai_chat_fab.dart';
 
 class NutritionScreen extends StatefulWidget {
   const NutritionScreen({super.key});
@@ -21,6 +22,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
   final _loggedMeals = <int, double>{};
   int _hydrationCups = 0;
   static const _hydrationTarget = 8;
+  bool _loading = true;
   Timer? _countdownTimer;
   Duration _nextMealIn = Duration.zero;
 
@@ -82,15 +84,28 @@ class _NutritionScreenState extends State<NutritionScreen> {
   Future<void> _fetch() async {
     try {
       final plan = await UserService.instance.getPlan();
-      if (mounted && plan != null) setState(() => _plan = plan);
-    } catch (_) {}
+      if (mounted) setState(() { _plan = plan; _loading = false; });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load meal plan. Check your connection.')),
+        );
+      }
+    }
   }
 
   Future<void> _loadHydration() async {
     try {
       final cups = await UserService.instance.getTodayHydrationCups();
       if (mounted) setState(() => _hydrationCups = cups);
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load hydration data.')),
+        );
+      }
+    }
   }
 
   Future<void> _addHydration() async {
@@ -98,7 +113,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
     setState(() => _hydrationCups++);
     try {
       await UserService.instance.logHydration();
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        setState(() => _hydrationCups--);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not log hydration. Try again.')),
+        );
+      }
+    }
   }
 
   static const _months = [
@@ -144,7 +166,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
         planId: _plan?.planId,
         caloriesConsumed: calories,
       );
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loggedMeals.remove(index));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not log meal. Try again.')),
+        );
+      }
+    }
   }
 
   List<_Meal> _buildMeals(bool isDark) {
@@ -175,14 +204,24 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF4F4F4),
+      bottomNavigationBar: const _BottomNav(),
+      floatingActionButton: const AiChatFab(),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             _NutritionHeader(
               isDark: isDark,
               onLight: () => scope.setThemeBrightness(Brightness.light),
               onDark: () => scope.setThemeBrightness(Brightness.dark),
+              onMenu: () => context.push(AppRoutes.settings),
             ),
+            if (_loading)
+              LinearProgressIndicator(
+                minHeight: 2,
+                color: AppColors.teal,
+                backgroundColor: AppColors.teal.withValues(alpha: 0.12),
+              ),
             Divider(
               height: 1,
               color: isDark ? const Color(0xFF2A2A2A) : Colors.transparent,
@@ -241,6 +280,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         focused: !isDark && i == 2,
                         isLogged: _loggedMeals.containsKey(i),
                         onLog: () => _logMeal(context, i, meals[i]),
+                        onTap: () => context.push(
+                          AppRoutes.recipeDetail,
+                          extra: _plan?.dailyMeals.elementAtOrNull(i),
+                        ),
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -259,7 +302,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
                 ),
               ),
             ),
-            const _BottomNav(),
           ],
         ),
       ),
@@ -282,11 +324,13 @@ class _NutritionHeader extends StatelessWidget {
     required this.isDark,
     required this.onLight,
     required this.onDark,
+    required this.onMenu,
   });
 
   final bool isDark;
   final VoidCallback onLight;
   final VoidCallback onDark;
+  final VoidCallback onMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -308,8 +352,8 @@ class _NutritionHeader extends StatelessWidget {
               )
             else ...[
               IconButton(
-                tooltip: 'Menu',
-                onPressed: () {},
+                tooltip: 'Settings',
+                onPressed: onMenu,
                 icon: const Icon(Icons.menu_rounded, color: AppColors.teal, size: 34),
               ),
               const SizedBox(width: 14),
@@ -720,12 +764,14 @@ class _MealTile extends StatelessWidget {
     required this.focused,
     required this.isLogged,
     required this.onLog,
+    required this.onTap,
   });
 
   final _Meal meal;
   final bool focused;
   final bool isLogged;
   final VoidCallback onLog;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -734,7 +780,7 @@ class _MealTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => context.push(AppRoutes.recipeDetail),
+        onTap: onTap,
         borderRadius: BorderRadius.circular(isDark ? 10 : 14),
         child: Ink(
           decoration: BoxDecoration(
@@ -1067,7 +1113,7 @@ class _BottomNav extends StatelessWidget {
       _NavSpec(Icons.fitness_center_rounded, 'Workouts', false, () => context.go(AppRoutes.workoutHub)),
       _NavSpec(Icons.restaurant_rounded, 'Nutrition', true, () {}),
       _NavSpec(Icons.insert_chart_outlined_rounded, 'Progress', false, () => context.go(AppRoutes.progress)),
-      _NavSpec(Icons.person_outline_rounded, isDark ? 'Profile' : 'Profile', false, () {}),
+      _NavSpec(Icons.person_outline_rounded, 'Profile', false, () => context.push(AppRoutes.settings)),
     ];
 
     return DecoratedBox(

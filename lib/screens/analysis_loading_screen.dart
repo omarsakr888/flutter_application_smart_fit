@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,19 +8,20 @@ import '../models/ocr_result.dart';
 import '../router/app_routes.dart';
 import '../services/scan_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/ai_chat_fab.dart';
 
 class AnalysisLoadingScreen extends StatefulWidget {
   const AnalysisLoadingScreen({super.key, this.ocrResult});
 
   final OcrExtractResult? ocrResult;
 
-  static const _steps = [
-    _AnalysisStep('Reading InBody metrics', _StepState.done),
-    _AnalysisStep('Calculating Calorie Target', _StepState.done),
-    _AnalysisStep('Determining Macro Split', _StepState.done),
-    _AnalysisStep('Setting Intensity Multiplier', _StepState.active),
-    _AnalysisStep('Building Workout Split', _StepState.pending),
-    _AnalysisStep('Assembling Meal Plan', _StepState.pending),
+  static const _stepLabels = [
+    'Reading InBody metrics',
+    'Calculating Calorie Target',
+    'Determining Macro Split',
+    'Setting Intensity Multiplier',
+    'Building Workout Split',
+    'Assembling Meal Plan',
   ];
 
   @override
@@ -26,16 +29,54 @@ class AnalysisLoadingScreen extends StatefulWidget {
 }
 
 class _AnalysisLoadingScreenState extends State<AnalysisLoadingScreen> {
+  int _activeStep = 0;
+  Timer? _stepTimer;
+
   @override
   void initState() {
     super.initState();
+    _startStepAnimation();
     _startAnalysis();
+  }
+
+  void _startStepAnimation() {
+    // Advance the active step every 900 ms to simulate progress.
+    _stepTimer = Timer.periodic(const Duration(milliseconds: 900), (t) {
+      if (!mounted) { t.cancel(); return; }
+      setState(() {
+        if (_activeStep < AnalysisLoadingScreen._stepLabels.length - 1) {
+          _activeStep++;
+        } else {
+          t.cancel();
+        }
+      });
+    });
+  }
+
+  List<_AnalysisStep> get _steps {
+    return [
+      for (var i = 0; i < AnalysisLoadingScreen._stepLabels.length; i++)
+        _AnalysisStep(
+          AnalysisLoadingScreen._stepLabels[i],
+          i < _activeStep
+              ? _StepState.done
+              : i == _activeStep
+                  ? _StepState.active
+                  : _StepState.pending,
+        ),
+    ];
+  }
+
+  @override
+  void dispose() {
+    _stepTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _startAnalysis() async {
     final ocr = widget.ocrResult;
     if (ocr == null) {
-      await Future<void>.delayed(const Duration(seconds: 4));
+      await Future<void>.delayed(const Duration(seconds: 6));
     } else {
       try {
         await ScanService.instance.generatePlan(ocr);
@@ -53,7 +94,10 @@ class _AnalysisLoadingScreenState extends State<AnalysisLoadingScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      bottomNavigationBar: isDark ? const _BottomNav() : null,
+      floatingActionButton: const AiChatFab(),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             _TopBar(
@@ -99,7 +143,7 @@ class _AnalysisLoadingScreenState extends State<AnalysisLoadingScreen> {
                       ),
                     ),
                     SizedBox(height: isDark ? 94 : 64),
-                    _StepsCard(steps: AnalysisLoadingScreen._steps),
+                    _StepsCard(steps: _steps),
                     SizedBox(height: isDark ? 48 : 62),
                     if (isDark) ...[
                       const _InsightCard(),
@@ -133,7 +177,6 @@ class _AnalysisLoadingScreenState extends State<AnalysisLoadingScreen> {
                 ),
               ),
             ),
-            if (isDark) const _BottomNav(),
           ],
         ),
       ),

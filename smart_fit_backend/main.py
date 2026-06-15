@@ -587,6 +587,30 @@ def generate_plan(
 # Authentication — /auth/register  /auth/login
 # ═══════════════════════════════════════════════════════════════════════════════
 
+import time
+from collections import defaultdict
+
+# In-memory rate-limit buckets: {ip: [timestamp, ...]}
+_auth_attempts: dict[str, list[float]] = defaultdict(list)
+_RATE_WINDOW = 60.0   # seconds
+_LOGIN_LIMIT = 10     # max login attempts per IP per minute
+_REGISTER_LIMIT = 5   # max register attempts per IP per minute
+
+
+def _check_rate_limit(request: Request, limit: int) -> None:
+    ip = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    bucket = _auth_attempts[ip]
+    # Drop timestamps outside the window
+    _auth_attempts[ip] = [t for t in bucket if now - t < _RATE_WINDOW]
+    if len(_auth_attempts[ip]) >= limit:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Please wait a minute before trying again.",
+        )
+    _auth_attempts[ip].append(now)
+
+
 class RegisterRequest(BaseModel):
     email: str
     password: str
@@ -599,9 +623,10 @@ class LoginRequest(BaseModel):
 
 
 @app.post("/auth/register")
-def register(payload: RegisterRequest) -> dict[str, object]:
-    if len(payload.password) < 6:
-        raise HTTPException(status_code=422, detail="Password must be at least 6 characters.")
+def register(payload: RegisterRequest, request: Request) -> dict[str, object]:
+    _check_rate_limit(request, _REGISTER_LIMIT)
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters.")
     result = user_storage.register_user(payload.email, payload.password, payload.name)
     if result is None:
         raise HTTPException(status_code=409, detail="Email is already registered.")
@@ -609,7 +634,8 @@ def register(payload: RegisterRequest) -> dict[str, object]:
 
 
 @app.post("/auth/login")
-def login(payload: LoginRequest) -> dict[str, object]:
+def login(payload: LoginRequest, request: Request) -> dict[str, object]:
+    _check_rate_limit(request, _LOGIN_LIMIT)
     result = user_storage.login_user(payload.email, payload.password)
     if result is None:
         raise HTTPException(status_code=401, detail="Invalid email or password.")

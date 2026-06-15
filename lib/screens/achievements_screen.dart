@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/ai_chat_fab.dart';
 
 class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
@@ -38,6 +39,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     return Scaffold(
       backgroundColor:
           isDark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF4F4F4),
+      floatingActionButton: const AiChatFab(),
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF09090A) : Colors.white,
         elevation: 0,

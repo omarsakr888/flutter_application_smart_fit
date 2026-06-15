@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../models/ocr_result.dart';
+import '../models/plan_result.dart';
 import '../screens/analysis_loading_screen.dart';
 import '../screens/create_account_screen.dart';
 import '../screens/home_dashboard_screen.dart';
@@ -68,7 +69,9 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: AppRoutes.recipeDetail,
-        builder: (context, state) => const RecipeDetailScreen(),
+        builder: (context, state) => RecipeDetailScreen(
+          meal: state.extra is MealSlot ? state.extra as MealSlot : null,
+        ),
       ),
       GoRoute(
         path: AppRoutes.progress,

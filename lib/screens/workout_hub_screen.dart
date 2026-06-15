@@ -6,6 +6,7 @@ import '../models/plan_result.dart';
 import '../router/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/ai_chat_fab.dart';
 
 class WorkoutHubScreen extends StatefulWidget {
   const WorkoutHubScreen({super.key});
@@ -18,6 +19,7 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
   PlanResult? _plan;
   final _checkedExercises = <int>{};
   bool _completing = false;
+  bool _loading = true;
 
   static const _fallbackDark = [
     _Exercise('Bench Press', '4 x 8–10 reps', 'CHEST', Icons.fitness_center_rounded, true),
@@ -46,8 +48,15 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
   Future<void> _fetch() async {
     try {
       final plan = await UserService.instance.getPlan();
-      if (mounted && plan != null) setState(() => _plan = plan);
-    } catch (_) {}
+      if (mounted) setState(() { _plan = plan; _loading = false; });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load workout plan. Check your connection.')),
+        );
+      }
+    }
   }
 
   Future<void> _completeWorkout(List<_Exercise> exercises) async {
@@ -116,14 +125,26 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF7FCF8),
+      bottomNavigationBar: const _BottomNav(),
+      floatingActionButton: const AiChatFab(),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             _WorkoutHeader(
               isDark: isDark,
               onLight: () => scope.setThemeBrightness(Brightness.light),
               onDark: () => scope.setThemeBrightness(Brightness.dark),
+              onDownload: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Plan export coming soon.')),
+              ),
             ),
+            if (_loading)
+              LinearProgressIndicator(
+                minHeight: 2,
+                color: AppColors.teal,
+                backgroundColor: AppColors.teal.withValues(alpha: 0.12),
+              ),
             Divider(
               height: 1,
               color: isDark ? const Color(0xFF292929) : Colors.transparent,
@@ -176,7 +197,6 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
                 ),
               ),
             ),
-            const _BottomNav(),
           ],
         ),
       ),
@@ -199,11 +219,13 @@ class _WorkoutHeader extends StatelessWidget {
     required this.isDark,
     required this.onLight,
     required this.onDark,
+    required this.onDownload,
   });
 
   final bool isDark;
   final VoidCallback onLight;
   final VoidCallback onDark;
+  final VoidCallback onDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -225,8 +247,8 @@ class _WorkoutHeader extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: 'Download',
-              onPressed: () {},
+              tooltip: 'Export Plan',
+              onPressed: onDownload,
               icon: Icon(
                 Icons.file_download_outlined,
                 color: isDark ? Colors.white70 : const Color(0xFF6D7079),

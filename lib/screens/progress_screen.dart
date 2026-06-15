@@ -7,6 +7,7 @@ import '../models/user_profile.dart';
 import '../router/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/ai_chat_fab.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -71,7 +72,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
     return Scaffold(
       backgroundColor:
           isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF4F4F4),
+      bottomNavigationBar: const _BottomNav(),
+      floatingActionButton: const AiChatFab(),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             _ProgressHeader(
@@ -170,7 +174,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
                       ),
                     ),
             ),
-            const _BottomNav(),
           ],
         ),
       ),
@@ -427,6 +430,17 @@ class _EmptyChartsCard extends StatelessWidget {
                     height: 1.4,
                   ),
             ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () => context.push(AppRoutes.inBodyScan),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.teal,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.document_scanner_outlined, size: 18),
+              label: const Text('Start InBody Scan'),
+            ),
           ],
         ),
       ),
@@ -457,8 +471,8 @@ class _ProgressHeader extends StatelessWidget {
         child: Row(
           children: [
             IconButton(
-              tooltip: 'Menu',
-              onPressed: () {},
+              tooltip: 'Settings',
+              onPressed: () => context.push(AppRoutes.settings),
               icon: Icon(Icons.menu_rounded,
                   color: isDark ? Colors.white70 : AppColors.teal, size: 34),
             ),

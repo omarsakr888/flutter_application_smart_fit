@@ -6,6 +6,7 @@ import '../models/user_profile.dart';
 import '../router/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/ai_chat_fab.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({super.key});
@@ -16,6 +17,7 @@ class HomeDashboardScreen extends StatefulWidget {
 
 class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   DashboardData? _data;
+  bool _loading = true;
 
   @override
   void initState() {
@@ -26,8 +28,15 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   Future<void> _fetch() async {
     try {
       final data = await UserService.instance.getDashboard();
-      if (mounted && data != null) setState(() => _data = data);
-    } catch (_) {}
+      if (mounted) setState(() { _data = data; _loading = false; });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load dashboard data. Check your connection.')),
+        );
+      }
+    }
   }
 
   @override
@@ -38,12 +47,21 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     final d = _data;
 
     return Scaffold(
+      bottomNavigationBar: const _BottomNav(),
+      floatingActionButton: const AiChatFab(),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
+            if (_loading)
+              LinearProgressIndicator(
+                minHeight: 2,
+                color: AppColors.teal,
+                backgroundColor: AppColors.teal.withValues(alpha: 0.12),
+              ),
             _DashboardHeader(
               isDark: isDark,
-              userName: d?.userName ?? 'Omar',
+              userName: d?.userName ?? '',
               streak: d?.streak ?? 5,
               onLight: () => scope.setThemeBrightness(Brightness.light),
               onDark: () => scope.setThemeBrightness(Brightness.dark),
@@ -118,11 +136,14 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                             ),
                           ),
                         ),
-                        Text(
-                          'View All',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: isDark ? const Color(0xFF2DB994) : AppColors.teal,
-                            fontWeight: FontWeight.w500,
+                        GestureDetector(
+                          onTap: () => context.push(AppRoutes.achievements),
+                          child: Text(
+                            'View All',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: isDark ? const Color(0xFF2DB994) : AppColors.teal,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -134,7 +155,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                 ),
               ),
             ),
-            const _BottomNav(),
           ],
         ),
       ),
@@ -827,7 +847,8 @@ class _BottomNav extends StatelessWidget {
           () => context.go(AppRoutes.nutrition)),
       _NavSpec(Icons.trending_up_rounded, 'Progress', false,
           () => context.go(AppRoutes.progress)),
-      _NavSpec(Icons.smart_toy_outlined, 'Coach', false, () {}),
+      _NavSpec(Icons.smart_toy_outlined, 'Coach', false,
+          () => context.go(AppRoutes.aiCoach)),
     ];
 
     return DecoratedBox(
