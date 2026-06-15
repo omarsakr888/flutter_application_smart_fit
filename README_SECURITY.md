@@ -85,20 +85,23 @@ Passwords are hashed with **bcrypt** (directly via the `bcrypt` package). SHA-25
 before this upgrade are automatically re-hashed to bcrypt on the user's next
 successful login.
 
+Minimum password length: **8 characters** (enforced on `/auth/register`).
+
 ---
 
 ## 7. What Is and Is Not Secured
 
 | ✅ Secured | ❌ Not production-ready |
 |---|---|
-| Passwords hashed with bcrypt | HTTP only (no TLS) |
+| Passwords hashed with bcrypt (min 8 chars) | HTTP only (no TLS) |
 | JWT authentication on all API routes | CORS allows all origins (`*`) |
 | Gemini key via `--dart-define` only | SQLite (no row-level ACL) |
-| Credentials in OS keychain | No rate limiting |
-| `.env` excluded from Git | No audit logging |
+| Credentials in OS keychain | No audit logging |
+| `.env` excluded from Git | — |
+| Rate limiting on auth endpoints (login: 10/min, register: 5/min per IP) | — |
 
 For a production deployment add HTTPS (reverse proxy such as nginx + Let's
-Encrypt), tighten CORS origins, add rate limiting, and use PostgreSQL.
+Encrypt), tighten CORS origins, and use PostgreSQL.
 
 ---
 
