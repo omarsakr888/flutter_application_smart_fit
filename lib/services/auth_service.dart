@@ -16,6 +16,7 @@ class AuthService {
   // Use BiometricStorage on Android for extra security (optional upgrade).
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    webOptions: WebOptions(dbName: 'smart_fit_auth', publicKey: 'smart_fit_key'),
   );
 
   static const _keyUserId = 'sf_user_id';

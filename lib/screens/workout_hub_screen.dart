@@ -682,9 +682,51 @@ class _ExerciseTile extends StatelessWidget {
             horizontal: isDark ? 24 : 26,
             vertical: isDark ? 24 : 26,
           ),
-          child: isDark
-              ? _DarkExerciseContent(exercise: exercise, focused: focused, isChecked: isChecked)
-              : _LightExerciseContent(exercise: exercise, isChecked: isChecked),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              isDark
+                  ? _DarkExerciseContent(exercise: exercise, focused: focused, isChecked: isChecked)
+                  : _LightExerciseContent(exercise: exercise, isChecked: isChecked),
+              const SizedBox(height: 18),
+              Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF18181A) : const Color(0xFFF4F7F6),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE4E9E7),
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.play_circle_outline_rounded,
+                      color: isDark ? const Color(0xFF2DB994) : AppColors.teal,
+                      size: 26,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Exercise Instruction Placeholder (Video/GIF)',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: isDark ? Colors.white54 : const Color(0xFF5A605E),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                    ),
+                    Text(
+                      'Demonstration instructions will be added here',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: isDark ? Colors.white30 : const Color(0xFF8A908E),
+                            fontSize: 11,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

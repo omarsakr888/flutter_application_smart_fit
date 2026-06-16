@@ -7,6 +7,7 @@ abstract final class AppRoutes {
   static const profileSetupStep2 = '/profile-setup/step-2';
   static const inBodyScan = '/inbody-scan';
   static const analysisLoading = '/analysis-loading';
+  static const planGeneration = '/plan-generation';
   static const homeDashboard = '/home';
   static const workoutHub = '/workout-hub';
   static const nutrition = '/nutrition';

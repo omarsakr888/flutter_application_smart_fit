@@ -26,7 +26,8 @@ from ml_engine import predict_focus_zone
 from ml_service import PredictionRequest, PredictionService
 from ocr_schemas import ConfirmScanRequest
 from ocr_service import OcrService
-from paddle_ocr_engine import PaddleOcrEngine
+from easyocr_engine import EasyOcrEngine
+from easyocr_router import build_easyocr_router
 from scan_storage import ScanStorage
 from user_storage import UserStorage
 
@@ -34,7 +35,7 @@ logger = configure_logging()
 prediction_service = PredictionService()
 scan_storage = ScanStorage()
 user_storage = UserStorage()
-ocr_engine = PaddleOcrEngine()
+ocr_engine = EasyOcrEngine()
 ocr_service = OcrService(
     engine=ocr_engine,
     extractor=InBodyExtractor(),
@@ -101,6 +102,9 @@ def get_current_user(
         )
 
 
+app.include_router(build_easyocr_router(get_current_user, scan_storage))
+
+
 # ─── Exception handlers ───────────────────────────────────────────────────────
 
 @app.exception_handler(HTTPException)
@@ -165,7 +169,6 @@ async def extract_inbody_scan(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        logger.exception("OCR extraction failed")
         raise HTTPException(status_code=500, detail="Unable to extract InBody scan.") from exc
 
 
@@ -477,14 +480,26 @@ def generate_plan(
     """Generate a personalised workout + nutrition plan.
 
     Pipeline:
-      1. Math Engine    → deterministic calorie / macro / intensity calculation.
-      2. ML Engine      → classify the user's Focus Zone (1 of 4 classes).
+      1. ML Engine       → classify the user's Focus Zone (1 of 4 classes).
+      2. Math Engine     → deterministic calorie / macro / intensity calculation.
       3. Matching Engine → query CSV datasets and assemble the final plan.
 
     Returns a fully structured JSON plan ready for the Flutter frontend.
     """
     try:
-        # ── 1. Math Engine ───────────────────────────────────────────────────
+        # ── 1. ML Inference Engine ───────────────────────────────────────────
+        if not prediction_service.ready:
+            raise HTTPException(
+                status_code=503,
+                detail="ML model is not loaded yet. Please try again shortly.",
+            )
+
+        focus_zone, ml_confidence = predict_focus_zone(
+            service=prediction_service,
+            features=payload.to_ml_features(),
+        )
+
+        # ── 2. Math Engine ───────────────────────────────────────────────────
         math_result = math_engine.calculate(
             age=float(payload.age),
             gender=float(payload.gender),
@@ -495,18 +510,6 @@ def generate_plan(
             phase_angle=float(payload.phase_angle),
             goal=payload.user_goal,
             preferred_days=int(payload.preferred_days),
-        )
-
-        # ── 2. ML Inference Engine ───────────────────────────────────────────
-        if not prediction_service.ready:
-            raise HTTPException(
-                status_code=503,
-                detail="ML model is not loaded yet. Please try again shortly.",
-            )
-
-        focus_zone, ml_confidence = predict_focus_zone(
-            service=prediction_service,
-            features=payload.to_ml_features(),
         )
 
         # ── 3. Matching Engine ───────────────────────────────────────────────
@@ -630,7 +633,8 @@ def register(payload: RegisterRequest, request: Request) -> dict[str, object]:
     result = user_storage.register_user(payload.email, payload.password, payload.name)
     if result is None:
         raise HTTPException(status_code=409, detail="Email is already registered.")
-    return {"status": "success", **result}
+    access_token = create_access_token(result["user_id"])
+    return {"status": "success", "access_token": access_token, **result}
 
 
 @app.post("/auth/login")

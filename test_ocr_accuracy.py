@@ -56,7 +56,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 try:
     from image_preprocessing import preprocess_image
     from inbody_extractor import FIELD_SPECS, InBodyExtractor
-    from paddle_ocr_engine import PaddleOcrEngine
+    from easyocr_engine import EasyOcrEngine
 except ImportError as exc:
     print(
         f"\nERROR: Could not import backend modules.\n"
@@ -208,7 +208,7 @@ class ImageResult:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def run_ocr_on_image(
-    engine: PaddleOcrEngine,
+    engine: EasyOcrEngine,
     extractor: InBodyExtractor,
     image_path: Path,
     image_name: str,
@@ -446,9 +446,9 @@ def main() -> None:
             print(f"  Expected at: {TEST_IMAGES_DIR}")
             sys.exit(1)
 
-    # Initialise OCR engine (loads PaddleOCR once, reused for all 3 images)
-    print("\nInitialising PaddleOCR engine (first load may take ~15-30s)...")
-    engine = PaddleOcrEngine()
+    # Initialise OCR engine
+    print("\nInitialising EasyOCR engine (first load may take ~15-30s)...")
+    engine = EasyOcrEngine()
     engine.load()
     extractor = InBodyExtractor()
     print("Engine ready.\n")

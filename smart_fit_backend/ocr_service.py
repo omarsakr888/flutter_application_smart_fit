@@ -6,14 +6,14 @@ from typing import Any
 from core import MAX_UPLOAD_BYTES
 from image_preprocessing import preprocess_image
 from inbody_extractor import InBodyExtractor
-from paddle_ocr_engine import PaddleOcrEngine
+from easyocr_engine import EasyOcrEngine
 from scan_storage import ScanStorage
 
 logger = logging.getLogger("smart_fit_backend.ocr")
 
 
 class OcrService:
-    def __init__(self, engine: PaddleOcrEngine, extractor: InBodyExtractor, storage: ScanStorage) -> None:
+    def __init__(self, engine: EasyOcrEngine, extractor: InBodyExtractor, storage: ScanStorage) -> None:
         self.engine = engine
         self.extractor = extractor
         self.storage = storage

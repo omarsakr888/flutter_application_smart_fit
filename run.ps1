@@ -1,4 +1,4 @@
-# run.ps1 — Start Smart Fit backend + Flutter app together.
+﻿# run.ps1 — Start Smart Fit backend + Flutter app together.
 #
 # Usage:
 #   .\run.ps1                      # uses GEMINI_API_KEY from smart_fit_backend/.env
@@ -18,7 +18,7 @@ param(
 $Root       = $PSScriptRoot
 $BackendDir = Join-Path $Root "smart_fit_backend"
 $EnvFile    = Join-Path $BackendDir ".env"
-$Python     = "C:\Users\omart\AppData\Local\Python\bin\python3.14-64.exe"
+$Python     = Join-Path $Root "smart_fit_backend\venv\Scripts\python.exe"
 
 # ── 0. Sanity checks ──────────────────────────────────────────────────────────
 

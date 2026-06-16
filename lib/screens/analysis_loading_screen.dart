@@ -122,7 +122,7 @@ class _AnalysisLoadingScreenState extends State<AnalysisLoadingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Center(child: _ProgressBot()),
+                    const Center(child: _LaserScanner()),
                     const SizedBox(height: 52),
                     Text(
                       'Analyzing your body data',
@@ -329,35 +329,78 @@ class _ThemeButton extends StatelessWidget {
   }
 }
 
-class _ProgressBot extends StatelessWidget {
-  const _ProgressBot();
+class _LaserScanner extends StatefulWidget {
+  const _LaserScanner();
+
+  @override
+  State<_LaserScanner> createState() => _LaserScannerState();
+}
+
+class _LaserScannerState extends State<_LaserScanner> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final track = isDark ? const Color(0xFF262728) : const Color(0xFFF0F1F2);
 
-    return SizedBox(
-      width: 180,
-      height: 180,
+    return Container(
+      width: 160,
+      height: 160,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1B2220) : const Color(0xFFF2F4F5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF3B4642) : const Color(0xFFE2E6E8),
+          width: 1.5,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Stack(
-        alignment: Alignment.center,
         children: [
-          SizedBox(
-            width: 150,
-            height: 150,
-            child: CircularProgressIndicator(
-              value: 0.78,
-              strokeWidth: 12,
-              strokeCap: StrokeCap.round,
-              color: isDark ? const Color(0xFF2DB994) : AppColors.teal,
-              backgroundColor: track,
+          Center(
+            child: Icon(
+              Icons.document_scanner_outlined,
+              color: isDark ? Colors.white24 : Colors.black12,
+              size: 72,
             ),
           ),
-          Icon(
-            Icons.smart_toy_rounded,
-            color: isDark ? Colors.white70 : const Color(0xFF8EA0A9),
-            size: 58,
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Align(
+                alignment: Alignment(0, -1.0 + (_controller.value * 2.0)),
+                child: child,
+              );
+            },
+            child: Container(
+              height: 3,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppColors.teal,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.teal.withValues(alpha: 0.8),
+                    blurRadius: 10,
+                    spreadRadius: 3,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),

@@ -11,7 +11,7 @@ $Root        = $PSScriptRoot
 $BackendDir  = Join-Path $Root "smart_fit_backend"
 $EnvFile     = Join-Path $BackendDir ".env"
 $ExampleFile = Join-Path $BackendDir ".env.example"
-$Python      = "C:\Users\omart\AppData\Local\Python\bin\python3.14-64.exe"
+$Python      = Join-Path $Root "smart_fit_backend\venv\Scripts\python.exe"
 
 Write-Host ""
 Write-Host "Smart Fit - One-Time Environment Setup" -ForegroundColor Cyan

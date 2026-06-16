@@ -50,17 +50,19 @@ class PaddleOcrEngine:
         try:
             self._engine = PaddleOCR(
                 lang="en",
+                ocr_version="PP-OCRv4",
                 use_doc_orientation_classify=False,
                 use_doc_unwarping=False,
-                use_textline_orientation=True,
+                use_angle_cls=False,
                 text_det_box_thresh=0.45,
                 text_det_unclip_ratio=1.7,
                 device="cpu",
             )
         except TypeError:
             self._engine = PaddleOCR(
-                use_angle_cls=True,
                 lang="en",
+                ocr_version="PP-OCRv4",
+                use_angle_cls=False,
                 show_log=False,
                 use_gpu=False,
                 det_db_box_thresh=0.45,

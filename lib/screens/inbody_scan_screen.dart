@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,6 +12,7 @@ import '../router/app_routes.dart';
 import '../services/scan_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/ai_chat_fab.dart';
+import '../widgets/laser_scanner.dart';
 import '../theme/smart_fit_theme.dart';
 
 class InBodyScanScreen extends StatefulWidget {
@@ -23,6 +26,17 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
   OcrExtractResult? _ocrResult;
   bool _uploading = false;
   String? _pickedImagePath;
+  XFile? _selectedFile;
+  final Map<String, TextEditingController> _controllers = {};
+  final Map<String, String> _originalValues = {};
+
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
 
   // Maps field key → (display label, unit)
   static const _fieldDisplay = {
@@ -49,34 +63,66 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
     for (final entry in _fieldDisplay.entries) {
       final field = result.fields[entry.key];
       if (field == null || field.value == null) continue;
-      final v = field.value!;
-      final String display;
-      if (entry.key == 'Gender') {
-        display = v == 1.0 ? 'Male' : 'Female';
-      } else if (entry.key == 'Age' ||
-          entry.key == 'BMR_(Basal_Metabolic_Rate)') {
-        display = v.toInt().toString();
-      } else {
-        display = v.toStringAsFixed(1);
+      
+      if (!_controllers.containsKey(entry.key)) {
+        final v = field.value!;
+        final String display;
+        if (entry.key == 'Gender') {
+          display = v == 1.0 ? 'Male' : 'Female';
+        } else if (entry.key == 'Age' ||
+            entry.key == 'BMR_(Basal_Metabolic_Rate)') {
+          display = v.toInt().toString();
+        } else {
+          display = v.toStringAsFixed(1);
+        }
+        _controllers[entry.key] = TextEditingController(text: display);
+        _originalValues[entry.key] = display;
       }
-      list.add(_Metric(entry.value.$1, display, entry.value.$2));
+      list.add(_Metric(
+        entry.key, 
+        entry.value.$1, 
+        _controllers[entry.key]!, 
+        entry.value.$2,
+        _originalValues[entry.key] ?? '',
+      ));
     }
     return list;
   }
 
-  Future<void> _pickAndUpload(ImageSource source) async {
+  Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final file = await picker.pickImage(source: source, imageQuality: 85);
     if (file == null || !mounted) return;
 
     setState(() {
-      _uploading = true;
+      _selectedFile = file;
       _pickedImagePath = file.path;
       _ocrResult = null;
+      _uploading = false;
+      _controllers.clear();
+      _originalValues.clear();
+    });
+  }
+
+  void _removeImage() {
+    setState(() {
+      _selectedFile = null;
+      _pickedImagePath = null;
+      _ocrResult = null;
+      _uploading = false;
+      _controllers.clear();
+      _originalValues.clear();
+    });
+  }
+
+  Future<void> _extractScan() async {
+    if (_selectedFile == null) return;
+    setState(() {
+      _uploading = true;
     });
 
     try {
-      final result = await ScanService.instance.uploadScan(file);
+      final result = await ScanService.instance.uploadScan(_selectedFile!);
       if (!mounted) return;
       setState(() {
         _ocrResult = result;
@@ -86,7 +132,6 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
       if (!mounted) return;
       setState(() {
         _uploading = false;
-        _pickedImagePath = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Upload failed: $e')),
@@ -97,7 +142,27 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
   void _confirm() {
     final ocr = _ocrResult;
     if (ocr == null) return;
-    context.push(AppRoutes.analysisLoading, extra: ocr);
+    
+    for (final entry in _controllers.entries) {
+      final text = entry.value.text.trim();
+      double? val;
+      if (entry.key == 'Gender') {
+        val = (text.toLowerCase() == 'male' || text == '1') ? 1.0 : 0.0;
+      } else {
+        val = double.tryParse(text);
+      }
+      
+      if (val != null) {
+        ocr.fields[entry.key] = OcrFieldResult(
+          value: val, 
+          unit: '',
+          confidence: 1.0,
+          isImputed: false,
+        );
+      }
+    }
+    
+    context.push(AppRoutes.planGeneration, extra: ocr);
   }
 
   @override
@@ -154,7 +219,13 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
                     if (_uploading)
                       const SizedBox(
                         height: 330,
-                        child: Center(child: CircularProgressIndicator()),
+                        child: Center(
+                          child: LaserScanner(
+                            axis: LaserScanAxis.vertical,
+                            width: 200,
+                            height: 200,
+                          ),
+                        ),
                       )
                     else if (_uploaded)
                       _UploadedState(
@@ -162,10 +233,16 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
                         imagePath: _pickedImagePath,
                         warnings: _ocrResult?.warnings ?? const [],
                       )
+                    else if (_pickedImagePath != null)
+                      _ImagePreviewState(
+                        imagePath: _pickedImagePath!,
+                        onRemove: _removeImage,
+                        onExtract: _extractScan,
+                      )
                     else
                       _UploadState(
-                        onCamera: () => _pickAndUpload(ImageSource.camera),
-                        onGallery: () => _pickAndUpload(ImageSource.gallery),
+                        onCamera: () => _pickImage(ImageSource.camera),
+                        onGallery: () => _pickImage(ImageSource.gallery),
                       ),
                     if (_uploaded && !_uploading) ...[
                       const SizedBox(height: 34),
@@ -222,11 +299,11 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Confirm & Analyze',
+                          'Confirm Extraction for Generating Plans',
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
-                            fontSize: 19,
+                            fontSize: 16,
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -245,11 +322,13 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
 }
 
 class _Metric {
-  const _Metric(this.label, this.value, this.unit);
+  const _Metric(this.key, this.label, this.controller, this.unit, this.originalValue);
 
+  final String key;
   final String label;
-  final String value;
+  final TextEditingController controller;
   final String unit;
+  final String originalValue;
 }
 
 class _TopBar extends StatelessWidget {
@@ -483,6 +562,75 @@ class _UploadState extends StatelessWidget {
   }
 }
 
+class _ImagePreviewState extends StatelessWidget {
+  const _ImagePreviewState({
+    required this.imagePath,
+    required this.onRemove,
+    required this.onExtract,
+  });
+
+  final String imagePath;
+  final VoidCallback onRemove;
+  final VoidCallback onExtract;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: AspectRatio(
+            aspectRatio: 1.95,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                kIsWeb
+                    ? Image.network(imagePath, fit: BoxFit.cover)
+                    : Image.file(File(imagePath), fit: BoxFit.cover),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFF576160)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    onPressed: onRemove,
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        FilledButton.icon(
+          onPressed: onExtract,
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.teal,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          icon: const Icon(Icons.document_scanner_outlined, size: 24),
+          label: const Text(
+            'Extract InBody Scan',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _UploadedState extends StatelessWidget {
   const _UploadedState({
     required this.metricsCount,
@@ -550,7 +698,9 @@ class _UploadedState extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 if (imagePath != null)
-                  Image.file(File(imagePath!), fit: BoxFit.cover)
+                  kIsWeb
+                      ? Image.network(imagePath!, fit: BoxFit.cover)
+                      : Image.file(File(imagePath!), fit: BoxFit.cover)
                 else
                   CustomPaint(painter: _ScanPreviewPainter()),
                 DecoratedBox(
@@ -572,7 +722,7 @@ class _UploadedState extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 5),
                         child: Text(
-                          imagePath!.split(Platform.pathSeparator).last,
+                          imagePath!.split(RegExp(r'[/\\]')).last,
                           style:
                               Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: Colors.white,
@@ -659,82 +809,196 @@ class _MetricsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            'VERIFY & CORRECT VALUES',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.25,
-                ),
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.teal.withValues(alpha: 0.23),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            child: Text(
-              '$count Metrics Found',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: const Color(0xFF2DB994),
-                    fontWeight: FontWeight.w700,
-                  ),
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A3130) : const Color(0xFFF2F8F4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: isDark ? const Color(0xFF3B4642) : const Color(0xFFE2EFE7)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(Icons.fact_check_outlined, color: AppColors.teal, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Verify & Correct Values',
+                style: theme.textTheme.titleMedium?.copyWith(
+                      color: isDark ? Colors.white : const Color(0xFF1D2425),
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
             ),
-          ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.teal,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Edits Saved',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
-class _MetricTile extends StatelessWidget {
+class _MetricTile extends StatefulWidget {
   const _MetricTile({required this.metric});
 
   final _Metric metric;
 
   @override
+  State<_MetricTile> createState() => _MetricTileState();
+}
+
+class _MetricTileState extends State<_MetricTile> {
+  final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.metric.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MetricTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.metric.controller != widget.metric.controller) {
+      oldWidget.metric.controller.removeListener(_onTextChanged);
+      widget.metric.controller.addListener(_onTextChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.metric.controller.removeListener(_onTextChanged);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    // Rebuild to update "isEdited" visually.
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFF151D18),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                metric.label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Evaluate edited state manually based on original string. 
+    final bool isEdited = widget.metric.controller.text != widget.metric.originalValue;
+    
+    return GestureDetector(
+      onTap: () => _focusNode.requestFocus(),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2A3130) : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isEdited 
+              ? AppColors.teal 
+              : (isDark ? const Color(0xFF3B4642) : const Color(0xFFE2E6E8)),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.metric.label,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                            color: isDark ? Colors.white : const Color(0xFF2D3534),
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
+                    if (isEdited)
+                      Text(
+                        'Manually edited',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.teal,
+                            ),
+                      )
+                    else
+                      Text(
+                        'Auto-calculated — tap to edit',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFFD69A3A),
+                            ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            Text(
-              metric.value,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: const Color(0xFF2DB994),
-                    fontWeight: FontWeight.w500,
+              SizedBox(
+                width: 60,
+                child: TextFormField(
+                  controller: widget.metric.controller,
+                  focusNode: _focusNode,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  textAlign: TextAlign.right,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                        color: isDark ? Colors.white : const Color(0xFF1D2425),
+                        fontWeight: FontWeight.w800,
+                      ),
+                  decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.zero,
+                    isDense: true,
+                    border: InputBorder.none,
                   ),
-            ),
-            const SizedBox(width: 18),
-            SizedBox(
-              width: 34,
-              child: Text(
-                metric.unit,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white,
-                    ),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 35,
+                child: Text(
+                  widget.metric.unit,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.teal,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF3B4642) : const Color(0xFFF2F4F5),
+                  shape: BoxShape.circle,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Icon(
+                    Icons.edit_rounded,
+                    size: 14,
+                    color: isDark ? Colors.white70 : const Color(0xFF6B7A77),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

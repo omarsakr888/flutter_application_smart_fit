@@ -57,7 +57,7 @@ EXERCISES_PER_ZONE_SLOT = 5
 # Columns to keep when returning meal data (drops large text blobs by default)
 _MEAL_DISPLAY_COLS = [
     "Name", "Calories_PS", "Protein_PS", "Carbs_PS", "Fat_PS",
-    "Diet_Type", "Health_Score", "AggregatedRating",
+    "Diet_Type", "Goal_Label", "Health_Score", "AggregatedRating",
     "Meal_Time_Category", "RecipeIngredientParts", "RecipeInstructions",
 ]
 

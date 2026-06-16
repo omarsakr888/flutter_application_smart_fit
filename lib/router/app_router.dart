@@ -2,7 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../models/ocr_result.dart';
 import '../models/plan_result.dart';
-import '../screens/analysis_loading_screen.dart';
+import '../screens/plan_generation_screen.dart';
 import '../screens/create_account_screen.dart';
 import '../screens/home_dashboard_screen.dart';
 import '../screens/inbody_scan_screen.dart';
@@ -48,8 +48,16 @@ GoRouter createAppRouter() {
         builder: (context, state) => const InBodyScanScreen(),
       ),
       GoRoute(
+        path: AppRoutes.planGeneration,
+        builder: (context, state) => PlanGenerationScreen(
+          ocrResult: state.extra is OcrExtractResult
+              ? state.extra as OcrExtractResult
+              : null,
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.analysisLoading,
-        builder: (context, state) => AnalysisLoadingScreen(
+        builder: (context, state) => PlanGenerationScreen(
           ocrResult: state.extra is OcrExtractResult
               ? state.extra as OcrExtractResult
               : null,

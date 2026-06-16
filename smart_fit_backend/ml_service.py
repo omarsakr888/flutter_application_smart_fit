@@ -49,8 +49,14 @@ class PredictionRequest(BaseModel):
         return float(value)
 
     def to_feature_dict(self) -> dict[str, float | str]:
+        goal_map = {
+            "Balanced/Recovery": 0.0,
+            "Core Stability": 1.0,
+            "Lower Body Power": 2.0,
+            "Upper Body Strength": 3.0,
+        }
         return {
-            "User_Goal": str(self.user_goal),
+            "User_Goal": float(goal_map.get(self.user_goal, 0.0)),
             "Age": float(self.age),
             "Gender": float(self.gender),
             "Height": float(self.height),

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../config/backend_config.dart';
 import '../models/ocr_result.dart';
+import '../models/plan_result.dart';
 import 'auth_service.dart';
 
 class ScanService {
@@ -16,7 +17,7 @@ class ScanService {
 
   Future<OcrExtractResult> uploadScan(XFile image) async {
     final token = await AuthService.instance.getAuthToken();
-    final uri = Uri.parse('${BackendConfig.baseUrl}/ocr/extract');
+    final uri = Uri.parse('${BackendConfig.baseUrl}/api/v3/ocr/easyocr');
 
     // fromBytes works on all platforms (web + native).
     // fromPath uses dart:io and fails on web (XFile.path is a blob URL there).
@@ -37,7 +38,7 @@ class ScanService {
 
     final streamed = await _client
         .send(request)
-        .timeout(const Duration(seconds: 60));
+        .timeout(const Duration(seconds: 180));
     final body = await streamed.stream.bytesToString();
 
     if (streamed.statusCode != 200) {
@@ -53,14 +54,15 @@ class ScanService {
     );
   }
 
-  Future<Map<String, dynamic>> generatePlan(
+  Future<PlanResult> generatePlan(
     OcrExtractResult ocr, {
     String goal = 'Balanced/Recovery',
     String dietType = 'Omnivore',
     int preferredDays = 4,
   }) async {
-    final uri = Uri.parse('${BackendConfig.baseUrl}/api/v1/generate-plan');
-    final payload = <String, dynamic>{
+    final normalizeUri =
+        Uri.parse('${BackendConfig.baseUrl}/api/v1/process-inbody-mlkit');
+    final rawFeatures = <String, dynamic>{
       'User_Goal': goal,
       'Age': ocr.fieldValue('Age'),
       'Gender': ocr.fieldValue('Gender'),
@@ -75,13 +77,42 @@ class ScanService {
           ocr.fieldValue('50kHz-Whole_Body_Phase_Angle'),
       'BFM_(Body_Fat_Mass)': ocr.fieldValue('BFM_(Body_Fat_Mass)'),
       'PBF_(Percent_Body_Fat)': ocr.fieldValue('PBF_(Percent_Body_Fat)'),
+    };
+
+    final normalizePayload = <String, dynamic>{
+      'features': rawFeatures,
+    };
+
+    final normalizeResponse = await _client
+        .post(
+          normalizeUri,
+          headers: await AuthService.instance.authHeaders,
+          body: jsonEncode(normalizePayload),
+        )
+        .timeout(const Duration(seconds: 90));
+
+    final normalizeDecoded =
+        jsonDecode(normalizeResponse.body) as Map<String, dynamic>;
+    if (normalizeResponse.statusCode != 200) {
+      throw Exception(
+        (normalizeDecoded['message'] as String?) ??
+            'Feature normalization failed (${normalizeResponse.statusCode})',
+      );
+    }
+
+    final normalizedFeatures =
+        (normalizeDecoded['features'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+
+    final generateUri = Uri.parse('${BackendConfig.baseUrl}/api/v1/generate-plan');
+    final payload = <String, dynamic>{
+      ...normalizedFeatures,
       'diet_type': dietType,
       'preferred_days': preferredDays,
     };
 
     final response = await _client
         .post(
-          uri,
+          generateUri,
           headers: await AuthService.instance.authHeaders,
           body: jsonEncode(payload),
         )
@@ -94,7 +125,7 @@ class ScanService {
             'Plan generation failed (${response.statusCode})',
       );
     }
-    return decoded;
+    return PlanResult.fromJson(decoded);
   }
 
   static String _subtype(String filename) {

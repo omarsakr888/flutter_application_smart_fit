@@ -116,7 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             isDark: isDark,
             onTap: () {
               final demo = _buildDemoScan();
-              context.push(AppRoutes.analysisLoading, extra: demo);
+              context.push(AppRoutes.planGeneration, extra: demo);
             },
           ),
           const SizedBox(height: 8),

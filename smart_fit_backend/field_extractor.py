@@ -439,7 +439,7 @@ class FieldExtractor:
 
             if direction == "right":
                 if (
-                    abs(tok.y - label.y) < 0.04
+                    abs(tok.y - label.y) < 0.08
                     and tok.x > label.x2
                     and (tok.x1 - label.x2) < r
                 ):
@@ -447,7 +447,7 @@ class FieldExtractor:
 
             elif direction == "below":
                 if (
-                    tok.y1 > label.y2 - 0.01
+                    tok.y1 > label.y2 - 0.035
                     and (tok.y1 - label.y2) < r
                     and abs(tok.x - label.x) < r * 1.5
                 ):
