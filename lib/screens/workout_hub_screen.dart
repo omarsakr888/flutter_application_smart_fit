@@ -22,21 +22,33 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
   bool _loading = true;
 
   static const _fallbackDark = [
-    _Exercise('Bench Press', '4 x 8–10 reps', 'CHEST', Icons.fitness_center_rounded, true),
-    _Exercise('Incline Press', '3 x 10–12 reps', 'CHEST', Icons.downhill_skiing_rounded, true),
-    _Exercise('Cable Fly', '3 x 12–15 reps', 'CHEST', Icons.flutter_dash_rounded, false),
-    _Exercise('Shoulder Press', '3 x 8–10 reps', 'SHOULDERS', Icons.fitness_center_rounded, false),
-    _Exercise('Lateral Raises', '4 x 12–15 reps', 'SHOULDERS', Icons.waving_hand_rounded, false),
-    _Exercise('Tricep Extension', '3 x 10–12 reps', 'TRICEPS', Icons.bolt_rounded, false),
+    _Exercise('Incline Bench Press', '3 x 10–12 reps', 'CHEST', Icons.downhill_skiing_rounded, true,
+        gifAsset: 'assets/exercise_gifs/3TZduzM.gif'),
+    _Exercise('Lat Pulldown', '4 x 10–12 reps', 'BACK', Icons.fitness_center_rounded, false,
+        gifAsset: 'assets/exercise_gifs/7F1DVzn.gif'),
+    _Exercise('Overhead Press', '3 x 8–10 reps', 'SHOULDERS', Icons.upload_rounded, false,
+        gifAsset: 'assets/exercise_gifs/5uFK1xr.gif'),
+    _Exercise('Lateral Raises', '4 x 12–15 reps', 'SHOULDERS', Icons.waving_hand_rounded, false,
+        gifAsset: 'assets/exercise_gifs/3eGE2JC.gif'),
+    _Exercise('Barbell Curl', '3 x 10–12 reps', 'BICEPS', Icons.bolt_rounded, false,
+        gifAsset: 'assets/exercise_gifs/4dUn2iv.gif'),
+    _Exercise('Lying Tricep Extension', '3 x 10–12 reps', 'TRICEPS', Icons.fitness_center_rounded, false,
+        gifAsset: 'assets/exercise_gifs/6MfS53i.gif'),
   ];
 
   static const _fallbackLight = [
-    _Exercise('Bench Press', '3 sets - 10 reps', 'CHEST', Icons.fitness_center_rounded, true),
-    _Exercise('Incline Press', '3 sets - 12 reps', 'CHEST', Icons.trending_up_rounded, true),
-    _Exercise('Cable Fly', '3 sets - 15 reps', 'CHEST', Icons.flutter_dash_rounded, false),
-    _Exercise('Overhead Press', '4 sets - 8 reps', 'SHOULDERS', Icons.upload_rounded, false),
-    _Exercise('Lateral Raises', '3 sets - 20 reps', 'SHOULDERS', Icons.waving_hand_rounded, false),
-    _Exercise('Tricep Pushdown', '3 sets - 12 reps', 'ARMS', Icons.fitness_center_rounded, false),
+    _Exercise('Incline Bench Press', '3 sets - 10 reps', 'CHEST', Icons.trending_up_rounded, true,
+        gifAsset: 'assets/exercise_gifs/3TZduzM.gif'),
+    _Exercise('Lat Pulldown', '4 sets - 10 reps', 'BACK', Icons.fitness_center_rounded, false,
+        gifAsset: 'assets/exercise_gifs/7F1DVzn.gif'),
+    _Exercise('Overhead Press', '4 sets - 8 reps', 'SHOULDERS', Icons.upload_rounded, false,
+        gifAsset: 'assets/exercise_gifs/5uFK1xr.gif'),
+    _Exercise('Lateral Raises', '3 sets - 15 reps', 'SHOULDERS', Icons.waving_hand_rounded, false,
+        gifAsset: 'assets/exercise_gifs/3eGE2JC.gif'),
+    _Exercise('Barbell Curl', '3 sets - 12 reps', 'BICEPS', Icons.bolt_rounded, false,
+        gifAsset: 'assets/exercise_gifs/4dUn2iv.gif'),
+    _Exercise('Bicycle Crunch', '3 sets - 20 reps', 'CORE', Icons.fitness_center_rounded, false,
+        gifAsset: 'assets/exercise_gifs/6sYyrRX.gif'),
   ];
 
   @override
@@ -104,7 +116,7 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
     return day.exercises.map((e) {
       final subtitle = '${e.sets} × ${e.repsMin}–${e.repsMax} reps';
       return _Exercise(e.name, subtitle, e.bodyPart.toUpperCase(),
-          Icons.fitness_center_rounded, false);
+          Icons.fitness_center_rounded, false, gifAsset: e.gifAsset);
     }).toList();
   }
 
@@ -205,13 +217,14 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
 }
 
 class _Exercise {
-  const _Exercise(this.title, this.subtitle, this.tag, this.icon, this.done);
+  const _Exercise(this.title, this.subtitle, this.tag, this.icon, this.done, {this.gifAsset = ''});
 
   final String title;
   final String subtitle;
   final String tag;
   final IconData icon;
   final bool done;
+  final String gifAsset;
 }
 
 class _WorkoutHeader extends StatelessWidget {
@@ -689,45 +702,58 @@ class _ExerciseTile extends StatelessWidget {
                   ? _DarkExerciseContent(exercise: exercise, focused: focused, isChecked: isChecked)
                   : _LightExerciseContent(exercise: exercise, isChecked: isChecked),
               const SizedBox(height: 18),
-              Container(
-                height: 100,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF18181A) : const Color(0xFFF4F7F6),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE4E9E7),
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.play_circle_outline_rounded,
-                      color: isDark ? const Color(0xFF2DB994) : AppColors.teal,
-                      size: 26,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Exercise Instruction Placeholder (Video/GIF)',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isDark ? Colors.white54 : const Color(0xFF5A605E),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                    ),
-                    Text(
-                      'Demonstration instructions will be added here',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isDark ? Colors.white30 : const Color(0xFF8A908E),
-                            fontSize: 11,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
+              exercise.gifAsset.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        exercise.gifAsset,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => _GifPlaceholder(isDark: isDark),
+                      ),
+                    )
+                  : _GifPlaceholder(isDark: isDark),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GifPlaceholder extends StatelessWidget {
+  const _GifPlaceholder({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 100,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF18181A) : const Color(0xFFF4F7F6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE4E9E7),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.play_circle_outline_rounded,
+            color: isDark ? const Color(0xFF2DB994) : AppColors.teal,
+            size: 26,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'No preview available',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  fontSize: 12,
+                ),
+          ),
+        ],
       ),
     );
   }

@@ -9,6 +9,7 @@ class WorkoutExercise {
     required this.sets,
     required this.repsMin,
     required this.repsMax,
+    this.gifAsset = '',
   });
 
   factory WorkoutExercise.fromJson(Map<String, dynamic> json) => WorkoutExercise(
@@ -21,6 +22,7 @@ class WorkoutExercise {
         sets: (json['sets'] as num?)?.toInt() ?? 3,
         repsMin: (json['reps_min'] as num?)?.toInt() ?? 8,
         repsMax: (json['reps_max'] as num?)?.toInt() ?? 12,
+        gifAsset: (json['gif_asset'] as String?) ?? '',
       );
 
   final String name;
@@ -32,6 +34,7 @@ class WorkoutExercise {
   final int sets;
   final int repsMin;
   final int repsMax;
+  final String gifAsset;
 
   String get repsLabel => repsMin == repsMax ? '$repsMin' : '$repsMin–$repsMax';
   String get setsRepsLabel => '$sets × $repsLabel';

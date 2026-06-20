@@ -68,6 +68,36 @@ _EXERCISE_DISPLAY_COLS = [
     "default_sets", "default_reps_min", "default_reps_max",
 ]
 
+# Keyword → GIF asset path mapping (order matters: first match wins)
+_GIF_MAP: list[tuple[list[str], str]] = [
+    (["lever calf press", "sled calf press", "calf press on leg press"], "assets/exercise_gifs/2ORFMoR.gif"),
+    (["leg press"], "assets/exercise_gifs/2Qh2J1e.gif"),
+    (["one arm lateral raise", "cable lateral raise", "single arm lateral"], "assets/exercise_gifs/6cKQC5E.gif"),
+    (["lateral raise", "front raise", "dumbbell raise"], "assets/exercise_gifs/3eGE2JC.gif"),
+    (["wrist curl", "forearm curl"], "assets/exercise_gifs/3tAXPQ6.gif"),
+    (["barbell incline bench press", "incline barbell bench"], "assets/exercise_gifs/3TZduzM.gif"),
+    (["smith incline bench press", "smith machine incline"], "assets/exercise_gifs/5v7KYld.gif"),
+    (["preacher curl", "concentration curl"], "assets/exercise_gifs/4dF3maG.gif"),
+    (["ez barbell curl", "barbell curl"], "assets/exercise_gifs/4dUn2iv.gif"),
+    (["barbell seated overhead press", "seated military press", "military press", "seated overhead press"], "assets/exercise_gifs/5uFK1xr.gif"),
+    (["lying triceps extension", "skull crusher", "barbell lying triceps"], "assets/exercise_gifs/6MfS53i.gif"),
+    (["decline push-up", "decline push up", "decline pushup"], "assets/exercise_gifs/6sMAmNv.gif"),
+    (["bicycle crunch", "cross body crunch"], "assets/exercise_gifs/6sYyrRX.gif"),
+    (["lat pulldown", "cable pulldown", "pulldown"], "assets/exercise_gifs/7F1DVzn.gif"),
+    (["hack squat", "smith hack squat"], "assets/exercise_gifs/7zdxRTl.gif"),
+    (["incline dumbbell curl", "dumbbell incline curl", "incline curl"], "assets/exercise_gifs/8eqjhOl.gif"),
+    (["hanging knee raise", "hanging leg raise"], "assets/exercise_gifs/8K0w2yA.gif"),
+]
+
+
+def _resolve_gif(exercise_name: str) -> str:
+    """Return the gif asset path for the exercise, or empty string if none."""
+    name_lower = exercise_name.lower()
+    for keywords, gif_path in _GIF_MAP:
+        if any(kw in name_lower for kw in keywords):
+            return gif_path
+    return ""
+
 
 # ── Data containers ───────────────────────────────────────────────────────────
 
@@ -99,6 +129,7 @@ class WorkoutExercise:
     sets:             int
     reps_min:         int
     reps_max:         int
+    gif_asset:        str = ""
 
 
 @dataclass
@@ -506,9 +537,10 @@ class ExerciseMatcher:
             # Apply intensity multiplier to reps_max (floor to keep integers)
             scaled_reps_max = max(base_reps_min, int(base_reps_max * intensity_multiplier))
 
+            ex_name = str(row["name"])
             exercises.append(
                 WorkoutExercise(
-                    name=str(row["name"]),
+                    name=ex_name,
                     body_part=str(row["bodyPart"]),
                     target_muscle=str(row["target"]),
                     equipment=str(row["equipment"]),
@@ -517,6 +549,7 @@ class ExerciseMatcher:
                     sets=base_sets,
                     reps_min=base_reps_min,
                     reps_max=scaled_reps_max,
+                    gif_asset=_resolve_gif(ex_name),
                 )
             )
 
