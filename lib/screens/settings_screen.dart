@@ -5,6 +5,7 @@ import '../models/ocr_result.dart';
 import '../models/plan_result.dart';
 import '../models/user_profile.dart';
 import '../router/app_routes.dart';
+import '../services/admin_service.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
@@ -130,6 +131,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => context.push(AppRoutes.achievements),
           ),
           const SizedBox(height: 8),
+          _SectionHeader('Developer', isDark),
+          _SettingsTile(
+            icon: Icons.shield_rounded,
+            iconColor: const Color(0xFF7C3AED),
+            title: 'Admin Panel',
+            subtitle: 'View platform stats, users, and ML analytics',
+            isDark: isDark,
+            onTap: () => _openAdmin(context, isDark),
+          ),
+          const SizedBox(height: 8),
           _SectionHeader('Account', isDark),
           _SettingsTile(
             icon: Icons.logout_rounded,
@@ -142,6 +153,79 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _openAdmin(BuildContext context, bool isDark) async {
+    final controller = TextEditingController();
+    bool checking = false;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) => AlertDialog(
+          title: const Text('Admin Access'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Enter the admin key to access the dashboard.',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Admin key',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.key_rounded),
+                ),
+                onSubmitted: (_) async {
+                  if (checking) return;
+                  setSt(() => checking = true);
+                  final valid =
+                      await AdminService.instance.verifyKey(controller.text.trim());
+                  if (ctx.mounted) Navigator.pop(ctx, valid);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: checking
+                  ? null
+                  : () async {
+                      setSt(() => checking = true);
+                      final valid = await AdminService.instance
+                          .verifyKey(controller.text.trim());
+                      if (ctx.mounted) Navigator.pop(ctx, valid);
+                    },
+              child: checking
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Enter'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    controller.dispose();
+
+    if (ok == true && context.mounted) {
+      context.push(AppRoutes.admin);
+    } else if (ok == false && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid admin key.')),
+      );
+    }
   }
 
   Future<void> _confirmLogout(BuildContext context) async {

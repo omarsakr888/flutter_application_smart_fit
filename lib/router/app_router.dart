@@ -15,6 +15,7 @@ import '../screens/achievements_screen.dart';
 import '../screens/ai_coach_screen.dart';
 import '../screens/progress_screen.dart';
 import '../screens/recipe_detail_screen.dart';
+import '../screens/admin_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/workout_hub_screen.dart';
 import 'app_routes.dart';
@@ -96,6 +97,10 @@ GoRouter createAppRouter() {
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.admin,
+        builder: (context, state) => const AdminScreen(),
       ),
     ],
   );

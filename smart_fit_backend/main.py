@@ -28,6 +28,7 @@ from ml_service import PredictionRequest, PredictionService
 from ocr_schemas import ConfirmScanRequest
 from ocr_service import OcrService
 from easyocr_engine import EasyOcrEngine
+from admin_router import router as admin_router
 from easyocr_router import build_easyocr_router
 from scan_storage import ScanStorage
 from user_storage import UserStorage
@@ -104,6 +105,7 @@ def get_current_user(
 
 
 app.include_router(build_easyocr_router(get_current_user, scan_storage, ocr_service))
+app.include_router(admin_router)
 
 
 # ─── Exception handlers ───────────────────────────────────────────────────────
