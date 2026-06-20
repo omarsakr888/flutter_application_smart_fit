@@ -128,11 +128,11 @@ class _AiChatSheetState extends State<_AiChatSheet> {
         });
         _scrollToBottom();
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() {
-          _messages.add(const _Msg(
-            text: 'Something went wrong. Please try again.',
+          _messages.add(_Msg(
+            text: 'Error: ${e.toString()}',
             isUser: false,
             isError: true,
           ));

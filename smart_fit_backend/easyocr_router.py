@@ -45,7 +45,7 @@ def build_easyocr_router(
             logger.exception("EasyOCR extraction pipeline failed")
             raise HTTPException(
                 status_code=500,
-                detail="Unable to extract InBody scan using EasyOCR.",
+                detail=f"EasyOCR pipeline failed: {type(exc).__name__}: {exc}",
             ) from exc
 
     return router
