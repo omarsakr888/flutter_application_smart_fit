@@ -17,14 +17,27 @@ class EasyOcrDocumentAnalyser:
         Scans the text for specific InBody model numbers.
         Returns 'InBody 120', 'InBody 270', or 'InBody 570'.
         Defaults to 'InBody 570' if unknown or ambiguous.
+
+        Uses "InBody NNN" context to avoid false-positives from numeric values
+        in the report body (BMR ≈ 1120 kcal, height ≈ 170 cm, etc.).
         """
-        if "120" in self.full_text:
+        # Primary check: "InBody" token adjacent to model number
+        if re.search(r'INBODY\s*120\b', self.full_text):
             return "InBody 120"
-        if "270" in self.full_text:
+        if re.search(r'INBODY\s*270\b', self.full_text):
             return "InBody 270"
-        if "570" in self.full_text:
+        if re.search(r'INBODY\s*570\b', self.full_text):
             return "InBody 570"
-            
+
+        # Secondary check: model number alone (only as a standalone token, not
+        # embedded in larger numbers like 1120 or 2700).
+        if re.search(r'(?<!\d)120(?!\d)', self.full_text):
+            return "InBody 120"
+        if re.search(r'(?<!\d)270(?!\d)', self.full_text):
+            return "InBody 270"
+        if re.search(r'(?<!\d)570(?!\d)', self.full_text):
+            return "InBody 570"
+
         return "InBody 570"  # Safe fallback
 
     def detect_units(self) -> str:

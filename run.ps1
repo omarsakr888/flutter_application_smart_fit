@@ -18,13 +18,29 @@ param(
 $Root       = $PSScriptRoot
 $BackendDir = Join-Path $Root "smart_fit_backend"
 $EnvFile    = Join-Path $BackendDir ".env"
-$Python     = Join-Path $Root "smart_fit_backend\venv\Scripts\python.exe"
 
 # ── 0. Sanity checks ──────────────────────────────────────────────────────────
 
 if (-not (Test-Path $BackendDir)) {
     Write-Error "smart_fit_backend/ not found. Run this script from the project root."
     exit 1
+}
+
+# Resolve Python: prefer venv, fall back to system python
+$VenvPython = Join-Path $Root "smart_fit_backend\venv\Scripts\python.exe"
+if (Test-Path $VenvPython) {
+    $Python = $VenvPython
+    Write-Host "[python] Using venv: $Python" -ForegroundColor DarkGray
+} else {
+    $Python = (Get-Command python -ErrorAction SilentlyContinue).Source
+    if (-not $Python) {
+        $Python = (Get-Command python3 -ErrorAction SilentlyContinue).Source
+    }
+    if (-not $Python) {
+        Write-Error "Python not found. Install Python or create a venv at smart_fit_backend/venv."
+        exit 1
+    }
+    Write-Host "[python] Using system Python: $Python" -ForegroundColor DarkGray
 }
 
 # ── 1. Load .env (backend secrets + optional Gemini key) ─────────────────────

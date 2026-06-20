@@ -31,8 +31,14 @@ def get_easyocr_reader() -> Any:
             "EasyOCR is not installed. Run `pip install easyocr`."
         ) from exc
 
-    logger.info("Initializing EasyOCR CPU engine (gpu=False) — model cached in RAM")
-    _GLOBAL_READER = easyocr.Reader(["en"], gpu=False)
+    try:
+        import torch
+        _use_gpu = torch.cuda.is_available()
+    except Exception:
+        _use_gpu = False
+
+    logger.info("Initializing EasyOCR engine (gpu=%s) — model cached in RAM", _use_gpu)
+    _GLOBAL_READER = easyocr.Reader(["en"], gpu=_use_gpu)
     return _GLOBAL_READER
 
 
@@ -40,7 +46,12 @@ def cluster_blocks_into_rows(
     blocks: list[OcrBlock],
     y_tolerance: float = 15.0,
 ) -> list[list[OcrBlock]]:
-    """Group OCR blocks that share close Y-centres into left-to-right rows."""
+    """Group OCR blocks that share close Y-centres into left-to-right rows.
+
+    Each incoming block is compared to the *median* Y of the current row
+    (not just the last block's Y) so that a single outlier cannot chain-link
+    two visually distinct lines together.
+    """
     if not blocks:
         return []
 
@@ -49,7 +60,9 @@ def cluster_blocks_into_rows(
     current_row: list[OcrBlock] = [sorted_blocks[0]]
 
     for block in sorted_blocks[1:]:
-        if abs(block.center_y - current_row[-1].center_y) <= y_tolerance:
+        row_ys = [b.center_y for b in current_row]
+        row_median_y = sorted(row_ys)[len(row_ys) // 2]
+        if abs(block.center_y - row_median_y) <= y_tolerance:
             current_row.append(block)
         else:
             rows.append(current_row)
@@ -81,7 +94,18 @@ class EasyOcrEngine:
         self.load()
         reader = self._reader or get_easyocr_reader()
 
-        raw_results = reader.readtext(image, width_ths=0.1, text_threshold=0.6)
+        raw_results = reader.readtext(
+            image,
+            paragraph=False,       # keep each text region as its own block
+            text_threshold=0.7,    # was 0.6 — reduces false positives from scale bars
+            low_text=0.4,          # detection sensitivity for faint characters
+            link_threshold=0.4,    # horizontal link threshold for detection
+            width_ths=0.3,         # was 0.1 (too tight, split words) — moderate merging
+            height_ths=0.5,
+            contrast_ths=0.1,      # auto-adjust contrast when image is low-contrast
+            adjust_contrast=0.5,   # target contrast for auto-adjustment
+            min_size=10,           # ignore very small artifacts
+        )
 
         blocks: list[OcrBlock] = []
         for bbox, text, prob in raw_results:
@@ -97,7 +121,11 @@ class EasyOcrEngine:
     def extract_clustered_rows(
         self,
         image: np.ndarray,
-        y_tolerance: float = 15.0,
+        y_tolerance: float | None = None,
     ) -> list[list[OcrBlock]]:
         blocks = self.extract_blocks(image)
+        # Default tolerance: 1.5% of image height — scales with resolution
+        if y_tolerance is None:
+            h = image.shape[0] if hasattr(image, "shape") else 1
+            y_tolerance = max(10.0, h * 0.015)
         return cluster_blocks_into_rows(blocks, y_tolerance=y_tolerance)

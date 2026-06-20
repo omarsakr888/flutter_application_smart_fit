@@ -42,6 +42,7 @@ env/
 recommendation_datasets/advanced_foodcom_labeled_dataset.csv
 recommendation_datasets/cleaned_intermediate_dataset.csv
 smart_fit_backend/data/uploads/
+smart_fit_backend/data/InBody_Augmented_Master.csv
 *.pkl
 *.model
 *.bin

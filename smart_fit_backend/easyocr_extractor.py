@@ -61,6 +61,9 @@ class EasyOcrExtractor:
         self.full_text = " ".join(block.text for block in self.blocks)
         self.layout = self._detect_layout()
         self.units = self._detect_units()
+        # Build a set of numeric values that appear 3+ times — almost certainly
+        # scale bar tick marks (e.g. 80, 90, 100, 110 on InBody bar charts).
+        self._scale_markers: set[float] = self._find_scale_markers()
 
     def extract(self) -> dict[str, Any]:
         """Return the Flutter-compatible extraction payload."""
@@ -114,6 +117,26 @@ class EasyOcrExtractor:
                 "average_confidence": avg_conf,
             },
         }
+
+    # ── Scale marker detection ────────────────────────────────────────────────
+
+    def _find_scale_markers(self) -> set[float]:
+        """Return numeric values that appear 3+ times — likely bar-chart tick marks."""
+        from collections import Counter
+        counts: Counter = Counter()
+        for block in self.blocks:
+            val = self._parse_float(block.text)
+            if val is not None and val >= 5.0:
+                counts[val] += 1
+        return {v for v, c in counts.items() if c >= 3}
+
+    def _is_scale_marker(self, value: float) -> bool:
+        """True if the value is a known scale tick (integer or .0/.5 multiples)."""
+        if value not in self._scale_markers:
+            return False
+        # Only reject round values — decimals like 26.5 are real readings
+        frac = value - int(value)
+        return frac in {0.0, 0.5}
 
     # ── Layout / unit detection ───────────────────────────────────────────────
 
@@ -283,6 +306,8 @@ class EasyOcrExtractor:
             val = self._parse_float(block.text)
             if val is None:
                 continue
+            if self._is_scale_marker(val):
+                continue
             distance = block.center_x - label_right
             candidates.append((distance, val, block.confidence))
 
@@ -306,7 +331,7 @@ class EasyOcrExtractor:
             if not match:
                 continue
             val = self._parse_float(match.group(1))
-            if val is not None:
+            if val is not None and not self._is_scale_marker(val):
                 return val, 0.75
         return None, 0.0
 

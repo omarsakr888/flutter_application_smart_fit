@@ -217,14 +217,32 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
                     ),
                     const SizedBox(height: 36),
                     if (_uploading)
-                      const SizedBox(
+                      SizedBox(
                         height: 330,
-                        child: Center(
-                          child: LaserScanner(
-                            axis: LaserScanAxis.vertical,
-                            width: 200,
-                            height: 200,
-                          ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const LaserScanner(
+                              axis: LaserScanAxis.vertical,
+                              width: 200,
+                              height: 200,
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              'Analyzing your InBody scan…',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.teal,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'This may take 30–60 seconds on CPU',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: isDark ? Colors.white38 : Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     else if (_uploaded)

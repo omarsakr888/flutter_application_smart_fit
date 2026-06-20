@@ -54,7 +54,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 # ── Import production OCR stack (no changes needed here) ─────────────────────
 try:
-    from image_preprocessing import preprocess_image
+    from image_preprocessing import preprocess_for_easyocr
     from inbody_extractor import FIELD_SPECS, InBodyExtractor
     from easyocr_engine import EasyOcrEngine
 except ImportError as exc:
@@ -218,7 +218,7 @@ def run_ocr_on_image(
     image_bytes = image_path.read_bytes()
 
     start = time.perf_counter()
-    preprocessed = preprocess_image(image_bytes)
+    preprocessed = preprocess_for_easyocr(image_bytes)
     blocks = engine.extract_blocks(preprocessed.processed)
     extraction = extractor.extract(
         blocks=blocks,

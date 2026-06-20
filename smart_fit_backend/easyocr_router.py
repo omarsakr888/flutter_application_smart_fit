@@ -27,122 +27,30 @@ def build_easyocr_router(
         file: UploadFile = File(...),
         user_id: str = Depends(get_current_user),
     ) -> dict[str, Any]:
+        import asyncio
         try:
-            import asyncio
-            logger.info("Demo Mode active (default): Sleeping for 12 seconds to simulate scan...")
-            await asyncio.sleep(12.0)
-            
-            # The 12 metrics exactly as requested by user
-            extraction = {
-                "layout": {
-                    "template": "InBody 270",
-                    "units": "metric",
-                    "confidence": 0.95
-                },
-                "fields": {
-                    "Age": {
-                        "value": 51.0,
-                        "unit": "yrs",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "Gender": {
-                        "value": 0.0,  # 0.0 for Female
-                        "unit": "0/1",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "Height": {
-                        "value": 156.0,
-                        "unit": "cm",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "Weight": {
-                        "value": 59.1,
-                        "unit": "kg",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "SMM_(Skeletal_Muscle_Mass)": {
-                        "value": 19.6,
-                        "unit": "kg",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "BMR_(Basal_Metabolic_Rate)": {
-                        "value": 1154.0,
-                        "unit": "kcal",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "FFM_of_Trunk": {
-                        "value": 36.0,
-                        "unit": "kg",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "TBW_(Total_Body_Water)": {
-                        "value": 29.1,
-                        "unit": "L",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "ECW/TBW": {
-                        "value": 0.376,
-                        "unit": "ratio",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "50kHz-Whole_Body_Phase_Angle": {
-                        "value": 0.7,
-                        "unit": "deg",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "BFM_(Body_Fat_Mass)": {
-                        "value": 22.8,  # BFM_kg: 22,8
-                        "unit": "kg",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    },
-                    "PBF_(Percent_Body_Fat)": {
-                        "value": 38.6,
-                        "unit": "%",
-                        "confidence": 1.0,
-                        "is_imputed": False
-                    }
-                },
-                "missing_fields": [],
-                "warnings": ["DEMO MODE: Returned hardcoded InBody 270 data"],
-                "ocr": {
-                    "engine": "easyocr_demo",
-                    "block_count": 12,
-                    "average_confidence": 1.0
-                }
-            }
-
             image_bytes = await file.read()
-            image_path = storage.save_upload(image_bytes, file.filename)
-            extraction_id = storage.create_extraction(
-                user_id=user_id,
-                image_path=image_path,
-                filename=file.filename,
-                content_type=file.content_type,
-                extraction=extraction,
+            # Run the CPU-bound OCR pipeline in a thread pool so we don't block
+            # the async event loop.
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                lambda: process_easyocr_image(
+                    image_bytes=image_bytes,
+                    filename=file.filename,
+                    content_type=file.content_type,
+                    user_id=user_id,
+                    storage=storage,
+                ),
             )
-
-            logger.info("Demo EasyOCR extraction %s completed successfully", extraction_id)
-            return {
-                "status": "success",
-                "extraction_id": extraction_id,
-                **extraction,
-            }
+            return result
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         except Exception as exc:
-            logger.exception("EasyOCR Demo pipeline failed")
+            logger.exception("EasyOCR pipeline failed")
             raise HTTPException(
                 status_code=500,
-                detail="Unable to extract InBody scan using EasyOCR Demo.",
+                detail=f"EasyOCR pipeline failed: {type(exc).__name__}: {exc}",
             ) from exc
 
     return router
@@ -159,12 +67,13 @@ def process_easyocr_image(
     """Run the EasyOCR pipeline and persist the extraction."""
     from core import MAX_UPLOAD_BYTES
     from easyocr_extractor import EasyOcrExtractor
-    from image_preprocessing import preprocess_image
+    from image_preprocessing import preprocess_for_easyocr
 
     _validate_upload(image_bytes, content_type, MAX_UPLOAD_BYTES)
-    preprocessed = preprocess_image(image_bytes)
+    preprocessed = preprocess_for_easyocr(image_bytes)
 
-    rows = _engine.extract_clustered_rows(preprocessed.processed, y_tolerance=15.0)
+    # y_tolerance=None → engine picks 1.5% of image height automatically
+    rows = _engine.extract_clustered_rows(preprocessed.processed, y_tolerance=None)
     blocks = [block for row in rows for block in row]
     avg_conf = (
         round(sum(block.confidence for block in blocks) / len(blocks), 4)
