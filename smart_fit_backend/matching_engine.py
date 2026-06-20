@@ -238,6 +238,7 @@ class MealMatcher:
         diet_type: str,
         goal: str,
         warnings: list[str],
+        plan_seed: int = 42,
     ) -> list[MealSlot]:
         """Return a list of MealSlot objects covering all 5 meal slots."""
         diet_type = _normalise_diet_type(diet_type, warnings)
@@ -271,6 +272,10 @@ class MealMatcher:
                 pool=pool,
                 target_cal=slot_target_cal,
                 used_indices=used_indices,
+                protein_g=protein_g / len(MEAL_SLOTS),
+                carbs_g=carbs_g / len(MEAL_SLOTS),
+                fat_g=fat_g / len(MEAL_SLOTS),
+                plan_seed=plan_seed + hash(slot_name) % 1000,
             )
             if meal_row is None:
                 warnings.append(
@@ -306,11 +311,13 @@ class MealMatcher:
         pool: pd.DataFrame,
         target_cal: float,
         used_indices: set[int],
+        *,
+        protein_g: float = 0.0,
+        carbs_g: float = 0.0,
+        fat_g: float = 0.0,
+        plan_seed: int = 42,
     ) -> Any | None:
-        """Find the row whose Calories_PS is closest to target_cal.
-
-        Searches in a ±40% window, then relaxes to any unvisited row.
-        """
+        """Deterministic meal selection with macro-fit scoring."""
         available = pool[~pool.index.isin(used_indices)]
         if available.empty:
             return None
@@ -320,12 +327,30 @@ class MealMatcher:
             (available["Calories_PS"] >= lo) & (available["Calories_PS"] <= hi)
         ]
         if window.empty:
-            window = available   # relax constraint
+            window = available
 
-        # Weighted random selection biased toward top health score rows
-        top_n = min(20, len(window))
-        candidates = window.head(top_n)
-        return candidates.sample(1).iloc[0]
+        if window.empty:
+            return None
+
+        scored = window.copy()
+        cal_diff = (scored["Calories_PS"] - target_cal).abs() / max(target_cal, 1)
+        prot_diff = (scored["Protein_PS"] - protein_g).abs() / max(protein_g, 1)
+        carb_diff = (scored["Carbs_PS"] - carbs_g).abs() / max(carbs_g, 1)
+        fat_diff = (scored["Fat_PS"] - fat_g).abs() / max(fat_g, 1)
+        health = 1.0 - scored["Health_Score"].fillna(0.5).clip(0, 1)
+
+        scored["_score"] = (
+            cal_diff * 0.35
+            + prot_diff * 0.30
+            + carb_diff * 0.20
+            + fat_diff * 0.10
+            + health * 0.05
+        )
+        scored = scored.sort_values("_score").reset_index(drop=True)
+        top_n = min(10, len(scored))
+        candidates = scored.head(top_n)
+        idx = plan_seed % len(candidates)
+        return candidates.iloc[idx]
 
 
 # ── Exercise Matcher ──────────────────────────────────────────────────────────
@@ -343,6 +368,7 @@ class ExerciseMatcher:
         preferred_days: int,
         intensity_multiplier: float,
         warnings: list[str],
+        plan_seed: int = 42,
     ) -> list[WorkoutDay]:
         """Return a list of WorkoutDay objects for the user's weekly split.
 
@@ -368,6 +394,7 @@ class ExerciseMatcher:
                 csv_zone=day_csv_zone,
                 intensity_multiplier=intensity_multiplier,
                 warnings=warnings,
+                plan_seed=plan_seed + day_num,
             )
             if not exercises:
                 warnings.append(
@@ -446,6 +473,7 @@ class ExerciseMatcher:
         csv_zone: str,
         intensity_multiplier: float,
         warnings: list[str],
+        plan_seed: int = 42,
     ) -> list[WorkoutExercise]:
         """Filter exercises for this zone and apply intensity scaling."""
 
@@ -457,7 +485,8 @@ class ExerciseMatcher:
                     csv_zone=sub_zone,
                     intensity_multiplier=intensity_multiplier,
                     warnings=warnings,
-                )[:2]  # 2 exercises from each sub-zone = 6 total
+                    plan_seed=plan_seed,
+                )[:2]
             return combined
 
         pool = self._df[self._df["focus_zone"] == csv_zone]
@@ -466,7 +495,7 @@ class ExerciseMatcher:
 
         # Sample up to EXERCISES_PER_ZONE_SLOT exercises
         n = min(EXERCISES_PER_ZONE_SLOT, len(pool))
-        sample = pool.sample(n=n, random_state=random.randint(0, 9999))
+        sample = pool.sample(n=n, random_state=plan_seed)
 
         exercises: list[WorkoutExercise] = []
         for _, row in sample.iterrows():
@@ -517,6 +546,7 @@ class MatchingEngine:
         focus_zone: str,
         ml_confidence: float,
         diet_type: str,
+        plan_seed: int = 42,
     ) -> RecommendationPlan:
         """Build the full recommendation plan.
 
@@ -541,6 +571,7 @@ class MatchingEngine:
             diet_type=diet_type,
             goal=math_result.goal,
             warnings=warnings,
+            plan_seed=plan_seed,
         )
 
         # ── Exercises ────────────────────────────────────────────────────────
@@ -550,6 +581,7 @@ class MatchingEngine:
             preferred_days=math_result.preferred_days,
             intensity_multiplier=math_result.intensity_multiplier,
             warnings=warnings,
+            plan_seed=plan_seed,
         )
 
         return RecommendationPlan(

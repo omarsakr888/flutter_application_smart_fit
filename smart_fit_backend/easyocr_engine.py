@@ -101,3 +101,44 @@ class EasyOcrEngine:
     ) -> list[list[OcrBlock]]:
         blocks = self.extract_blocks(image)
         return cluster_blocks_into_rows(blocks, y_tolerance=y_tolerance)
+
+    def extract_region_text(
+        self,
+        image: np.ndarray,
+        *,
+        numeric_only: bool = True,
+    ) -> tuple[str, float]:
+        """OCR a small cropped region; return combined text and average confidence."""
+        self.load()
+        reader = self._reader or get_easyocr_reader()
+
+        if image.size == 0:
+            return "", 0.0
+
+        kwargs: dict[str, Any] = {
+            "detail": 1,
+            "paragraph": False,
+            "width_ths": 0.3,
+            "text_threshold": 0.4,
+        }
+        if numeric_only:
+            kwargs["allowlist"] = "0123456789.,/- "
+
+        raw_results = reader.readtext(image, **kwargs)
+        if not raw_results:
+            # Retry without allowlist for alphanumeric fields
+            if numeric_only:
+                return self.extract_region_text(image, numeric_only=False)
+            return "", 0.0
+
+        texts: list[str] = []
+        confs: list[float] = []
+        for _bbox, text, prob in raw_results:
+            cleaned = str(text).strip()
+            if cleaned:
+                texts.append(cleaned)
+                confs.append(float(prob))
+
+        combined = " ".join(texts)
+        avg_conf = sum(confs) / len(confs) if confs else 0.0
+        return combined, round(avg_conf, 4)

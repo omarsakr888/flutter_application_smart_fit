@@ -129,21 +129,34 @@ def _empty_extraction() -> dict[str, Any]:
     """Return a well-formed extraction dict when OCR produces no tokens."""
     from field_extractor import FIELD_DESCRIPTORS as _FD
     fields = {
-        d.key: {"value": None, "unit": d.unit_in_output, "confidence": 0.0}
+        d.key: {
+            "value": None,
+            "unit": d.unit_in_output,
+            "confidence": 0.0,
+            "source_region": d.section_hint,
+            "extraction_method": "none",
+            "validation_status": "missing",
+            "review_action": "mark_uncertain",
+        }
         for d in _FD
     }
     missing = list(fields.keys())
     return {
+        "report_type": "InBodyUnknown",
+        "scan_datetime": None,
+        "extraction_confidence": 0.0,
         "layout": {
             "template":   "InBodyUnknown",
             "units":      "metric",
             "confidence": 0.0,
         },
         "fields":         fields,
+        "canonical_fields": {},
         "missing_fields": missing,
+        "fields_needing_verification": missing,
         "warnings":       ["OCR produced no readable text from this image"],
         "ocr": {
-            "engine":             "paddleocr",
+            "engine":             "easyocr",
             "block_count":        0,
             "average_confidence": 0.0,
         },

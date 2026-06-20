@@ -18,6 +18,7 @@ from difflib import SequenceMatcher
 from typing import Dict, List, Optional, Tuple
 
 from ocr_engine import OcrToken
+from inbody_regions import merge_sections, normalise_model_name, VERSION_ANCHORS
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -138,7 +139,8 @@ class DocumentAnalyser:
 
         model   = self._detect_model(full_text)
         units   = self._detect_units(tokens, full_text)
-        sections = self._locate_sections(tokens)
+        detected_sections = self._locate_sections(tokens)
+        sections = merge_sections(detected_sections, normalise_model_name(model))
 
         has_ecw = (
             "ecw_tbw" in sections
@@ -175,6 +177,11 @@ class DocumentAnalyser:
 
     def _detect_model(self, text: str) -> str:
         """Extract the InBody model number from the OCR text."""
+        lowered = text.lower()
+        for model_name, anchors in VERSION_ANCHORS.items():
+            if any(anchor in lowered for anchor in anchors):
+                return model_name
+
         for pattern in self.MODEL_PATTERNS:
             m = re.search(pattern, text, re.IGNORECASE)
             if m:
@@ -182,11 +189,11 @@ class DocumentAnalyser:
 
         # Structural fallback when the model tag is absent or garbled
         if self._text_contains_any(text, ["ECW/TBW Analysis", "ECW TBW Analysis"]):
-            return "InBody570-class"
+            return "InBody570"
         if self._text_contains_any(text, ["Results Interpretation", "QR Code"]):
-            return "InBody120-class"
+            return "InBody120"
         if self._text_contains_any(text, ["Waist-Hip Ratio", "Visceral Fat Level"]):
-            return "InBody270-class"
+            return "InBody270"
         return "InBodyUnknown"
 
     def _detect_units(self, tokens: List[OcrToken], text: str) -> str:

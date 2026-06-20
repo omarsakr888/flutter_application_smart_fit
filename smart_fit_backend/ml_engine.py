@@ -43,8 +43,8 @@ FOCUS_ZONE_TO_CSV: dict[str, list[str]] = {
 def predict_focus_zone(
     service: "PredictionService",
     features: dict[str, float | str],
-) -> tuple[str, float]:
-    """Run ML inference and return (focus_zone_label, confidence_pct).
+) -> tuple[str, float, str]:
+    """Run ML inference and return (focus_zone_label, confidence_pct, raw_persona).
 
     Args:
         service:  A loaded `PredictionService` instance (from ml_service.py).
@@ -74,7 +74,7 @@ def predict_focus_zone(
         "MLEngine: raw='%s' → normalised='%s' confidence=%.2f%%",
         raw_persona, focus_zone, confidence,
     )
-    return focus_zone, confidence
+    return focus_zone, confidence, raw_persona
 
 
 def get_csv_zones(focus_zone: str) -> list[str]:

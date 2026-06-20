@@ -15,6 +15,16 @@ class UserService {
 
   // ── Profile ──────────────────────────────────────────────────────────────
 
+  Future<Map<String, dynamic>?> getProfile() async {
+    final uri = Uri.parse('${BackendConfig.baseUrl}/users/profile');
+    final response = await _client
+        .get(uri, headers: await AuthService.instance.authHeaders)
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) return null;
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return body['profile'] as Map<String, dynamic>?;
+  }
+
   Future<void> saveProfile({
     required double? age,
     required String? gender,
@@ -41,6 +51,16 @@ class UserService {
   }
 
   // ── Preferences ───────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>?> getPreferences() async {
+    final uri = Uri.parse('${BackendConfig.baseUrl}/users/preferences');
+    final response = await _client
+        .get(uri, headers: await AuthService.instance.authHeaders)
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) return null;
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return body['preferences'] as Map<String, dynamic>?;
+  }
 
   Future<void> savePreferences({
     required String dietType,

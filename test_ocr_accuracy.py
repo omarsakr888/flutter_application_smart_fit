@@ -54,8 +54,9 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 # ── Import production OCR stack (no changes needed here) ─────────────────────
 try:
-    from image_preprocessing import preprocess_image
-    from inbody_extractor import FIELD_SPECS, InBodyExtractor
+    from scan_preprocess import load_scan_image
+    from field_extractor import FIELD_DESCRIPTORS
+    from template_extractor import TemplateExtractor
     from easyocr_engine import EasyOcrEngine
 except ImportError as exc:
     print(
@@ -89,46 +90,46 @@ TEST_IMAGES: dict[str, str] = {
 #
 GROUND_TRUTH: dict[str, dict[str, float | None]] = {
     "InBody120": {
-        "Age":                          None,   # <- fill in e.g. 28
-        "Gender":                       None,   # <- fill in 1.0 or 0.0
-        "Height":                       None,   # <- fill in e.g. 176.0
-        "Weight":                       None,   # <- fill in e.g. 74.5
-        "SMM_(Skeletal_Muscle_Mass)":   None,
-        "BMR_(Basal_Metabolic_Rate)":   None,
-        "FFM_of_Trunk":                 None,
-        "TBW_(Total_Body_Water)":       None,
+        "Age":                          51.0,
+        "Gender":                       0.0,
+        "Height":                       156.9,
+        "Weight":                       59.1,
+        "SMM_(Skeletal_Muscle_Mass)":   19.6,
+        "BMR_(Basal_Metabolic_Rate)":   1176.0,
+        "FFM_of_Trunk":                 17.7,
+        "TBW_(Total_Body_Water)":       27.5,
         "ECW/TBW":                      None,
         "50kHz-Whole_Body_Phase_Angle": None,
-        "BFM_(Body_Fat_Mass)":          None,
-        "PBF_(Percent_Body_Fat)":       None,
+        "BFM_(Body_Fat_Mass)":          21.8,
+        "PBF_(Percent_Body_Fat)":       36.9,
     },
     "InBody270": {
-        "Age":                          None,
-        "Gender":                       None,
-        "Height":                       None,
-        "Weight":                       None,
-        "SMM_(Skeletal_Muscle_Mass)":   None,
-        "BMR_(Basal_Metabolic_Rate)":   None,
-        "FFM_of_Trunk":                 None,
-        "TBW_(Total_Body_Water)":       None,
+        "Age":                          51.0,
+        "Gender":                       0.0,
+        "Height":                       156.9,
+        "Weight":                       59.1,
+        "SMM_(Skeletal_Muscle_Mass)":   19.6,
+        "BMR_(Basal_Metabolic_Rate)":   1154.0,
+        "FFM_of_Trunk":                 16.7,
+        "TBW_(Total_Body_Water)":       26.5,
         "ECW/TBW":                      None,
         "50kHz-Whole_Body_Phase_Angle": None,
-        "BFM_(Body_Fat_Mass)":          None,
-        "PBF_(Percent_Body_Fat)":       None,
+        "BFM_(Body_Fat_Mass)":          22.8,
+        "PBF_(Percent_Body_Fat)":       38.6,
     },
     "InBody570": {
-        "Age":                          None,
-        "Gender":                       None,
-        "Height":                       None,
-        "Weight":                       None,
-        "SMM_(Skeletal_Muscle_Mass)":   None,
-        "BMR_(Basal_Metabolic_Rate)":   None,
-        "FFM_of_Trunk":                 None,
-        "TBW_(Total_Body_Water)":       None,
-        "ECW/TBW":                      None,
+        "Age":                          31.0,
+        "Gender":                       0.0,
+        "Height":                       165.1,
+        "Weight":                       61.42,
+        "SMM_(Skeletal_Muscle_Mass)":   21.59,
+        "BMR_(Basal_Metabolic_Rate)":   1231.0,
+        "FFM_of_Trunk":                 17.96,
+        "TBW_(Total_Body_Water)":       29.12,
+        "ECW/TBW":                      0.376,
         "50kHz-Whole_Body_Phase_Angle": None,
-        "BFM_(Body_Fat_Mass)":          None,
-        "PBF_(Percent_Body_Fat)":       None,
+        "BFM_(Body_Fat_Mass)":          21.51,
+        "PBF_(Percent_Body_Fat)":       35.0,
     },
 }
 
@@ -208,26 +209,21 @@ class ImageResult:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def run_ocr_on_image(
-    engine: EasyOcrEngine,
-    extractor: InBodyExtractor,
+    extractor: TemplateExtractor,
     image_path: Path,
     image_name: str,
 ) -> ImageResult:
-    """Run the full production OCR pipeline on a single image."""
+    """Run the template ROI OCR pipeline on a single image."""
     print(f"\n  Loading: {image_path.name} ...", end="", flush=True)
     image_bytes = image_path.read_bytes()
 
     start = time.perf_counter()
-    preprocessed = preprocess_image(image_bytes)
-    blocks = engine.extract_blocks(preprocessed.processed)
-    extraction = extractor.extract(
-        blocks=blocks,
-        image_width=preprocessed.width,
-        image_height=preprocessed.height,
-    )
+    scan = load_scan_image(image_bytes)
+    extraction = extractor.extract(scan.image)
     elapsed = time.perf_counter() - start
 
-    print(f" done ({elapsed:.1f}s, {len(blocks)} OCR blocks)")
+    block_count = extraction.get("ocr", {}).get("block_count", 0)
+    print(f" done ({elapsed:.1f}s, {block_count} ROI crops, template={extraction.get('template', '?')})")
 
     layout = extraction.get("layout", {})
     ocr_meta = extraction.get("ocr", {})
@@ -236,7 +232,7 @@ def run_ocr_on_image(
     gt = GROUND_TRUTH.get(image_name, {})
     field_results: list[FieldResult] = []
 
-    for spec in FIELD_SPECS:
+    for spec in FIELD_DESCRIPTORS:
         key = spec.key
         truth = gt.get(key)
         extracted_field = raw_fields.get(key)
@@ -447,16 +443,15 @@ def main() -> None:
             sys.exit(1)
 
     # Initialise OCR engine
-    print("\nInitialising EasyOCR engine (first load may take ~15-30s)...")
-    engine = EasyOcrEngine()
-    engine.load()
-    extractor = InBodyExtractor()
+    print("\nInitialising template ROI extractor (EasyOCR first load may take ~15-30s)...")
+    extractor = TemplateExtractor()
+    extractor._engine.load()
     print("Engine ready.\n")
 
     results: list[ImageResult] = []
     for name, filename in TEST_IMAGES.items():
         image_path = TEST_IMAGES_DIR / filename
-        result = run_ocr_on_image(engine, extractor, image_path, name)
+        result = run_ocr_on_image(extractor, image_path, name)
         print_image_report(result)
         results.append(result)
 
