@@ -111,7 +111,7 @@ class AuthService {
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode != 200) {
       throw Exception(
-        (body['detail'] as String?) ?? 'Social login failed (${response.statusCode})',
+        (body['message'] as String?) ?? 'Social login failed (${response.statusCode})',
       );
     }
     await _persist(body);

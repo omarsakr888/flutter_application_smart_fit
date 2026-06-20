@@ -31,11 +31,17 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
   final Map<String, TextEditingController> _controllers = {};
   final Map<String, String> _originalValues = {};
 
-  @override
-  void dispose() {
+  void _disposeControllers() {
     for (final controller in _controllers.values) {
       controller.dispose();
     }
+    _controllers.clear();
+    _originalValues.clear();
+  }
+
+  @override
+  void dispose() {
+    _disposeControllers();
     super.dispose();
   }
 
@@ -98,24 +104,22 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
     final file = await picker.pickImage(source: source, imageQuality: 85);
     if (file == null || !mounted) return;
 
+    _disposeControllers();
     setState(() {
       _selectedFile = file;
       _pickedImagePath = file.path;
       _ocrResult = null;
       _uploading = false;
-      _controllers.clear();
-      _originalValues.clear();
     });
   }
 
   void _removeImage() {
+    _disposeControllers();
     setState(() {
       _selectedFile = null;
       _pickedImagePath = null;
       _ocrResult = null;
       _uploading = false;
-      _controllers.clear();
-      _originalValues.clear();
     });
   }
 

@@ -24,6 +24,8 @@ MEALS_SAMPLE_SIZE = 60_000
 
 TEMPLATES_DIR = BASE_DIR / "templates"
 
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+
 REQUIRED_INPUT_FEATURES = (
     "Age",
     "Gender",
