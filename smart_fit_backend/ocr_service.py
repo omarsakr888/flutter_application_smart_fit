@@ -4,16 +4,23 @@ import logging
 from typing import Any
 
 from core import MAX_UPLOAD_BYTES
-from image_preprocessing import preprocess_image
-from inbody_extractor import InBodyExtractor
+from scan_preprocess import load_scan_image
 from easyocr_engine import EasyOcrEngine
 from scan_storage import ScanStorage
+from template_extractor import TemplateExtractor
 
 logger = logging.getLogger("smart_fit_backend.ocr")
 
 
 class OcrService:
-    def __init__(self, engine: EasyOcrEngine, extractor: InBodyExtractor, storage: ScanStorage) -> None:
+    """Template-aware OCR service — ROI-first extraction only."""
+
+    def __init__(
+        self,
+        engine: EasyOcrEngine,
+        extractor: TemplateExtractor,
+        storage: ScanStorage,
+    ) -> None:
         self.engine = engine
         self.extractor = extractor
         self.storage = storage
@@ -28,22 +35,17 @@ class OcrService:
         include_blocks: bool = False,
     ) -> dict[str, Any]:
         _validate_upload(image_bytes, content_type)
-        preprocessed = preprocess_image(image_bytes)
-        blocks = self.engine.extract_blocks(preprocessed.processed)
-        extraction = self.extractor.extract(
-            blocks=blocks,
-            image_width=preprocessed.width,
-            image_height=preprocessed.height,
-        )
-        extraction["preprocessing"] = {"steps": preprocessed.steps}
+        scan = load_scan_image(image_bytes)
+        extraction = self.extractor.extract(scan.image)
+        extraction["preprocessing"] = {"steps": scan.steps}
         extraction["image"] = {
             "filename": filename,
             "content_type": content_type,
-            "width": preprocessed.width,
-            "height": preprocessed.height,
+            "width": scan.width,
+            "height": scan.height,
         }
         if include_blocks:
-            extraction["ocr"]["blocks"] = [block.to_json() for block in blocks]
+            extraction["ocr"]["blocks"] = []
 
         image_path = self.storage.save_upload(image_bytes, filename)
         extraction_id = self.storage.create_extraction(
@@ -54,10 +56,10 @@ class OcrService:
             extraction=extraction,
         )
         logger.info(
-            "OCR extraction %s created for user=%s with %d fields",
+            "Template OCR extraction %s created for user=%s template=%s",
             extraction_id,
             user_id,
-            len(extraction["fields"]),
+            extraction.get("template", "unknown"),
         )
         return {
             "status": "success",

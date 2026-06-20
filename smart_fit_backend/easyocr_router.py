@@ -1,23 +1,23 @@
-"""easyocr_router.py — Standalone FastAPI route for the parallel EasyOCR pipeline."""
+"""easyocr_router.py — Production EasyOCR route for InBody scan extraction."""
 from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
-from easyocr_engine import EasyOcrEngine
-from scan_storage import ScanStorage
+if TYPE_CHECKING:
+    from ocr_service import OcrService
+    from scan_storage import ScanStorage
 
 logger = logging.getLogger(__name__)
-
-_engine = EasyOcrEngine()
 
 
 def build_easyocr_router(
     get_current_user: Callable[..., str],
     storage: ScanStorage,
+    ocr_service: OcrService,
 ) -> APIRouter:
     """Return an APIRouter exposing ``POST /api/v3/ocr/easyocr``."""
     router = APIRouter(tags=["easyocr"])
@@ -25,111 +25,27 @@ def build_easyocr_router(
     @router.post("/api/v3/ocr/easyocr")
     async def extract_easyocr_scan(
         file: UploadFile = File(...),
+        include_blocks: bool = Form(False),
         user_id: str = Depends(get_current_user),
     ) -> dict[str, Any]:
-        import asyncio
         try:
             image_bytes = await file.read()
-            # Run the CPU-bound OCR pipeline in a thread pool so we don't block
-            # the async event loop.
-            loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                None,
-                lambda: process_easyocr_image(
-                    image_bytes=image_bytes,
-                    filename=file.filename,
-                    content_type=file.content_type,
-                    user_id=user_id,
-                    storage=storage,
-                ),
+            return ocr_service.extract_scan(
+                image_bytes=image_bytes,
+                filename=file.filename,
+                content_type=file.content_type,
+                user_id=user_id,
+                include_blocks=include_blocks,
             )
-            return result
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         except Exception as exc:
-            logger.exception("EasyOCR pipeline failed")
+            logger.exception("EasyOCR extraction pipeline failed")
             raise HTTPException(
                 status_code=500,
                 detail=f"EasyOCR pipeline failed: {type(exc).__name__}: {exc}",
             ) from exc
 
     return router
-
-
-def process_easyocr_image(
-    *,
-    image_bytes: bytes,
-    filename: str | None,
-    content_type: str | None,
-    user_id: str,
-    storage: ScanStorage,
-) -> dict[str, Any]:
-    """Run the EasyOCR pipeline and persist the extraction."""
-    from core import MAX_UPLOAD_BYTES
-    from easyocr_extractor import EasyOcrExtractor
-    from image_preprocessing import preprocess_for_easyocr
-
-    _validate_upload(image_bytes, content_type, MAX_UPLOAD_BYTES)
-    preprocessed = preprocess_for_easyocr(image_bytes)
-
-    # y_tolerance=None → engine picks 1.5% of image height automatically
-    rows = _engine.extract_clustered_rows(preprocessed.processed, y_tolerance=None)
-    blocks = [block for row in rows for block in row]
-    avg_conf = (
-        round(sum(block.confidence for block in blocks) / len(blocks), 4)
-        if blocks
-        else 0.0
-    )
-
-    extraction = EasyOcrExtractor(
-        rows,
-        image_width=preprocessed.width,
-        image_height=preprocessed.height,
-        block_count=len(blocks),
-        average_confidence=avg_conf,
-    ).extract()
-
-    extraction["preprocessing"] = {"steps": preprocessed.steps}
-    extraction["image"] = {
-        "filename": filename,
-        "content_type": content_type,
-        "width": preprocessed.width,
-        "height": preprocessed.height,
-    }
-
-    image_path = storage.save_upload(image_bytes, filename)
-    extraction_id = storage.create_extraction(
-        user_id=user_id,
-        image_path=image_path,
-        filename=filename,
-        content_type=content_type,
-        extraction=extraction,
-    )
-
-    logger.info(
-        "EasyOCR extraction %s created for user=%s with %d/%d fields",
-        extraction_id,
-        user_id,
-        sum(1 for f in extraction["fields"].values() if f.get("value") is not None),
-        len(extraction["fields"]),
-    )
-
-    return {
-        "status": "success",
-        "extraction_id": extraction_id,
-        **extraction,
-    }
-
-
-def _validate_upload(
-    image_bytes: bytes,
-    content_type: str | None,
-    max_bytes: int,
-) -> None:
-    if not image_bytes:
-        raise ValueError("Uploaded image is empty.")
-    if len(image_bytes) > max_bytes:
-        raise ValueError("Uploaded image is too large. Maximum size is 10 MB.")
-    allowed = {"image/jpeg", "image/png", "image/webp", "image/jpg"}
-    if content_type and content_type.lower() not in allowed:
-        raise ValueError("Unsupported upload type. Use JPEG, PNG, or WebP.")

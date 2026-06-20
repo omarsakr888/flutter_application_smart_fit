@@ -8,6 +8,7 @@ import '../config/backend_config.dart';
 import '../models/ocr_result.dart';
 import '../models/plan_result.dart';
 import 'auth_service.dart';
+import 'user_service.dart';
 
 class ScanService {
   ScanService._();
@@ -54,16 +55,69 @@ class ScanService {
     );
   }
 
-  Future<PlanResult> generatePlan(
+  Future<void> confirmScan(
     OcrExtractResult ocr, {
     String goal = 'Balanced/Recovery',
-    String dietType = 'Omnivore',
-    int preferredDays = 4,
   }) async {
+    final uri = Uri.parse('${BackendConfig.baseUrl}/ocr/confirm');
+    final payload = <String, dynamic>{
+      'extraction_id': ocr.extractionId.isEmpty ? null : ocr.extractionId,
+      'features': {
+        'User_Goal': goal,
+        'Age': ocr.fieldValue('Age'),
+        'Gender': ocr.fieldValue('Gender'),
+        'Height': ocr.fieldValue('Height'),
+        'Weight': ocr.fieldValue('Weight'),
+        'SMM_(Skeletal_Muscle_Mass)': ocr.fieldValue('SMM_(Skeletal_Muscle_Mass)'),
+        'BMR_(Basal_Metabolic_Rate)': ocr.fieldValue('BMR_(Basal_Metabolic_Rate)'),
+        'FFM_of_Trunk': ocr.fieldValue('FFM_of_Trunk'),
+        'TBW_(Total_Body_Water)': ocr.fieldValue('TBW_(Total_Body_Water)'),
+        'ECW/TBW': ocr.fieldValue('ECW/TBW'),
+        '50kHz-Whole_Body_Phase_Angle':
+            ocr.fieldValue('50kHz-Whole_Body_Phase_Angle'),
+        'BFM_(Body_Fat_Mass)': ocr.fieldValue('BFM_(Body_Fat_Mass)'),
+        'PBF_(Percent_Body_Fat)': ocr.fieldValue('PBF_(Percent_Body_Fat)'),
+      },
+    };
+
+    final response = await _client
+        .post(
+          uri,
+          headers: await AuthService.instance.authHeaders,
+          body: jsonEncode(payload),
+        )
+        .timeout(const Duration(seconds: 60));
+
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode != 200) {
+      throw Exception(
+        (decoded['message'] as String?) ??
+            'Scan confirmation failed (${response.statusCode})',
+      );
+    }
+  }
+
+  Future<PlanResult> generatePlan(
+    OcrExtractResult ocr, {
+    String? goal,
+    String? dietType,
+    int? preferredDays,
+    String? scanId,
+  }) async {
+    final prefs = await UserService.instance.getPreferences();
+    final profile = await UserService.instance.getProfile();
+
+    final resolvedGoal =
+        goal ?? (profile?['goal'] as String?) ?? 'Balanced/Recovery';
+    final resolvedDiet =
+        dietType ?? (prefs?['diet_type'] as String?) ?? 'Omnivore';
+    final resolvedDays =
+        preferredDays ?? (prefs?['preferred_days'] as num?)?.toInt() ?? 4;
+
     final normalizeUri =
         Uri.parse('${BackendConfig.baseUrl}/api/v1/process-inbody-mlkit');
     final rawFeatures = <String, dynamic>{
-      'User_Goal': goal,
+      'User_Goal': resolvedGoal,
       'Age': ocr.fieldValue('Age'),
       'Gender': ocr.fieldValue('Gender'),
       'Height': ocr.fieldValue('Height'),
@@ -80,6 +134,7 @@ class ScanService {
     };
 
     final normalizePayload = <String, dynamic>{
+      'extraction_id': ocr.extractionId.isEmpty ? null : ocr.extractionId,
       'features': rawFeatures,
     };
 
@@ -106,8 +161,9 @@ class ScanService {
     final generateUri = Uri.parse('${BackendConfig.baseUrl}/api/v1/generate-plan');
     final payload = <String, dynamic>{
       ...normalizedFeatures,
-      'diet_type': dietType,
-      'preferred_days': preferredDays,
+      'diet_type': resolvedDiet,
+      'preferred_days': resolvedDays,
+      if (scanId != null && scanId.isNotEmpty) 'scan_id': scanId,
     };
 
     final response = await _client

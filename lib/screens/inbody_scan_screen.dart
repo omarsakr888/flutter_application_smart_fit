@@ -25,6 +25,7 @@ class InBodyScanScreen extends StatefulWidget {
 class _InBodyScanScreenState extends State<InBodyScanScreen> {
   OcrExtractResult? _ocrResult;
   bool _uploading = false;
+  bool _confirming = false;
   String? _pickedImagePath;
   XFile? _selectedFile;
   final Map<String, TextEditingController> _controllers = {};
@@ -84,6 +85,9 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
         _controllers[entry.key]!, 
         entry.value.$2,
         _originalValues[entry.key] ?? '',
+        field.confidence,
+        field.validationStatus,
+        field.isImputed,
       ));
     }
     return list;
@@ -139,10 +143,10 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
     }
   }
 
-  void _confirm() {
+  Future<void> _confirm() async {
     final ocr = _ocrResult;
-    if (ocr == null) return;
-    
+    if (ocr == null || _confirming) return;
+
     for (final entry in _controllers.entries) {
       final text = entry.value.text.trim();
       double? val;
@@ -151,18 +155,32 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
       } else {
         val = double.tryParse(text);
       }
-      
+
       if (val != null) {
         ocr.fields[entry.key] = OcrFieldResult(
-          value: val, 
-          unit: '',
+          value: val,
+          unit: ocr.fields[entry.key]?.unit ?? '',
           confidence: 1.0,
           isImputed: false,
+          validationStatus: 'valid',
+          reviewAction: 'auto_accept',
         );
       }
     }
-    
-    context.push(AppRoutes.planGeneration, extra: ocr);
+
+    setState(() => _confirming = true);
+    try {
+      await ScanService.instance.confirmScan(ocr);
+      if (!mounted) return;
+      context.push(AppRoutes.planGeneration, extra: ocr);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Confirmation failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _confirming = false);
+    }
   }
 
   @override
@@ -312,12 +330,22 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
                         borderRadius: BorderRadius.circular(isDark ? 8 : 7),
                       ),
                     ),
-                    onPressed: (_uploaded && !_uploading) ? _confirm : null,
+                    onPressed: (_uploaded && !_uploading && !_confirming) ? _confirm : null,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          'Confirm Extraction for Generating Plans',
+                        if (_confirming)
+                          const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        else ...[
+                          Text(
+                            'Confirm Extraction for Generating Plans',
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -326,6 +354,7 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
                         ),
                         const SizedBox(width: 14),
                         const Icon(Icons.check_circle_outline_rounded, size: 28),
+                        ],
                       ],
                     ),
                   ),
@@ -340,13 +369,25 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
 }
 
 class _Metric {
-  const _Metric(this.key, this.label, this.controller, this.unit, this.originalValue);
+  const _Metric(
+    this.key,
+    this.label,
+    this.controller,
+    this.unit,
+    this.originalValue,
+    this.confidence,
+    this.validationStatus,
+    this.isImputed,
+  );
 
   final String key;
   final String label;
   final TextEditingController controller;
   final String unit;
   final String originalValue;
+  final double confidence;
+  final String validationStatus;
+  final bool isImputed;
 }
 
 class _TopBar extends StatelessWidget {
@@ -924,8 +965,19 @@ class _MetricTileState extends State<_MetricTile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     
-    // Evaluate edited state manually based on original string. 
+    // Evaluate edited state manually based on original string.
     final bool isEdited = widget.metric.controller.text != widget.metric.originalValue;
+    final confidencePct = (widget.metric.confidence * 100).round();
+    final statusLabel = _statusLabel(
+      widget.metric.validationStatus,
+      widget.metric.isImputed,
+      isEdited,
+    );
+    final statusColor = _statusColor(
+      widget.metric.validationStatus,
+      widget.metric.isImputed,
+      isEdited,
+    );
     
     return GestureDetector(
       onTap: () => _focusNode.requestFocus(),
@@ -934,9 +986,9 @@ class _MetricTileState extends State<_MetricTile> {
           color: isDark ? const Color(0xFF2A3130) : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isEdited 
-              ? AppColors.teal 
-              : (isDark ? const Color(0xFF3B4642) : const Color(0xFFE2E6E8)),
+            color: isEdited
+              ? AppColors.teal
+              : statusColor.withValues(alpha: 0.55),
           ),
         ),
         child: Padding(
@@ -963,9 +1015,9 @@ class _MetricTileState extends State<_MetricTile> {
                       )
                     else
                       Text(
-                        'Auto-calculated — tap to edit',
+                        '$statusLabel · ${confidencePct}% confidence',
                         style: theme.textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFFD69A3A),
+                              color: statusColor,
                             ),
                       ),
                   ],
@@ -1001,24 +1053,80 @@ class _MetricTileState extends State<_MetricTile> {
                 ),
               ),
               const SizedBox(width: 4),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF3B4642) : const Color(0xFFF2F4F5),
-                  shape: BoxShape.circle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Icon(
-                    Icons.edit_rounded,
-                    size: 14,
-                    color: isDark ? Colors.white70 : const Color(0xFF6B7A77),
-                  ),
-                ),
+              _ConfidenceBadge(
+                confidence: widget.metric.confidence,
+                validationStatus: widget.metric.validationStatus,
+                isImputed: widget.metric.isImputed,
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  String _statusLabel(String status, bool isImputed, bool isEdited) {
+    if (isEdited) return 'Edited';
+    if (isImputed) return 'Estimated value';
+    switch (status) {
+      case 'valid':
+        return 'Verified';
+      case 'uncertain':
+        return 'Review recommended';
+      case 'failed_validation':
+        return 'Check value';
+      default:
+        return 'Tap to edit';
+    }
+  }
+
+  Color _statusColor(String status, bool isImputed, bool isEdited) {
+    if (isEdited) return AppColors.teal;
+    if (isImputed) return const Color(0xFF5B8DEF);
+    switch (status) {
+      case 'valid':
+        return const Color(0xFF2DB994);
+      case 'uncertain':
+        return const Color(0xFFD69A3A);
+      case 'failed_validation':
+        return const Color(0xFFE05A5A);
+      default:
+        return const Color(0xFF8B97A8);
+    }
+  }
+}
+
+class _ConfidenceBadge extends StatelessWidget {
+  const _ConfidenceBadge({
+    required this.confidence,
+    required this.validationStatus,
+    required this.isImputed,
+  });
+
+  final double confidence;
+  final String validationStatus;
+  final bool isImputed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (validationStatus) {
+      'valid' => const Color(0xFF2DB994),
+      'uncertain' => const Color(0xFFD69A3A),
+      'failed_validation' => const Color(0xFFE05A5A),
+      _ when isImputed => const Color(0xFF5B8DEF),
+      _ => const Color(0xFF8B97A8),
+    };
+    final icon = switch (validationStatus) {
+      'valid' => Icons.check_circle_outline,
+      'uncertain' => Icons.warning_amber_rounded,
+      'failed_validation' => Icons.error_outline,
+      _ when isImputed => Icons.auto_fix_high,
+      _ => Icons.help_outline,
+    };
+
+    return Tooltip(
+      message: '${(confidence * 100).round()}% OCR confidence',
+      child: Icon(icon, size: 18, color: color),
     );
   }
 }

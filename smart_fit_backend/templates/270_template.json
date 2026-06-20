@@ -1,0 +1,165 @@
+{
+  "report_type": "InBody270",
+  "reference_image": "test_inbody_versions/inbody270.png",
+  "reference_dimensions": { "width": 737, "height": 1024 },
+  "units_default": "metric",
+  "version_anchors": [
+    "[InBody 270]",
+    "[InBody270]",
+    "InBody 270",
+    "InBody270"
+  ],
+  "unique_section_markers": [
+    "Calorie Expenditure of Exercise",
+    "Obesity Evaluation"
+  ],
+  "absent_fields": ["ecw_tbw", "phase_angle"],
+  "exclusion_zones": [
+    {
+      "name": "body_composition_history",
+      "description": "Line graph — caused Weight/Age confusion with repeated axis values",
+      "roi": { "x": 0.02, "y": 0.60, "w": 0.64, "h": 0.38 }
+    },
+    {
+      "name": "calorie_expenditure",
+      "description": "Exercise calorie table — large numeric grid",
+      "roi": { "x": 0.66, "y": 0.50, "w": 0.32, "h": 0.28 }
+    },
+    {
+      "name": "impedance_table",
+      "roi": { "x": 0.66, "y": 0.78, "w": 0.32, "h": 0.10 }
+    },
+    {
+      "name": "obesity_bar_scales",
+      "description": "BMI/PBF scale ticks including 30, 35, 40",
+      "roi": { "x": 0.02, "y": 0.34, "w": 0.38, "h": 0.12 }
+    }
+  ],
+  "sections": {
+    "header": {
+      "anchor": "Test Date & Time",
+      "roi": { "x": 0.0, "y": 0.0, "w": 1.0, "h": 0.12 }
+    },
+    "body_composition": {
+      "anchor": "Body Composition Analysis",
+      "roi": { "x": 0.02, "y": 0.12, "w": 0.64, "h": 0.13 }
+    },
+    "muscle_fat": {
+      "anchor": "Muscle-Fat Analysis",
+      "roi": { "x": 0.02, "y": 0.26, "w": 0.64, "h": 0.10 }
+    },
+    "obesity": {
+      "anchor": "Obesity Analysis",
+      "roi": { "x": 0.02, "y": 0.36, "w": 0.64, "h": 0.10 }
+    },
+    "segmental_lean": {
+      "anchor": "Segmental Lean Analysis",
+      "roi": { "x": 0.02, "y": 0.44, "w": 0.32, "h": 0.16 }
+    },
+    "research_params": {
+      "anchor": "Research Parameters",
+      "roi": { "x": 0.66, "y": 0.38, "w": 0.32, "h": 0.12 }
+    }
+  },
+  "age_roi": {
+    "section": "header",
+    "anchor_labels": ["Age"],
+    "roi": { "x": 0.30, "y": 0.042, "w": 0.05, "h": 0.025 },
+    "expected_unit": "yrs",
+    "expected_format": "integer",
+    "valid_range": [10, 110],
+    "reference_value": 51
+  },
+  "gender_roi": {
+    "section": "header",
+    "anchor_labels": ["Gender"],
+    "roi": { "x": 0.38, "y": 0.042, "w": 0.10, "h": 0.025 },
+    "expected_unit": "word",
+    "expected_format": "Male|Female",
+    "reference_value": "Female"
+  },
+  "height_roi": {
+    "section": "header",
+    "anchor_labels": ["Height"],
+    "roi": { "x": 0.17, "y": 0.042, "w": 0.10, "h": 0.025 },
+    "expected_unit": "cm",
+    "expected_format": "decimal",
+    "valid_range": [120, 230],
+    "reference_value": 156.9
+  },
+  "weight_roi": {
+    "section": "body_composition",
+    "anchor_labels": ["Weight", "Weight (kg)"],
+    "roi": { "x": 0.40, "y": 0.215, "w": 0.08, "h": 0.022 },
+    "row_anchor": "Weight",
+    "value_column": 4,
+    "expected_unit": "kg",
+    "expected_format": "decimal",
+    "valid_range": [30, 200],
+    "reference_value": 59.1
+  },
+  "smm_roi": {
+    "section": "muscle_fat",
+    "anchor_labels": ["SMM", "Skeletal Muscle Mass"],
+    "roi": { "x": 0.42, "y": 0.285, "w": 0.08, "h": 0.022 },
+    "expected_unit": "kg",
+    "expected_format": "decimal",
+    "valid_range": [10, 80],
+    "reference_value": 19.6
+  },
+  "bmr_roi": {
+    "section": "research_params",
+    "anchor_labels": ["Basal Metabolic Rate", "BMR"],
+    "roi": { "x": 0.68, "y": 0.415, "w": 0.22, "h": 0.025 },
+    "expected_unit": "kcal",
+    "expected_format": "integer",
+    "valid_range": [800, 3500],
+    "reference_value": 1154
+  },
+  "tbw_roi": {
+    "section": "body_composition",
+    "anchor_labels": ["Total Body Water", "TBW"],
+    "roi": { "x": 0.40, "y": 0.145, "w": 0.08, "h": 0.022 },
+    "row_anchor": "Total Body Water",
+    "expected_unit": "L",
+    "expected_format": "decimal",
+    "valid_range": [15, 60],
+    "reference_value": 26.5
+  },
+  "segmental_ffm_roi": {
+    "section": "segmental_lean",
+    "anchor_labels": ["Trunk"],
+    "roi": { "x": 0.14, "y": 0.525, "w": 0.12, "h": 0.045 },
+    "expected_unit": "kg",
+    "expected_format": "decimal",
+    "valid_range": [10, 50],
+    "reference_value": 16.7
+  },
+  "ecw_tbw_roi": {
+    "present": false,
+    "notes": "Not available on InBody 270"
+  },
+  "phase_angle_roi": {
+    "present": false,
+    "notes": "Not available on InBody 270 reference scan"
+  },
+  "bfm_roi": {
+    "section": "body_composition",
+    "anchor_labels": ["Body Fat Mass", "BFM"],
+    "roi": { "x": 0.40, "y": 0.195, "w": 0.08, "h": 0.022 },
+    "row_anchor": "Body Fat Mass",
+    "expected_unit": "kg",
+    "expected_format": "decimal",
+    "valid_range": [3, 100],
+    "reference_value": 22.8
+  },
+  "pbf_roi": {
+    "section": "obesity",
+    "anchor_labels": ["PBF", "Percent Body Fat"],
+    "roi": { "x": 0.42, "y": 0.385, "w": 0.08, "h": 0.022 },
+    "expected_unit": "%",
+    "expected_format": "decimal",
+    "valid_range": [5, 60],
+    "reference_value": 38.6
+  }
+}

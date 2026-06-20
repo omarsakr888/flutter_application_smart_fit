@@ -23,6 +23,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from document_analyser import DocumentLayout
 from ocr_engine import OcrToken
+from ocr_normalizer import parse_normalized_float
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -258,18 +259,23 @@ class FieldExtractor:
     def extract_all(self, layout: DocumentLayout) -> Dict[str, dict]:
         """
         Returns a dict mapping ``featureKey`` ->
-        ``{"value": float | None, "unit": str, "confidence": float}``.
+        ``{"value", "unit", "confidence", "source_region", "extraction_method"}``.
         """
         # Pre-compute set of token values that appear >= 3 times (scale markers)
         self._scale_value_set: Set[float] = self._find_global_scale_values(layout.raw_tokens)
 
         results: Dict[str, dict] = {}
         for desc in FIELD_DESCRIPTORS:
-            raw_val, confidence = self._extract_field(desc, layout)
+            raw_val, confidence, method = self._extract_field(desc, layout)
+            region = desc.section_hint
+            if region not in layout.sections and desc.secondary_section_hint:
+                region = desc.secondary_section_hint
             results[desc.key] = {
                 "value": raw_val,
                 "unit": desc.unit_in_output,
                 "confidence": round(float(confidence), 4),
+                "source_region": region,
+                "extraction_method": method,
             }
         return results
 
@@ -302,41 +308,41 @@ class FieldExtractor:
         self,
         desc: FieldDescriptor,
         layout: DocumentLayout,
-    ) -> Tuple[Optional[float], float]:
-        """Tries Strategy A → B → C in order. Returns (raw_value, confidence)."""
+    ) -> Tuple[Optional[float], float, str]:
+        """Tries Strategy A → B → C in order. Returns (raw_value, confidence, method)."""
 
         # For Height specifically: always try structural first since spatial
         # confuses it with adjacent Weight/Age values on the header table.
         if desc.key == "Height":
             val_c, conf_c = self._structural_search(desc, layout)
             if val_c is not None and self._in_range_loose(val_c, desc, layout.units):
-                return val_c, conf_c
-            return None, 0.0
+                return val_c, conf_c, "structural"
+            return None, 0.0, "none"
 
         # For Age: structural is more reliable (avoids grabbing height values)
         if desc.key == "Age":
             val_c, conf_c = self._structural_search(desc, layout)
             if val_c is not None and self._in_range_loose(val_c, desc, layout.units):
-                return val_c, conf_c
+                return val_c, conf_c, "structural"
             # Fall through to spatial/semantic if structural fails
 
         # Strategy A — Spatial
         val_a, conf_a = self._spatial_search(desc, layout)
         if val_a is not None and self._in_range_loose(val_a, desc, layout.units):
-            return val_a, conf_a
+            return val_a, conf_a, "spatial"
 
         # Strategy B — Semantic
         val_b, conf_b = self._semantic_search(desc, layout)
         if val_b is not None and self._in_range_loose(val_b, desc, layout.units):
             # Slight confidence penalty vs spatial
-            return val_b, conf_b * 0.92
+            return val_b, conf_b * 0.92, "semantic"
 
         # Strategy C — Structural rules for hard cases
         val_c, conf_c = self._structural_search(desc, layout)
         if val_c is not None and self._in_range_loose(val_c, desc, layout.units):
-            return val_c, conf_c * 0.85
+            return val_c, conf_c * 0.85, "structural"
 
-        return None, 0.0
+        return None, 0.0, "none"
 
     # ─────────────────────────────────────────────────────────────────────────
     # Strategy A — Spatial search
@@ -978,15 +984,10 @@ class FieldExtractor:
     @staticmethod
     def _safe_float(text: str) -> Optional[float]:
         """Parse a float from text, returning None on failure."""
-        try:
-            # Replace comma-as-decimal-separator
-            cleaned = re.sub(r"[^\d.\-]", "", text.replace(",", "."))
-            if not cleaned or cleaned.count(".") > 1:
-                return None
-            val = float(cleaned)
-            return None if (math.isnan(val) or math.isinf(val)) else val
-        except (ValueError, TypeError):
+        val = parse_normalized_float(text)
+        if val is None:
             return None
+        return None if (math.isnan(val) or math.isinf(val)) else val
 
     def _parse_token(self, text: str, value_type: str) -> Optional[float]:
         """Parse a single OCR token as the target value type."""

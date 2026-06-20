@@ -19,9 +19,10 @@ from auth.jwt import create_access_token, verify_token
 from core import REQUIRED_INPUT_FEATURES, configure_logging
 
 load_dotenv()
-from inbody_extractor import InBodyExtractor
+from template_extractor import TemplateExtractor
 from math_engine import MathEngine
 from matching_engine import MatchingEngine
+from delta_engine import caloric_modifier, compute_delta
 from ml_engine import predict_focus_zone
 from ml_service import PredictionRequest, PredictionService
 from ocr_schemas import ConfirmScanRequest
@@ -38,7 +39,7 @@ user_storage = UserStorage()
 ocr_engine = EasyOcrEngine()
 ocr_service = OcrService(
     engine=ocr_engine,
-    extractor=InBodyExtractor(),
+    extractor=TemplateExtractor(),
     storage=scan_storage,
 )
 math_engine     = MathEngine()
@@ -102,7 +103,7 @@ def get_current_user(
         )
 
 
-app.include_router(build_easyocr_router(get_current_user, scan_storage))
+app.include_router(build_easyocr_router(get_current_user, scan_storage, ocr_service))
 
 
 # ─── Exception handlers ───────────────────────────────────────────────────────
@@ -439,6 +440,14 @@ class GeneratePlanRequest(BaseModel):
         le=7,
         description="Workout days per week (1-7).",
     )
+    plan_seed: int | None = Field(
+        default=None,
+        description="Deterministic seed for meal/exercise selection.",
+    )
+    scan_id: str | None = Field(
+        default=None,
+        description="Confirmed scan ID for progress delta context.",
+    )
     user_id: str = Field(default="local-user", description="User ID to store the generated plan.")
 
     @field_validator("gender")
@@ -494,10 +503,21 @@ def generate_plan(
                 detail="ML model is not loaded yet. Please try again shortly.",
             )
 
-        focus_zone, ml_confidence = predict_focus_zone(
+        ml_features = payload.to_ml_features()
+        focus_zone, ml_confidence, raw_persona = predict_focus_zone(
             service=prediction_service,
-            features=payload.to_ml_features(),
+            features=ml_features,
         )
+
+        # Progress delta vs previous confirmed scan
+        previous_features: dict[str, Any] | None = None
+        history = scan_storage.list_history(user_id=user_id, limit=2)
+        if len(history) > 1:
+            previous_features = history[1].get("features")
+        scan_delta = compute_delta(ml_features, previous_features)
+        delta_adj = caloric_modifier(scan_delta)
+
+        plan_seed = payload.plan_seed if payload.plan_seed is not None else abs(hash(user_id)) % 100_000
 
         # ── 2. Math Engine ───────────────────────────────────────────────────
         math_result = math_engine.calculate(
@@ -510,6 +530,7 @@ def generate_plan(
             phase_angle=float(payload.phase_angle),
             goal=payload.user_goal,
             preferred_days=int(payload.preferred_days),
+            extra_caloric_adjustment=delta_adj,
         )
 
         # ── 3. Matching Engine ───────────────────────────────────────────────
@@ -518,6 +539,7 @@ def generate_plan(
             focus_zone=focus_zone,
             ml_confidence=ml_confidence,
             diet_type=payload.diet_type,
+            plan_seed=plan_seed,
         )
 
         # ── Serialise dataclasses to plain dicts for JSON ────────────────────
@@ -531,8 +553,22 @@ def generate_plan(
 
         response: dict[str, Any] = {
             "status": "success",
+            "persona": raw_persona,
             "focus_zone": plan.focus_zone,
             "ml_confidence_pct": plan.ml_confidence_pct,
+            "plan_seed": plan_seed,
+            "scan_id": payload.scan_id,
+            "scan_delta": {
+                "has_previous": scan_delta.has_previous,
+                "weight_delta_kg": scan_delta.weight_delta_kg,
+                "pbf_delta_pp": scan_delta.pbf_delta_pp,
+                "smm_delta_kg": scan_delta.smm_delta_kg,
+                "tbw_delta_l": scan_delta.tbw_delta_l,
+                "weeks_between": scan_delta.weeks_between,
+            },
+            "recovery_adjustments": {
+                "caloric_modifier_pct": round(delta_adj * 100, 2),
+            },
             "intensity_multiplier": plan.intensity_multiplier,
             "intensity_reason": plan.intensity_reason,
             "nutrition": {

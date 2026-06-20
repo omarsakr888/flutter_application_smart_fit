@@ -22,7 +22,7 @@ MEALS_FALLBACK_CSV  = DATASETS_DIR / "cleaned_intermediate_dataset.csv"
 # Number of meal rows sampled from disk per engine load (keeps RAM low)
 MEALS_SAMPLE_SIZE = 60_000
 
-MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+TEMPLATES_DIR = BASE_DIR / "templates"
 
 REQUIRED_INPUT_FEATURES = (
     "Age",

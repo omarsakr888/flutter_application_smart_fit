@@ -114,6 +114,7 @@ class MathEngine:
         phase_angle: float,     # bioelectrical phase angle (degrees)
         goal: str,
         preferred_days: int,    # 0-7 workout days per week
+        extra_caloric_adjustment: float = 0.0,
     ) -> MathEngineResult:
         """Run the full deterministic pipeline and return a MathEngineResult."""
 
@@ -137,7 +138,9 @@ class MathEngine:
 
         # 4. Goal-aware caloric adjustment
         caloric_adjustment = _GOAL_CALORIC_ADJUSTMENTS.get(goal, 0.0)
-        target_calories = round(tdee * (1.0 + caloric_adjustment), 1)
+        target_calories = round(
+            tdee * (1.0 + caloric_adjustment + extra_caloric_adjustment), 1
+        )
 
         # 5. Macro split
         macros = self._calculate_macros(target_calories, goal)
