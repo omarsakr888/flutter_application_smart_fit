@@ -9,7 +9,7 @@ import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/smart_fit_theme.dart';
 
-enum _Gender { male, female, other }
+enum _Gender { male, female }
 
 enum _FitnessGoal { loseFat, buildMuscle, maintain }
 
@@ -29,6 +29,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   _Gender _gender = _Gender.male;
   _FitnessGoal _goal = _FitnessGoal.buildMuscle;
+
+  String? _ageError;
+  String? _heightError;
+  String? _weightError;
+  String? _targetError;
 
   void _rebadge() => setState(() {});
 
@@ -50,10 +55,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     super.dispose();
   }
 
-  void _snack(Locale l, String message) {
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(message)));
-  }
-
   double? _parseDouble(String raw) => double.tryParse(raw.trim());
 
   int? _parseDeltaBadge() {
@@ -65,30 +66,36 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   Future<void> _continue(Locale l) async {
+    setState(() {
+      _ageError = null;
+      _heightError = null;
+      _weightError = null;
+      _targetError = null;
+    });
+
     final age = int.tryParse(_age.text.trim());
     if (age == null || age < 13 || age > 120) {
-      _snack(l, ProfileSetupStrings.badAge(l));
+      setState(() => _ageError = ProfileSetupStrings.badAge(l));
       return;
     }
     final h = _parseDouble(_height.text);
     if (h == null || h < 100 || h > 250) {
-      _snack(l, ProfileSetupStrings.badHeight(l));
+      setState(() => _heightError = ProfileSetupStrings.badHeight(l));
       return;
     }
     final wt = _parseDouble(_weight.text);
     if (wt == null || wt < 30 || wt > 400) {
-      _snack(l, ProfileSetupStrings.badWeight(l));
+      setState(() => _weightError = ProfileSetupStrings.badWeight(l));
       return;
     }
     final tgt = _parseDouble(_target.text);
     if (tgt == null || tgt < 30 || tgt > 400) {
-      _snack(l, ProfileSetupStrings.badWeight(l));
+      setState(() => _targetError = ProfileSetupStrings.badWeight(l));
       return;
     }
     final genderStr = switch (_gender) {
       _Gender.male => 'Male',
       _Gender.female => 'Female',
-      _Gender.other => 'Other',
     };
     final goalStr = switch (_goal) {
       _FitnessGoal.loseFat => 'Lose Fat',
@@ -228,6 +235,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       controller: _age,
                       borderColor: fieldBorder,
                       fill: numberFill,
+                      errorText: _ageError,
                       formatting: FilteringTextInputFormatter.digitsOnly,
                       keyboardType: TextInputType.number,
                     ),
@@ -248,7 +256,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                               label: switch (g) {
                                 _Gender.male => ProfileSetupStrings.male(l),
                                 _Gender.female => ProfileSetupStrings.female(l),
-                                _Gender.other => ProfileSetupStrings.other(l),
                               },
                               selected: _gender == g,
                               onTap: () => setState(() => _gender = g),
@@ -269,6 +276,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             controller: _height,
                             borderColor: fieldBorder,
                             fill: numberFill,
+                            errorText: _heightError,
                             formatting: FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                             keyboardType:
                                 const TextInputType.numberWithOptions(decimal: true),
@@ -281,6 +289,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             controller: _weight,
                             borderColor: fieldBorder,
                             fill: numberFill,
+                            errorText: _weightError,
                             formatting: FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                             keyboardType:
                                 const TextInputType.numberWithOptions(decimal: true),
@@ -370,6 +379,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         ),
                         filled: true,
                         fillColor: numberFill,
+                        errorText: _targetError,
                         contentPadding:
                             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         border: OutlineInputBorder(
@@ -435,6 +445,7 @@ class _NumericBlock extends StatelessWidget {
     required this.borderColor,
     required this.fill,
     required this.formatting,
+    this.errorText,
     this.keyboardType =
         const TextInputType.numberWithOptions(decimal: true),
   });
@@ -444,6 +455,7 @@ class _NumericBlock extends StatelessWidget {
   final Color borderColor;
   final Color fill;
   final TextInputFormatter formatting;
+  final String? errorText;
   final TextInputType keyboardType;
 
   @override
@@ -468,6 +480,7 @@ class _NumericBlock extends StatelessWidget {
           decoration: InputDecoration(
             filled: true,
             fillColor: fill,
+            errorText: errorText,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

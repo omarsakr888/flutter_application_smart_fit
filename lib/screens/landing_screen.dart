@@ -6,9 +6,39 @@ import '../localization/landing_strings.dart';
 import '../router/app_routes.dart';
 import '../theme/app_colors.dart';
 import '../theme/smart_fit_theme.dart';
+import '../widgets/animated_smart_fit_logo.dart';
 
-class LandingScreen extends StatelessWidget {
+class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
+
+  @override
+  State<LandingScreen> createState() => _LandingScreenState();
+}
+
+class _LandingScreenState extends State<LandingScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    );
+    _fadeController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +48,9 @@ class LandingScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      body: SafeArea(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
@@ -37,23 +69,41 @@ class LandingScreen extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      _LogoBubble(isDark: isDark),
-                      const SizedBox(height: 22),
-                      Text(
-                        LandingStrings.title(l),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: Theme.of(context).colorScheme.onSurface,
+                      AnimatedSmartFitLogo(isDark: isDark, size: 120),
+                      const SizedBox(height: 18),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'SMART',
+                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? Colors.white : Colors.black,
+                                    letterSpacing: 2.0,
+                                    fontSize: 38,
+                                  ),
                             ),
+                            TextSpan(
+                              text: 'FIT',
+                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: const Color(0xFF8A1028),
+                                    letterSpacing: 2.0,
+                                    fontSize: 38,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 14),
                       Text(
                         LandingStrings.tagline(l),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: ext.mutedText,
-                              height: 1.45,
+                              color: const Color(0xFF9CA3AF), // Light gray
+                              height: 1.5,
+                              fontSize: 15,
                             ),
                       ),
                       const SizedBox(height: 32),
@@ -111,6 +161,7 @@ class LandingScreen extends StatelessWidget {
               const SizedBox(height: 20),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -237,39 +288,6 @@ class _ThemeOrb extends StatelessWidget {
             size: 22,
             color: selected ? iconWhenActive : iconWhenIdle,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LogoBubble extends StatelessWidget {
-  const _LogoBubble({required this.isDark});
-
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 92,
-      height: 92,
-      decoration: BoxDecoration(
-        color: AppColors.teal,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.teal.withValues(alpha: isDark ? 0.35 : 0.22),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Transform.rotate(
-        angle: -0.45,
-        child: const Icon(
-          Icons.fitness_center_rounded,
-          color: Colors.white,
-          size: 44,
         ),
       ),
     );

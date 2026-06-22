@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic import ValidationError
 
 from auth.jwt import create_access_token, verify_token
-from core import REQUIRED_INPUT_FEATURES, configure_logging
+from core import CORE_REQUIRED_FIELDS, REQUIRED_INPUT_FEATURES, configure_logging
 
 load_dotenv()
 from template_extractor import TemplateExtractor
@@ -31,6 +31,7 @@ from easyocr_engine import EasyOcrEngine
 from easyocr_router import build_easyocr_router
 from scan_storage import ScanStorage
 from user_storage import UserStorage
+from chatbot_service import chatbot_service
 
 logger = configure_logging()
 prediction_service = PredictionService()
@@ -319,7 +320,7 @@ def _normalize_and_impute_mlkit_features(
 
     missing = [
         key
-        for key in REQUIRED_INPUT_FEATURES
+        for key in CORE_REQUIRED_FIELDS
         if key != "User_Goal" and values.get(key) is None
     ]
     if missing:
@@ -329,7 +330,7 @@ def _normalize_and_impute_mlkit_features(
         )
 
     features = {
-        key: str(values[key]) if key == "User_Goal" else float(values[key])  # type: ignore[arg-type]
+        key: (str(values[key]) if key == "User_Goal" else (float(values[key]) if values.get(key) is not None else None))
         for key in REQUIRED_INPUT_FEATURES
     }
     metadata = {
@@ -415,18 +416,18 @@ class GeneratePlanRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     # ── InBody biometrics (aliased to match existing InBodyPredictionRequest) ──
-    age:    float = Field(alias="Age",    gt=0, le=120)
-    gender: float | str = Field(alias="Gender")
-    height: float = Field(alias="Height", gt=0)
-    weight: float = Field(alias="Weight", gt=0)
-    smm:    float = Field(alias="SMM_(Skeletal_Muscle_Mass)", gt=0)
-    bmr:    float = Field(alias="BMR_(Basal_Metabolic_Rate)", gt=0)
-    ffm_of_trunk:  float = Field(alias="FFM_of_Trunk",          gt=0)
-    tbw:           float = Field(alias="TBW_(Total_Body_Water)", ge=0)
-    ecw_tbw:       float = Field(alias="ECW/TBW",               ge=0)
-    phase_angle:   float = Field(alias="50kHz-Whole_Body_Phase_Angle", ge=0)
-    body_fat_mass: float = Field(alias="BFM_(Body_Fat_Mass)",   ge=0)
-    percent_body_fat: float = Field(alias="PBF_(Percent_Body_Fat)", ge=0)
+    age:    Any = Field(alias="Age")
+    gender: Any = Field(alias="Gender")
+    height: Any = Field(alias="Height")
+    weight: Any = Field(alias="Weight")
+    smm:    Any = Field(None, alias="SMM_(Skeletal_Muscle_Mass)")
+    bmr:    Any = Field(alias="BMR_(Basal_Metabolic_Rate)")
+    ffm_of_trunk:  Any = Field(None, alias="FFM_of_Trunk")
+    tbw:           Any = Field(None, alias="TBW_(Total_Body_Water)")
+    ecw_tbw:       Any = Field(None, alias="ECW/TBW")
+    phase_angle:   Any = Field(None, alias="50kHz-Whole_Body_Phase_Angle")
+    body_fat_mass: Any = Field(None, alias="BFM_(Body_Fat_Mass)")
+    percent_body_fat: Any = Field(None, alias="PBF_(Percent_Body_Fat)")
     user_goal: str  = Field(alias="User_Goal")
 
     # ── User preferences ─────────────────────────────────────────────────────
@@ -462,22 +463,30 @@ class GeneratePlanRequest(BaseModel):
             raise ValueError("Gender must be 0/1 or 'male'/'female'.")
         return float(value)
 
-    def to_ml_features(self) -> dict[str, float | str]:
-        """Build the feature dict expected by PredictionService."""
+    def _extract_val(self, v: Any) -> float | None:
+        if isinstance(v, dict):
+            return v.get("value")
+        if v is None:
+            return None
+        return float(v)
+
+    def to_ml_features(self) -> dict[str, float | str | None]:
+        """Build the feature dict expected by PredictionService.
+        """
         return {
             "User_Goal":                    self.user_goal,
-            "Age":                          float(self.age),
-            "Gender":                       float(self.gender),
-            "Height":                       float(self.height),
-            "Weight":                       float(self.weight),
-            "SMM_(Skeletal_Muscle_Mass)":   float(self.smm),
-            "BMR_(Basal_Metabolic_Rate)":   float(self.bmr),
-            "FFM_of_Trunk":                 float(self.ffm_of_trunk),
-            "TBW_(Total_Body_Water)":        float(self.tbw),
-            "ECW/TBW":                      float(self.ecw_tbw),
-            "50kHz-Whole_Body_Phase_Angle": float(self.phase_angle),
-            "BFM_(Body_Fat_Mass)":          float(self.body_fat_mass),
-            "PBF_(Percent_Body_Fat)":        float(self.percent_body_fat),
+            "Age":                          self._extract_val(self.age),
+            "Gender":                       self._extract_val(self.gender),
+            "Height":                       self._extract_val(self.height),
+            "Weight":                       self._extract_val(self.weight),
+            "SMM_(Skeletal_Muscle_Mass)":   self._extract_val(self.smm),
+            "BMR_(Basal_Metabolic_Rate)":   self._extract_val(self.bmr),
+            "FFM_of_Trunk":                 self._extract_val(self.ffm_of_trunk),
+            "TBW_(Total_Body_Water)":       self._extract_val(self.tbw),
+            "ECW/TBW":                      self._extract_val(self.ecw_tbw),
+            "50kHz-Whole_Body_Phase_Angle": self._extract_val(self.phase_angle),
+            "BFM_(Body_Fat_Mass)":          self._extract_val(self.body_fat_mass),
+            "PBF_(Percent_Body_Fat)":       self._extract_val(self.percent_body_fat),
         }
 
 
@@ -520,14 +529,22 @@ def generate_plan(
         plan_seed = payload.plan_seed if payload.plan_seed is not None else abs(hash(user_id)) % 100_000
 
         # ── 2. Math Engine ───────────────────────────────────────────────────
+        
+        # Extract the biological metrics safely for the Math Engine
+        def _e(v: Any) -> float | None:
+            if isinstance(v, dict):
+                return v.get("value")
+            return v if v is not None else None
+
         math_result = math_engine.calculate(
-            age=float(payload.age),
-            gender=float(payload.gender),
-            weight_kg=float(payload.weight),
-            height_cm=float(payload.height),
-            smm_kg=float(payload.smm),
-            ecw_tbw=float(payload.ecw_tbw),
-            phase_angle=float(payload.phase_angle),
+            age=float(_e(payload.age) or 0.0),
+            gender=float(_e(payload.gender) or 0.0),
+            weight_kg=float(_e(payload.weight) or 0.0),
+            height_cm=float(_e(payload.height) or 0.0),
+            smm_kg=_e(payload.smm),
+            ecw_tbw=_e(payload.ecw_tbw),
+            phase_angle=_e(payload.phase_angle),
+            ocr_bmr=_e(payload.bmr),
             goal=payload.user_goal,
             preferred_days=int(payload.preferred_days),
             extra_caloric_adjustment=delta_adj,
@@ -1006,3 +1023,25 @@ def get_achievements(user_id: str = Depends(get_current_user)) -> dict[str, obje
     except Exception as exc:
         logger.exception("get achievements failed")
         raise HTTPException(status_code=500, detail="Unable to fetch achievements.") from exc
+
+# ── Chatbot Layer ────────────────────────────────────────────────────────────
+
+class ChatRequest(BaseModel):
+    message: str
+    history: list[dict[str, Any]] | None = None
+
+@app.post("/api/v1/chat")
+def chat_endpoint(payload: ChatRequest, user_id: str = Depends(get_current_user)) -> dict[str, Any]:
+    system_prompt = (
+        "You are SmartFit AI Coach. "
+        "You provide:\n"
+        "- general fitness advice\n"
+        "- nutrition guidance\n"
+        "- workout explanations\n"
+        "Do not access CSV or ML data yet."
+    )
+    return chatbot_service.generate_response(
+        system_prompt=system_prompt,
+        user_message=payload.message,
+        history=payload.history,
+    )

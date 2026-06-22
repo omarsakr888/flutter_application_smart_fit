@@ -147,6 +147,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
             ),
             Divider(height: 1, color: isDark ? const Color(0xFF272729) : const Color(0xFFEDEFF0)),
+            _StickyMacroBar(
+              proteinG: proteinG ?? 38,
+              carbsG: carbsG ?? 52,
+              fatG: fatG ?? 22,
+              isDark: isDark,
+            ),
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(bottom: isDark ? 28 : 36),
@@ -370,6 +376,56 @@ class _MoreSheet extends StatelessWidget {
           const SizedBox(height: 8),
         ],
       ),
+    );
+  }
+}
+
+class _StickyMacroBar extends StatelessWidget {
+  const _StickyMacroBar({
+    required this.proteinG,
+    required this.carbsG,
+    required this.fatG,
+    required this.isDark,
+  });
+
+  final int proteinG;
+  final int carbsG;
+  final int fatG;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isDark ? const Color(0xFF1E1E1F) : const Color(0xFFF9FAFB);
+    final textC = isDark ? Colors.white70 : const Color(0xFF4B5563);
+    return Container(
+      color: bg,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _MacroDot(label: '${proteinG}g Protein', color: const Color(0xFFEF4444), textColor: textC),
+          _MacroDot(label: '${carbsG}g Carbs', color: const Color(0xFFF59E0B), textColor: textC),
+          _MacroDot(label: '${fatG}g Fat', color: const Color(0xFF3B82F6), textColor: textC),
+        ],
+      ),
+    );
+  }
+}
+
+class _MacroDot extends StatelessWidget {
+  const _MacroDot({required this.label, required this.color, required this.textColor});
+  final String label;
+  final Color color;
+  final Color textColor;
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 6),
+        Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: textColor, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }
@@ -788,18 +844,6 @@ class _IngredientTile extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: isDark ? 14 : 16, vertical: isDark ? 15 : 13),
           child: Row(
             children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: Checkbox(
-                  value: checked,
-                  onChanged: (_) => onToggle(),
-                  activeColor: AppColors.teal,
-                  side: BorderSide(color: isDark ? const Color(0xFF4A4C52) : const Color(0xFF8D9692)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
-                ),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   ingredient.name,
@@ -818,6 +862,18 @@ class _IngredientTile extends StatelessWidget {
                     color: isDark ? const Color(0xFF7E8088) : const Color(0xFF5F6268),
                   ),
                 ),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: Checkbox(
+                  value: checked,
+                  onChanged: (_) => onToggle(),
+                  activeColor: AppColors.teal,
+                  side: BorderSide(color: isDark ? const Color(0xFF4A4C52) : const Color(0xFF8D9692)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
+                ),
+              ),
             ],
           ),
         ),

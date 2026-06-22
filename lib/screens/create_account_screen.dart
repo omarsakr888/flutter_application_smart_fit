@@ -20,6 +20,7 @@ class CreateAccountScreen extends StatefulWidget {
 }
 
 class _CreateAccountScreenState extends State<CreateAccountScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
@@ -29,6 +30,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool _obscureConfirm = true;
   bool _agreePrivacy = true;
   bool _busy = false;
+  String? _authError;
 
   @override
   void dispose() {
@@ -57,27 +59,21 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool _isAr(Locale l) => l.languageCode.toLowerCase() == 'ar';
 
   Future<void> _onCreate(Locale l) async {
+    setState(() => _authError = null);
+    if (!_formKey.currentState!.validate()) return;
+    
     final email = _email.text.trim();
     final pass = _password.text;
-    final pass2 = _confirm.text;
 
-    if (email.isEmpty || pass.isEmpty || pass2.isEmpty) {
-      _snack(_isAr(l) ? 'أكمل كل الحقول' : 'Fill in email and both passwords');
-      return;
-    }
     if (!_agreePrivacy) {
       _snack(SignupStrings.acceptPrivacy(l));
-      return;
-    }
-    if (pass != pass2) {
-      _snack(SignupStrings.passwordsMismatch(l));
       return;
     }
     await _runGuarded(() async {
       try {
         await AuthService.instance.register(email, pass);
       } catch (e) {
-        _snack('$e');
+        setState(() => _authError = e.toString());
         return;
       }
       if (!mounted) return;
@@ -100,11 +96,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         if (!mounted) return;
         context.push(AppRoutes.profileSetup);
       } on StateError catch (e) {
-        _snack(e.message);
+        setState(() => _authError = e.message);
       } on UnsupportedError catch (e) {
-        _snack('$e');
+        setState(() => _authError = e.toString());
       } catch (e) {
-        _snack('$e');
+        setState(() => _authError = e.toString());
       }
     });
   }
@@ -135,9 +131,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
             SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                     const SizedBox(height: 4),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -201,10 +199,14 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           ),
                     ),
                     const SizedBox(height: 8),
-                    TextField(
+                    TextFormField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? (_isAr(l) ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter your email')
+                          : null,
                       decoration: _fieldDecoration(hintText: SignupStrings.emailHint(l)),
                     ),
                     const SizedBox(height: 16),
@@ -215,9 +217,13 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           ),
                     ),
                     const SizedBox(height: 8),
-                    TextField(
+                    TextFormField(
                       controller: _password,
                       obscureText: _obscure,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (v) => v == null || v.isEmpty
+                          ? (_isAr(l) ? 'الرجاء إدخال كلمة المرور' : 'Please enter a password')
+                          : null,
                       decoration: _fieldDecoration(
                         hintText: '••••••••',
                         suffixPass: IconButton(
@@ -238,11 +244,22 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           ),
                     ),
                     const SizedBox(height: 8),
-                    TextField(
+                    TextFormField(
                       controller: _confirm,
                       obscureText: _obscureConfirm,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return _isAr(l) ? 'الرجاء تأكيد كلمة المرور' : 'Please confirm your password';
+                        }
+                        if (v != _password.text) {
+                          return SignupStrings.passwordsMismatch(l);
+                        }
+                        return null;
+                      },
                       decoration: _fieldDecoration(
                         hintText: '••••••••',
+                        errorText: _authError,
                         suffixPass: IconButton(
                           tooltip: _obscureConfirm ? 'Show password' : 'Hide password',
                           onPressed: () =>
@@ -452,6 +469,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 ),
               ),
             ),
+            ),
             if (_busy)
               const Positioned.fill(
                 child: ColoredBox(
@@ -468,6 +486,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   InputDecoration _fieldDecoration({
     required String hintText,
     Widget? suffixPass,
+    String? errorText,
   }) {
     final ctx = context;
     final ext = ctx.smartFitExt;
@@ -478,6 +497,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     return InputDecoration(
       hintText: hintText,
       hintStyle: TextStyle(color: ext.mutedText.withValues(alpha: 0.72)),
+      errorText: errorText,
       filled: true,
       fillColor: fill,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -490,6 +510,15 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
+      ),
+      errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 12),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
       ),
     );
   }

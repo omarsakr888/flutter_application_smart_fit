@@ -33,6 +33,12 @@ class _SmartFitAppState extends State<SmartFitApp> {
     });
   }
 
+  void _setThemeMode(ThemeMode mode) {
+    setState(() {
+      _themeMode = mode;
+    });
+  }
+
   void _toggleLocaleEnAr() {
     setState(() {
       _locale =
@@ -46,6 +52,7 @@ class _SmartFitAppState extends State<SmartFitApp> {
       themeMode: _themeMode,
       locale: _locale,
       setThemeBrightness: _setThemeBrightness,
+      setThemeMode: _setThemeMode,
       toggleLocaleEnAr: _toggleLocaleEnAr,
       child: MaterialApp.router(
         title: 'Smart Fit',
@@ -64,6 +71,14 @@ class _SmartFitAppState extends State<SmartFitApp> {
           GlobalCupertinoLocalizations.delegate,
         ],
         routerConfig: _router,
+        builder: (context, child) {
+          return Directionality(
+            textDirection: _locale.languageCode == 'ar'
+                ? TextDirection.rtl
+                : TextDirection.ltr,
+            child: child!,
+          );
+        },
       ),
     );
   }

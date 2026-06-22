@@ -1,0 +1,68 @@
+{
+  "minimum_plan_metrics": [
+    "Weight",
+    "Height",
+    "Age",
+    "Gender"
+  ],
+  "preferred_plan_metrics": [
+    "PBF_(Percent_Body_Fat)",
+    "SMM_(Skeletal_Muscle_Mass)"
+  ],
+  "versions": {
+    "InBody120": {
+      "required": [
+        "Weight",
+        "SMM_(Skeletal_Muscle_Mass)",
+        "BFM_(Body_Fat_Mass)",
+        "PBF_(Percent_Body_Fat)",
+        "TBW_(Total_Body_Water)",
+        "BMR_(Basal_Metabolic_Rate)",
+        "Age",
+        "Gender",
+        "Height"
+      ],
+      "unsupported": [
+        "FFM_of_Trunk",
+        "ECW/TBW",
+        "50kHz-Whole_Body_Phase_Angle"
+      ]
+    },
+    "InBody270": {
+      "required": [
+        "Weight",
+        "SMM_(Skeletal_Muscle_Mass)",
+        "BFM_(Body_Fat_Mass)",
+        "PBF_(Percent_Body_Fat)",
+        "TBW_(Total_Body_Water)",
+        "BMR_(Basal_Metabolic_Rate)",
+        "Age",
+        "Gender",
+        "Height"
+      ],
+      "unsupported": [
+        "FFM_of_Trunk",
+        "ECW/TBW",
+        "50kHz-Whole_Body_Phase_Angle"
+      ]
+    },
+    "InBody570": {
+      "required": [
+        "Weight",
+        "SMM_(Skeletal_Muscle_Mass)",
+        "BFM_(Body_Fat_Mass)",
+        "PBF_(Percent_Body_Fat)",
+        "TBW_(Total_Body_Water)",
+        "BMR_(Basal_Metabolic_Rate)",
+        "FFM_of_Trunk",
+        "ECW/TBW",
+        "Age",
+        "Gender",
+        "Height"
+      ],
+      "unsupported": [
+        "50kHz-Whole_Body_Phase_Angle"
+      ]
+    }
+  }
+}

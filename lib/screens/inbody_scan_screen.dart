@@ -999,12 +999,34 @@ class _MetricTileState extends State<_MetricTile> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.metric.label,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                            color: isDark ? Colors.white : const Color(0xFF2D3534),
-                            fontWeight: FontWeight.w600,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            widget.metric.label,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: isDark ? Colors.white : const Color(0xFF2D3534),
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
+                        ),
+                        if (_tooltipFor(widget.metric.key) != null) ...[
+                          const SizedBox(width: 6),
+                          Tooltip(
+                            message: _tooltipFor(widget.metric.key)!,
+                            triggerMode: TooltipTriggerMode.tap,
+                            preferBelow: false,
+                            margin: const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.all(12),
+                            textStyle: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+                            child: const Icon(
+                              Icons.info_outline_rounded,
+                              size: 16,
+                              color: AppColors.teal,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     if (isEdited)
                       Text(
@@ -1058,11 +1080,31 @@ class _MetricTileState extends State<_MetricTile> {
                 validationStatus: widget.metric.validationStatus,
                 isImputed: widget.metric.isImputed,
               ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.edit_rounded,
+                size: 16,
+                color: AppColors.teal.withValues(alpha: 0.6),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String? _tooltipFor(String key) {
+    switch (key) {
+      case 'Height':
+      case 'Weight':
+        return 'Found at the top of your InBody printout, usually under personal details.';
+      case 'SMM_(Skeletal_Muscle_Mass)':
+        return 'Found in the Muscle-Fat Analysis section (usually the middle bar).';
+      case 'BFM_(Body_Fat_Mass)':
+        return 'Found in the Muscle-Fat Analysis section (usually the bottom bar).';
+      default:
+        return null;
+    }
   }
 
   String _statusLabel(String status, bool isImputed, bool isEdited) {

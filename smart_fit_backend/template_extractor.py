@@ -1,4 +1,4 @@
-"""template_extractor.py — ROI-first template-aware InBody extraction pipeline."""
+"""template_extractor.py ΓÇö ROI-first template-aware InBody extraction pipeline."""
 from __future__ import annotations
 
 import logging
@@ -10,7 +10,8 @@ import numpy as np
 from document_analyser import DocumentLayout
 from easyocr_engine import EasyOcrEngine
 from field_extractor import FIELD_DESCRIPTORS
-from ocr_normalizer import parse_normalized_float
+from debug_logger import init_debug_dir, save_roi_crop, save_ocr_blocks, save_extraction_report
+from ocr_normalizer import parse_normalized_float, normalize_numeric_text
 from response_builder import ResponseBuilder
 from roi_utils import crop_roi, normalized_to_pixel
 from section_extractor import (
@@ -18,6 +19,7 @@ from section_extractor import (
     extract_bar_end_value,
     extract_label_value,
     extract_trunk_from_segmental,
+    _match_label,
 )
 from template_loader import load_template
 from version_detector import detect_version
@@ -36,6 +38,7 @@ class TemplateExtractor:
         self._section_cache: dict[str, list] = {}
 
     def extract(self, image: np.ndarray) -> dict[str, Any]:
+        init_debug_dir()
         img_h, img_w = image.shape[:2]
         self._section_cache.clear()
 
@@ -90,9 +93,11 @@ class TemplateExtractor:
                 "raw_text": raw_text,
             }
 
+        # Pass the scan's actual unit system so ResponseBuilder can apply lb→kg conversions
+        scan_units = template.get("units_default", "metric")
         layout = DocumentLayout(
             model=report_type,
-            units="metric",
+            units=scan_units,
             sections={
                 name: (sec["roi"]["y"], sec["roi"]["y"] + sec["roi"]["h"])
                 for name, sec in template.get("sections", {}).items()
@@ -111,6 +116,9 @@ class TemplateExtractor:
         result["ocr"]["detection_method"] = detect_method
         result["ocr"]["version_confidence"] = version_conf
         result["template"] = report_type
+        
+        save_extraction_report(result.get("canonical_fields", {}))
+        
         return result
 
     def _section_blocks(
@@ -120,19 +128,36 @@ class TemplateExtractor:
         img_h: int,
         template: dict,
         section_name: str,
+        preprocess: bool = False,
     ) -> list:
-        cache_key = section_name
+        cache_key = f"{section_name}_pre_{preprocess}"
         if cache_key in self._section_cache:
             return self._section_cache[cache_key]
 
         sections = template.get("sections", {})
         sec = sections.get(section_name)
         if not sec or "roi" not in sec:
+            return []
+
+        crop_rect = normalized_to_pixel(sec["roi"], img_w, img_h, pad_frac=0.02)
+        px, py, pw, ph = crop_rect.x, crop_rect.y, crop_rect.w, crop_rect.h
+
+        crop = crop_roi(image, crop_rect)
+        if crop is None or crop.size == 0:
             self._section_cache[cache_key] = []
             return []
 
-        crop = crop_roi(image, normalized_to_pixel(sec["roi"], img_w, img_h, pad_frac=0.02))
-        blocks = blocks_from_crop(self._engine, crop)
+        save_roi_crop(cache_key, crop)
+
+        blocks = blocks_from_crop(self._engine, crop, preprocess=preprocess)
+        save_ocr_blocks(blocks, cache_key)
+
+        for b in blocks:
+            b.x1 += px
+            b.y1 += py
+            b.x2 += px
+            b.y2 += py
+
         self._section_cache[cache_key] = blocks
         return blocks
 
@@ -176,9 +201,9 @@ class TemplateExtractor:
         if val is None:
             for b in blocks:
                 low = b.text.lower()
-                if "female" in low:
+                if _match_label(low, ["female"]):
                     return 0.0, b.confidence, b.text, "header"
-                if "male" in low and "female" not in low:
+                if _match_label(low, ["male"]) and not _match_label(low, ["female"]):
                     return 1.0, b.confidence, b.text, "header"
         return val, conf, raw, "header"
 
@@ -187,8 +212,12 @@ class TemplateExtractor:
         fmt = cfg.get("expected_format", "decimal")
         if fmt == "composite_ft_in":
             val, conf, raw = extract_label_value(
-                blocks, ["Height"], value_type="composite_ft_in"
+                blocks, ["Height"], value_type="composite_ft_in", direction="right"
             )
+            if val is None:
+                val, conf, raw = extract_label_value(
+                    blocks, ["Height"], value_type="composite_ft_in", direction="below"
+                )
             return val, conf, raw, "header"
         # Metric: look for cm-labelled value first
         for b in blocks:
@@ -210,9 +239,9 @@ class TemplateExtractor:
         return None, 0.0, "", "header"
 
     def _extract_weight(self, image, w, h, template, cfg):
-        for section in ("muscle_fat", "body_composition"):
+        for section in ("muscle_fat", "body_composition", "obesity"):
             blocks = self._section_blocks(image, w, h, template, section)
-            val, conf, raw = extract_bar_end_value(blocks, ["Weight"])
+            val, conf, raw = extract_bar_end_value(blocks, ["Weight"], validator=lambda v: _plausible_weight(v, cfg))
             if val is None:
                 val, conf, raw = extract_label_value(
                     blocks, ["Weight", "Weight (kg)", "Weight (lb)"], direction="right"
@@ -221,37 +250,123 @@ class TemplateExtractor:
                 return val, conf, raw, section
         return None, 0.0, "", "body_composition"
 
+    def _extract_pbf(self, image, w, h, template, cfg):
+        # 120 has PBF in segmental_lean
+        sections = [cfg.get("section", "obesity"), "segmental_lean"]
+        
+        for pre in [False, True]:
+            for section in sections:
+                blocks = self._section_blocks(image, w, h, template, section, preprocess=pre)
+                
+                val, conf, raw = extract_label_value(
+                    blocks,
+                    ["Percent Body Fat", "PBF", "% Body Fat", "Body Fat Percentage", "Percent Body Fat (%)"],
+                    direction="right",
+                )
+                if val is None:
+                    # Anchor-to-Nearest for PBF
+                    numerics = [b for b in blocks if parse_normalized_float(b.text) is not None]
+                    if numerics:
+                        anchors = [b for b in blocks if _match_label(b.text, ["Percent Body Fat", "PBF", "% Body Fat"])]
+                        if anchors:
+                            anchor = max(anchors, key=lambda b: b.confidence)
+                            # Score candidates: prefer same row, then closest Euclidean distance
+                            def score(b):
+                                same_row = 1 if abs(b.cy - anchor.cy) <= max(10.0, (anchor.y2 - anchor.y1)) else 0
+                                dist = ((b.cx - anchor.cx)**2 + (b.cy - anchor.cy)**2)**0.5
+                                return (-same_row, dist)
+                            
+                            cand = min(numerics, key=score)
+                            v = parse_normalized_float(cand.text)
+                            if v and 3 <= v <= 70:
+                                return v, cand.confidence, cand.text, section
+
+                if val is not None and 3 <= val <= 70:
+                    return val, conf, raw, section
+        return None, 0.0, "", cfg.get("section", "obesity")
+
     def _extract_smm(self, image, w, h, template, cfg):
-        for section in ("muscle_fat", "obesity"):
-            blocks = self._section_blocks(image, w, h, template, section)
-            val, conf, raw = extract_bar_end_value(
-                blocks, ["SMM", "Skeletal Muscle Mass", "SHM"]
-            )
-            if val is not None and _plausible_smm(val, cfg):
-                return val, conf, raw, section
-        return None, 0.0, "", "muscle_fat"
+        best = (None, 0.0, "", "muscle_fat")
+        for pre in [False, True]:
+            for section in ("muscle_fat", "obesity"):
+                blocks = self._section_blocks(image, w, h, template, section, preprocess=pre)
+                
+                # Priority 1: Nearest value (anchor -> nearest association with token merging)
+                val, conf, raw = extract_label_value(
+                    blocks, ["SMM", "Skeletal Muscle Mass", "SHM"], direction="right"
+                )
+                
+                # Priority 2: Bar end value fallback
+                if val is None or not _plausible_smm(val, cfg):
+                    val, conf, raw = extract_bar_end_value(
+                        blocks, ["SMM", "Skeletal Muscle Mass", "SHM"],
+                        validator=lambda v: _plausible_smm(v, cfg)
+                    )
+                    
+                if val is not None and _plausible_smm(val, cfg):
+                    if conf > best[1]:
+                        best = (val, conf, raw, section)
+                        
+        return best
 
     def _extract_bmr(self, image, w, h, template, cfg):
         section = cfg.get("section", "research_params")
         sections = [section] if section == "bmr_standalone" else ["research_params", "bmr_standalone"]
-        for sec in sections:
-            if sec not in template.get("sections", {}):
-                continue
-            blocks = self._section_blocks(image, w, h, template, sec)
-            val, conf, raw = extract_label_value(
-                blocks,
-                ["Basal Metabolic Rate", "BMR", "Metabolic Rate", "Metabolc Rate"],
-                direction="right",
-            )
-            if val is not None and 800 <= val <= 3500:
-                return val, conf, raw, sec
-            # OCR may split 1154 as separate blocks — pick best kcal-range number
-            for b in blocks:
-                if "kcal" in b.text.lower() or "kal" in b.text.lower():
+        valid_min, valid_max = cfg.get("valid_range", [800, 3500])
+
+        for pre in [False, True]:
+            for sec in sections:
+                if sec not in template.get("sections", {}):
                     continue
-                v = parse_normalized_float(b.text)
-                if v is not None and 800 <= v <= 3500:
-                    return v, b.confidence, b.text, sec
+                blocks = self._section_blocks(image, w, h, template, sec, preprocess=pre)
+
+                for direction in ["right", "below"]:
+                    val, conf, raw = extract_label_value(
+                        blocks,
+                        ["Basal Metabolic Rate", "BMR", "Metabolic Rate", "Metabolc Rate",
+                         "Basal Metabolc Rate", "Besal Metabolic Rate"],
+                        direction=direction,
+                    )
+                    if val is None:
+                        continue
+                        
+                    # Safe BMR Recovery Logic (Task 1)
+                    # 1. Known version, 2. Conf < 0.8, 3. 100 <= val <= 999, 4. Nearby BMR (implicit), 5. Corrected in 1000-3000
+                    # if 100 <= val <= 999 and conf < 0.80 and template.get("name") != "InBodyUnknown":
+                    #     corrected = val + 1000.0
+                    #     if 1000 <= corrected <= 3000:
+                    #         return corrected, conf, raw, sec
+                            
+                    if valid_min <= val <= valid_max:
+                        return val, conf, raw, sec
+
+                # Fallback: anchor-to-nearest with bracket stripping
+                # OCR often reads "1149" as "[49" or "(149" — strip leading brackets
+                bmr_anchors = [b for b in blocks if _match_label_simple(
+                    b.text, ["Basal Metabolic Rate", "BMR", "Basal Metabolc Rate", "Besal Metabolic Rate"]
+                )]
+                for anchor in bmr_anchors:
+                    from section_extractor import _row_blocks
+                    row = _row_blocks(blocks, anchor, max(10.0, (anchor.y2 - anchor.y1) * 1.2))
+                    for cand in row:
+                        if cand.x1 <= anchor.x2:
+                            continue
+                        # Strip leading bracket/paren OCR artifacts before parsing
+                        cleaned = re.sub(r'^[\[\(\{]+', '', cand.text.strip())
+                        v = parse_normalized_float(normalize_numeric_text(cleaned))
+                        if v is not None:
+                            c = anchor.confidence * 0.4 + cand.confidence * 0.6
+                            
+                            # Tightly scoped OCR recovery rule for BMR (e.g. 1176 read as 176)
+                            if 100 <= v <= 999 and cand.confidence < 0.80 and template.get("name") != "InBodyUnknown":
+                                corrected = v + 1000.0
+                                # Only recover if the corrected value is physiological and no higher-confidence candidate exists.
+                                # The anchor check ensures a BMR label was confidently detected nearby.
+                                if valid_min <= corrected <= valid_max:
+                                    return corrected, c, cand.text, sec
+                                    
+                            if valid_min <= v <= valid_max:
+                                return v, c, cand.text, sec
         return None, 0.0, "", section
 
     def _extract_tbw(self, image, w, h, template, cfg):
@@ -260,7 +375,7 @@ class TemplateExtractor:
             blocks, ["Total Body Water", "TBW"], direction="right"
         )
         if val is None:
-            val, conf, raw = extract_bar_end_value(blocks, ["Total Body Water", "TBW"])
+            val, conf, raw = extract_bar_end_value(blocks, ["Total Body Water", "TBW"], validator=lambda v: 10 <= v <= 150)
         if val is None and template.get("units_default") == "imperial":
             val, conf, raw = extract_label_value(
                 blocks, ["Total Body Water", "TBW"], direction="below"
@@ -268,23 +383,50 @@ class TemplateExtractor:
         return val, conf, raw, "body_composition"
 
     def _extract_trunk(self, image, w, h, template, cfg):
-        blocks = self._section_blocks(image, w, h, template, "segmental_lean")
-        val, conf, raw = extract_trunk_from_segmental(blocks)
-        if val is None:
-            # Figure layout: trunk mass often largest kg value near "Trunk"
-            for b in blocks:
-                v = parse_normalized_float(b.text)
-                if v and 10 <= v <= 50:
-                    val, conf, raw = v, b.confidence, b.text
-                    break
-        return val, conf, raw, "segmental_lean"
+        if template.get("name") == "InBody270":
+            # Trunk is not present on the InBody270 printout
+            return None, 0.0, "", "segmental_lean", "field_not_present_on_document"
+
+        section = cfg.get("section", "segmental_lean")
+        best = (None, 0.0, "", section)
+        
+        for pre in [False, True]:
+            blocks = self._section_blocks(image, w, h, template, section, preprocess=pre)
+
+            # Try row-based extraction first
+            from section_extractor import extract_trunk_from_segmental
+            val, conf, raw = extract_trunk_from_segmental(blocks)
+            
+            # Anchor-to-Nearest for Trunk (fallback)
+            if val is None:
+                numerics = [b for b in blocks if parse_normalized_float(b.text) is not None]
+                if numerics:
+                    anchors = [b for b in blocks if _match_label(b.text, ["Trunk", "TRUNK", "Torso"])]
+                    if anchors:
+                        anchor = max(anchors, key=lambda b: b.confidence)
+                        # Find closest numeric by euclidean distance
+                        def dist(b):
+                            return ((b.cx - anchor.cx)**2 + (b.cy - anchor.cy)**2)**0.5
+                        cand = min(numerics, key=dist)
+                        v = parse_normalized_float(cand.text)
+                        if v is not None and 5 <= v <= 100:
+                            val, conf, raw = v, cand.confidence, cand.text
+                            
+            if val is not None and 5 <= val <= 100:
+                if conf > best[1]:
+                    best = (val, conf, raw, section)
+
+        if best[0] is not None:
+            return best
+
+        return None, 0.0, "", section
 
     def _extract_ecw_tbw(self, image, w, h, template, cfg):
         section = "ecw_tbw_section"
         if section not in template.get("sections", {}):
             return None, 0.0, "", section
         blocks = self._section_blocks(image, w, h, template, section)
-        val, conf, raw = extract_bar_end_value(blocks, ["ECW/TBW"])
+        val, conf, raw = extract_bar_end_value(blocks, ["ECW/TBW"], validator=lambda v: 0.30 <= v <= 0.45)
         if val is not None and 0.30 <= val <= 0.45:
             return val, conf, raw, section
         return None, 0.0, "", section
@@ -294,30 +436,33 @@ class TemplateExtractor:
 
     def _extract_bfm(self, image, w, h, template, cfg):
         imperial = template.get("units_default") == "imperial"
-        sections = ("obesity",) if imperial else ("obesity", "muscle_fat", "body_composition")
-        for section in sections:
-            blocks = self._section_blocks(image, w, h, template, section)
-            val, conf, raw = extract_bar_end_value(blocks, ["Body Fat Mass", "BFM"])
-            if val is None:
-                val, conf, raw = extract_label_value(
-                    blocks, ["Body Fat Mass", "BFM"], direction="right"
+        # Always search muscle_fat first (contains Body Fat Mass row in imperial 570 layout)
+        sections = ("muscle_fat", "obesity", "body_composition")
+        for pre in [False, True]:
+            for section in sections:
+                blocks = self._section_blocks(image, w, h, template, section, preprocess=pre)
+                val, conf, raw = extract_bar_end_value(
+                    blocks, ["Body Fat Mass", "BFM"],
+                    validator=lambda v: _plausible_bfm(v, cfg, imperial=imperial)
                 )
-            if val is not None and _plausible_bfm(val, cfg, imperial=imperial):
-                if section == "body_composition" and val > 24:
-                    continue
-                return val, conf, raw, section
+                if val is None:
+                    val, conf, raw = extract_label_value(
+                        blocks, ["Body Fat Mass", "BFM"], direction="right"
+                    )
+                if val is not None and _plausible_bfm(val, cfg, imperial=imperial):
+                    return val, conf, raw, section
         return None, 0.0, "", "body_composition"
 
     def _extract_pbf(self, image, w, h, template, cfg):
         blocks = self._section_blocks(image, w, h, template, "obesity")
         val, conf, raw = extract_bar_end_value(
-            blocks, ["PBF", "Percent Body Fat"]
+            blocks, ["PBF", "Percent Body Fat"], validator=lambda v: 5 <= v <= 60
         )
         if val is not None and 5 <= val <= 60:
             return val, conf, raw, "obesity"
         # PBF bar may bleed into segmental section on some scans
         blocks2 = self._section_blocks(image, w, h, template, "segmental_lean")
-        val2, conf2, raw2 = extract_bar_end_value(blocks2, ["PBF", "Percent Body Fat"])
+        val2, conf2, raw2 = extract_bar_end_value(blocks2, ["PBF", "Percent Body Fat"], validator=lambda v: 5 <= v <= 60)
         return val2, conf2, raw2, "obesity"
 
 
@@ -335,32 +480,23 @@ def _empty_field(unit: str, section: str, *, absent: bool = False) -> dict[str, 
 def _convert_to_metric(value: float | None, field_cfg: dict[str, Any]) -> float | None:
     if value is None:
         return None
-    convert_to = field_cfg.get("convert_to")
-    if not convert_to:
-        return round(value, 2)
-    factor = field_cfg.get("conversion_factor")
-    if convert_to == "kg" and factor:
-        return round(value * factor, 2)
-    if convert_to == "L":
-        return round(value / 2.20462, 2)
+    # All conversions should be handled centrally in ResponseBuilder based on DocumentAnalyser units.
+    # We no longer apply static multipliers here.
     return round(value, 2)
 
 
 def _plausible_weight(val: float, cfg: dict) -> bool:
-    if cfg.get("convert_to") == "kg":
-        return 30 <= val <= 400  # lb range before conversion
-    return 30 <= val <= 200
+    # Accept up to 400 lbs to support imperial scans before conversion
+    return 30 <= val <= 400
 
 
 def _plausible_smm(val: float, cfg: dict) -> bool:
-    if cfg.get("convert_to") == "kg":
-        return 15 <= val <= 120
-    return 10 <= val <= 80
+    # Accept up to 120 lbs to support imperial scans before conversion
+    return 10 <= val <= 120
 
 
 def _plausible_bfm(val: float, cfg: dict, *, imperial: bool = False) -> bool:
-    if cfg.get("convert_to") == "kg" or imperial:
-        return 5 <= val <= 95  # lb before conversion for imperial scans
+    # Accept up to 100 lbs to support imperial scans before conversion
     return 3 <= val <= 100
 
 

@@ -38,7 +38,7 @@
   "sections": {
     "header": {
       "anchor": "Test Date & Time",
-      "roi": { "x": 0.0, "y": 0.0, "w": 1.0, "h": 0.12 }
+      "roi": { "x": 0.0, "y": 0.0, "w": 1.0, "h": 0.18 }
     },
     "body_composition": {
       "anchor": "Body Composition Analysis",
@@ -58,7 +58,7 @@
     },
     "research_params": {
       "anchor": "Research Parameters",
-      "roi": { "x": 0.66, "y": 0.38, "w": 0.32, "h": 0.12 }
+      "roi": { "x": 0.45, "y": 0.38, "w": 0.50, "h": 0.30 }
     }
   },
   "age_roi": {

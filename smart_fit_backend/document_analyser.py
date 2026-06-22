@@ -199,27 +199,39 @@ class DocumentAnalyser:
     def _detect_units(self, tokens: List[OcrToken], text: str) -> str:
         """
         Determine metric vs imperial.
-
-        Checks for:
-        - standalone 'lb' or 'lbs' tokens
-        - '(lb)' or '(lbs)' unit annotations in text
-        - 'X ft Y in' height format
+        Strictly requires explicit structural evidence to avoid false positives.
         """
-        # Check individual tokens for bare 'lb' / 'lbs'
-        for tok in tokens:
-            normalised = tok.text.lower().strip().strip("()./,|")
-            if normalised in {"lb", "lbs"}:
-                return "imperial"
-
-        # Check parenthetical unit annotations in the raw text
+        # 1. Parenthesized indicators anywhere in the document
         if re.search(r"\(\s*lbs?\s*\)", text, re.IGNORECASE):
             return "imperial"
+        if re.search(r"\(\s*ft\s*/\s*in\s*\)", text, re.IGNORECASE):
+            return "imperial"
+        if re.search(r"\(\s*inches\s*\)", text, re.IGNORECASE):
+            return "imperial"
 
-        # Check for imperial height format "N ft M" or "N' M\""
-        if re.search(r"\d\s*ft\s+\d", text, re.IGNORECASE):
+        # 2. Strict Height measurement format
+        if re.search(r"Height\s*:?\s*\d+\s*ft", text, re.IGNORECASE):
             return "imperial"
-        if re.search(r"\d\s*'\s*\d{1,2}\s*\"", text):
+        if re.search(r"\b\d{1,2}\s*ft\s*\d{1,2}\s*in\b", text, re.IGNORECASE):
             return "imperial"
+        if re.search(r"\b\d{1,2}\s*'\s*\d{1,2}\s*\"", text):
+            return "imperial"
+
+        # 3. Explicit unit labels bound to numerical values (e.g. "135.4 lb", "135.4 lbs")
+        if re.search(r"\b\d+(\.\d+)?\s*lbs?\b", text, re.IGNORECASE):
+            return "imperial"
+
+        # 4. Check tokens exclusively in the top section (y < 0.25) for 'lb', 'lbs', 'ft', 'in'
+        # Since demographics (Height/Weight) live at the top of the report.
+        top_tokens = [tok for tok in tokens if getattr(tok, 'y', 1.0) < 0.25]
+        for tok in top_tokens:
+            low = tok.text.lower().strip()
+            # Must exactly match lb/lbs/in/ft as standalone tokens without punctuation
+            if low in {"lb", "lbs", "ft"}:
+                return "imperial"
+            # 'in' is risky even in header ("Date / Time in"), so we only check 'ft/in' or rely on regexes above
+            if low == "ft/in":
+                return "imperial"
 
         return "metric"
 

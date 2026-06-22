@@ -1,0 +1,65 @@
+[
+  {
+    "field": "age",
+    "value": 51.0,
+    "confidence": 0.9999,
+    "source": "extracted",
+    "needs_review": false
+  },
+  {
+    "field": "gender",
+    "value": "female",
+    "confidence": 0.6473,
+    "source": "extracted",
+    "needs_review": true
+  },
+  {
+    "field": "height_cm",
+    "value": 156.9,
+    "confidence": 0.7842,
+    "source": "extracted",
+    "needs_review": false
+  },
+  {
+    "field": "weight_kg",
+    "value": 59.51,
+    "confidence": 0.8238,
+    "source": "extracted",
+    "needs_review": false
+  },
+  {
+    "field": "smm_kg",
+    "value": 19.6,
+    "confidence": 0.532,
+    "source": "extracted",
+    "needs_review": true
+  },
+  {
+    "field": "bmr_kcal",
+    "value": 176.0,
+    "confidence": 0.5718,
+    "source": "extracted",
+    "needs_review": true
+  },
+  {
+    "field": "tbw_l",
+    "value": 27.6,
+    "confidence": 0.55,
+    "source": "estimated",
+    "needs_review": false
+  },
+  {
+    "field": "bfm_kg",
+    "value": 21.8,
+    "confidence": 0.6289,
+    "source": "extracted",
+    "needs_review": true
+  },
+  {
+    "field": "pbf_percent",
+    "value": 36.9,
+    "confidence": 0.7373,
+    "source": "extracted",
+    "needs_review": true
+  }
+]

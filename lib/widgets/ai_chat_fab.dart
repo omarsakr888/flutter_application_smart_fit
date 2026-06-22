@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
-
-import '../models/plan_result.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 
@@ -42,67 +39,19 @@ class _AiChatSheet extends StatefulWidget {
 }
 
 class _AiChatSheetState extends State<_AiChatSheet> {
-  static const _apiKey = String.fromEnvironment('GEMINI_API_KEY');
-
-  late final GenerativeModel _model;
-  ChatSession? _chat;
-
   final _messages = <_Msg>[];
   final _controller = TextEditingController();
   final _scrollCtrl = ScrollController();
 
-  bool _loadingPlan = true;
   bool _sending = false;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _initModel();
-    _loadContext();
+    _startChat();
   }
 
-  void _initModel() {
-    if (_apiKey.isEmpty) {
-      setState(() => _error =
-          'Missing API key.\n\nRun with:\n  flutter run --dart-define=GEMINI_API_KEY=your_key\n\nGet a free key at aistudio.google.com');
-      return;
-    }
-    _model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: _apiKey);
-  }
-
-  Future<void> _loadContext() async {
-    if (_apiKey.isEmpty) {
-      setState(() => _loadingPlan = false);
-      return;
-    }
-    try {
-      final plan = await UserService.instance.getPlan();
-      _startChat(plan);
-    } catch (_) {
-      _startChat(null);
-    }
-    if (mounted) setState(() => _loadingPlan = false);
-  }
-
-  void _startChat(PlanResult? plan) {
-    final buf = StringBuffer(
-      'You are Smart Fit Coach, a certified personal trainer and nutritionist AI. '
-      'Be supportive, motivating, and concise. ',
-    );
-    if (plan != null) {
-      buf.write(
-        'User plan — calories: ${plan.targetCaloriesKcal.round()} kcal, '
-        'protein: ${plan.macros.proteinG.round()} g, '
-        'carbs: ${plan.macros.carbsG.round()} g, '
-        'fat: ${plan.macros.fatG.round()} g. '
-        '${plan.focusZone.isNotEmpty ? 'Focus zone: ${plan.focusZone}. ' : ''}'
-        'Training days/week: ${plan.preferredDays}. ',
-      );
-    }
-    buf.write('Never provide medical diagnoses. Ask clarifying questions when needed.');
-
-    _chat = _model.startChat(history: [Content.system(buf.toString())]);
+  void _startChat() {
     _messages.add(const _Msg(
       text: "Hi! I'm your Smart Fit AI coach. Ask me anything about your workout, nutrition, or recovery!",
       isUser: false,
@@ -111,7 +60,7 @@ class _AiChatSheetState extends State<_AiChatSheet> {
 
   Future<void> _send() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _sending || _chat == null) return;
+    if (text.isEmpty || _sending) return;
     _controller.clear();
     setState(() {
       _messages.add(_Msg(text: text, isUser: true));
@@ -119,8 +68,7 @@ class _AiChatSheetState extends State<_AiChatSheet> {
     });
     _scrollToBottom();
     try {
-      final res = await _chat!.sendMessage(Content.text(text));
-      final reply = res.text ?? 'Sorry, I could not generate a response.';
+      final reply = await UserService.instance.sendChatMessage(text);
       if (mounted) {
         setState(() {
           _messages.add(_Msg(text: reply, isUser: false));
@@ -131,8 +79,8 @@ class _AiChatSheetState extends State<_AiChatSheet> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _messages.add(_Msg(
-            text: 'Error: ${e.toString()}',
+          _messages.add(const _Msg(
+            text: 'Error: Something went wrong.',
             isUser: false,
             isError: true,
           ));
@@ -236,32 +184,7 @@ class _AiChatSheetState extends State<_AiChatSheet> {
           ),
           // Messages or loading/error
           Expanded(
-            child: _error != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.warning_amber_rounded,
-                              size: 48, color: Color(0xFFB80000)),
-                          const SizedBox(height: 16),
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: const Color(0xFFB80000),
-                                  height: 1.5,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : _loadingPlan
-                    ? const Center(
-                        child: CircularProgressIndicator(color: AppColors.teal))
-                    : ListView.builder(
+            child: ListView.builder(
                         controller: _scrollCtrl,
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                         itemCount: _messages.length,

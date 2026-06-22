@@ -34,23 +34,23 @@
     },
     "body_composition": {
       "anchor": "Body Composition Analysis",
-      "roi": { "x": 0.02, "y": 0.12, "w": 0.66, "h": 0.14 }
+      "roi": { "x": 0.02, "y": 0.19, "w": 0.90, "h": 0.14 }
     },
     "muscle_fat": {
       "anchor": "Muscle-Fat Analysis",
-      "roi": { "x": 0.02, "y": 0.27, "w": 0.66, "h": 0.10 }
+      "roi": { "x": 0.02, "y": 0.20, "w": 0.90, "h": 0.13 }
     },
     "obesity": {
       "anchor": "Obesity Analysis",
-      "roi": { "x": 0.02, "y": 0.37, "w": 0.66, "h": 0.10 }
+      "roi": { "x": 0.02, "y": 0.33, "w": 0.90, "h": 0.22 }
     },
     "segmental_lean": {
       "anchor": "Segmental Lean Analysis",
-      "roi": { "x": 0.02, "y": 0.47, "w": 0.34, "h": 0.16 }
+      "roi": { "x": 0.02, "y": 0.43, "w": 0.90, "h": 0.24 }
     },
     "research_params": {
       "anchor": "Research Parameters",
-      "roi": { "x": 0.68, "y": 0.28, "w": 0.30, "h": 0.14 }
+      "roi": { "x": 0.45, "y": 0.28, "w": 0.50, "h": 0.20 }
     }
   },
   "age_roi": {
@@ -106,7 +106,7 @@
   "bmr_roi": {
     "section": "research_params",
     "anchor_labels": ["Basal Metabolic Rate", "BMR"],
-    "roi": { "x": 0.72, "y": 0.335, "w": 0.18, "h": 0.025 },
+    "roi": { "x": 0.72, "y": 0.442, "w": 0.18, "h": 0.025 },
     "expected_unit": "kcal",
     "expected_format": "integer",
     "valid_range": [800, 3500],
@@ -125,7 +125,7 @@
   "segmental_ffm_roi": {
     "section": "segmental_lean",
     "anchor_labels": ["Trunk"],
-    "roi": { "x": 0.14, "y": 0.545, "w": 0.12, "h": 0.045 },
+    "roi": { "x": 0.14, "y": 0.645, "w": 0.12, "h": 0.055 },
     "expected_unit": "kg",
     "expected_format": "decimal",
     "valid_range": [10, 50],

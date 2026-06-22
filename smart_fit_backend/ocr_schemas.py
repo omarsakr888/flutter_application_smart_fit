@@ -20,6 +20,9 @@ class OcrFieldSchema(BaseModel):
     review_action: Literal[
         "auto_accept", "request_verification", "mark_uncertain"
     ] = "mark_uncertain"
+    needs_review: bool = False
+    unsupported: bool = False
+    source: Literal["extracted", "derived"] = "extracted"
 
 
 class CanonicalFieldSchema(BaseModel):
@@ -28,6 +31,9 @@ class CanonicalFieldSchema(BaseModel):
     source_region: str = ""
     extraction_method: str = "none"
     validation_status: str = "missing"
+    needs_review: bool = False
+    unsupported: bool = False
+    source: Literal["extracted", "derived"] = "extracted"
 
 
 class OcrExtractionResponse(BaseModel):
@@ -53,16 +59,17 @@ class ConfirmScanRequest(BaseModel):
 
     extraction_id: str | None = None
     user_id: str = "local-user"
-    features: dict[str, float | int | str]
+    features: dict[str, float | int | str | None]
 
-    def normalized_features(self) -> dict[str, float | str]:
-        missing = [key for key in REQUIRED_INPUT_FEATURES if key not in self.features]
-        if missing:
-            raise ValueError("Missing required confirmed fields: " + ", ".join(missing))
+    def normalized_features(self) -> dict[str, float | str | None]:
         normalized = {}
         for key in REQUIRED_INPUT_FEATURES:
+            val = self.features.get(key)
             if key == "User_Goal":
-                normalized[key] = str(self.features[key])
+                normalized[key] = str(val).strip() if val not in {None, ""} else "Balanced/Recovery"
             else:
-                normalized[key] = float(self.features[key])
+                try:
+                    normalized[key] = float(val) if val not in {None, ""} else None
+                except ValueError:
+                    normalized[key] = None
         return normalized

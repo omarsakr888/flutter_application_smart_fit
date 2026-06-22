@@ -247,4 +247,26 @@ class UserService {
         .where((n) => n.isNotEmpty)
         .toList();
   }
+
+  // ── Chatbot ────────────────────────────────────────────────────────────────
+  
+  Future<String> sendChatMessage(String message) async {
+    final uri = Uri.parse('${BackendConfig.baseUrl}/api/v1/chat');
+    try {
+      final response = await _client
+          .post(
+            uri,
+            headers: await AuthService.instance.authHeaders,
+            body: jsonEncode({'message': message}),
+          )
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        return body['response'] as String? ?? 'Sorry, I got an empty response.';
+      }
+      return 'Sorry, the coach is temporarily unavailable (Status ${response.statusCode}).';
+    } catch (e) {
+      return 'Network error: could not reach the AI coach.';
+    }
+  }
 }

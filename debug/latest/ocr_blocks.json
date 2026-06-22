@@ -1,0 +1,4325 @@
+[
+  {
+    "text": "InBody",
+    "confidence": 0.8032,
+    "bounding_box": {
+      "x1": 39.0,
+      "y1": 30.0,
+      "x2": 240.0,
+      "y2": 109.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "([InBody120]",
+    "confidence": 0.5895,
+    "bounding_box": {
+      "x1": 449.0,
+      "y1": 77.0,
+      "x2": 535.0,
+      "y2": 97.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "athletehome\"",
+    "confidence": 0.9506,
+    "bounding_box": {
+      "x1": 575.0,
+      "y1": 77.0,
+      "x2": 797.0,
+      "y2": 121.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "ID",
+    "confidence": 0.9981,
+    "bounding_box": {
+      "x1": 55.0,
+      "y1": 107.0,
+      "x2": 73.0,
+      "y2": 123.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "He ght",
+    "confidence": 0.8652,
+    "bounding_box": {
+      "x1": 200.0,
+      "y1": 106.0,
+      "x2": 243.0,
+      "y2": 126.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "Age",
+    "confidence": 0.9824,
+    "bounding_box": {
+      "x1": 291.0,
+      "y1": 109.0,
+      "x2": 317.0,
+      "y2": 125.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "Gender",
+    "confidence": 0.9801,
+    "bounding_box": {
+      "x1": 349.0,
+      "y1": 107.0,
+      "x2": 393.0,
+      "y2": 123.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "Tesi Dale & Tme",
+    "confidence": 0.6873,
+    "bounding_box": {
+      "x1": 405.0,
+      "y1": 107.0,
+      "x2": 503.0,
+      "y2": 123.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "SM2OO8",
+    "confidence": 0.3682,
+    "bounding_box": {
+      "x1": 57.0,
+      "y1": 123.0,
+      "x2": 119.0,
+      "y2": 143.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "156,9cm",
+    "confidence": 0.7842,
+    "bounding_box": {
+      "x1": 201.0,
+      "y1": 123.0,
+      "x2": 267.0,
+      "y2": 143.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "51",
+    "confidence": 0.9999,
+    "bounding_box": {
+      "x1": 293.0,
+      "y1": 127.0,
+      "x2": 313.0,
+      "y2": 143.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "Female",
+    "confidence": 0.6473,
+    "bounding_box": {
+      "x1": 349.0,
+      "y1": 125.0,
+      "x2": 399.0,
+      "y2": 141.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "2012.05.04.09",
+    "confidence": 0.7841,
+    "bounding_box": {
+      "x1": 405.0,
+      "y1": 123.0,
+      "x2": 513.0,
+      "y2": 143.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "46",
+    "confidence": 1.0,
+    "bounding_box": {
+      "x1": 519.0,
+      "y1": 123.0,
+      "x2": 543.0,
+      "y2": 143.0
+    },
+    "section": "header_pre_False"
+  },
+  {
+    "text": "For buila ng muscles",
+    "confidence": 0.4502,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 3.0,
+      "x2": 161.0,
+      "y2": 21.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Protein",
+    "confidence": 0.9992,
+    "bounding_box": {
+      "x1": 239.0,
+      "y1": 3.0,
+      "x2": 285.0,
+      "y2": 19.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "7.2",
+    "confidence": 0.5382,
+    "bounding_box": {
+      "x1": 401.0,
+      "y1": 3.0,
+      "x2": 429.0,
+      "y2": 21.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "7.0 - 8.6",
+    "confidence": 0.6023,
+    "bounding_box": {
+      "x1": 445.0,
+      "y1": 3.0,
+      "x2": 505.0,
+      "y2": 21.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "For strengthening bones",
+    "confidence": 0.5155,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 29.0,
+      "x2": 183.0,
+      "y2": 45.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Minorals",
+    "confidence": 0.5211,
+    "bounding_box": {
+      "x1": 239.0,
+      "y1": 29.0,
+      "x2": 291.0,
+      "y2": 45.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Ko)",
+    "confidence": 0.2222,
+    "bounding_box": {
+      "x1": 347.0,
+      "y1": 31.0,
+      "x2": 367.0,
+      "y2": 45.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "2.63 (2.44",
+    "confidence": 0.7478,
+    "bounding_box": {
+      "x1": 393.0,
+      "y1": 27.0,
+      "x2": 469.0,
+      "y2": 47.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "2.98)",
+    "confidence": 0.3664,
+    "bounding_box": {
+      "x1": 481.0,
+      "y1": 29.0,
+      "x2": 517.0,
+      "y2": 45.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "68/100",
+    "confidence": 0.9939,
+    "bounding_box": {
+      "x1": 629.0,
+      "y1": 11.0,
+      "x2": 709.0,
+      "y2": 47.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Toul xolt",
+    "confidence": 0.3937,
+    "bounding_box": {
+      "x1": 567.0,
+      "y1": 45.0,
+      "x2": 621.0,
+      "y2": 57.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "thal mllal",
+    "confidence": 0.1824,
+    "bounding_box": {
+      "x1": 623.0,
+      "y1": 45.0,
+      "x2": 679.0,
+      "y2": 57.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "I:",
+    "confidence": 0.0741,
+    "bounding_box": {
+      "x1": 682.0,
+      "y1": 46.0,
+      "x2": 698.0,
+      "y2": 54.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Calualion of Eudy",
+    "confidence": 0.1252,
+    "bounding_box": {
+      "x1": 701.0,
+      "y1": 45.0,
+      "x2": 791.0,
+      "y2": 57.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "For sloring axcess enargy",
+    "confidence": 0.4542,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 55.0,
+      "x2": 189.0,
+      "y2": 71.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Body Fat Kass",
+    "confidence": 0.6506,
+    "bounding_box": {
+      "x1": 239.0,
+      "y1": 55.0,
+      "x2": 327.0,
+      "y2": 71.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "21.8 (10.3",
+    "confidence": 0.6144,
+    "bounding_box": {
+      "x1": 395.0,
+      "y1": 53.0,
+      "x2": 469.0,
+      "y2": 71.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "16.5)",
+    "confidence": 0.4816,
+    "bounding_box": {
+      "x1": 481.0,
+      "y1": 53.0,
+      "x2": 517.0,
+      "y2": 71.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "compotition",
+    "confidence": 0.4553,
+    "bounding_box": {
+      "x1": 566.0,
+      "y1": 56.0,
+      "x2": 625.0,
+      "y2": 70.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "nucoulit Deron muy",
+    "confidence": 0.063,
+    "bounding_box": {
+      "x1": 639.0,
+      "y1": 57.0,
+      "x2": 739.0,
+      "y2": 69.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Lnec",
+    "confidence": 0.0186,
+    "bounding_box": {
+      "x1": 742.0,
+      "y1": 60.0,
+      "x2": 766.0,
+      "y2": 66.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Oyc",
+    "confidence": 0.0944,
+    "bounding_box": {
+      "x1": 768.0,
+      "y1": 60.0,
+      "x2": 786.0,
+      "y2": 66.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "J0 ponts",
+    "confidence": 0.2708,
+    "bounding_box": {
+      "x1": 567.0,
+      "y1": 69.0,
+      "x2": 617.0,
+      "y2": 81.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Sum of Ine above",
+    "confidence": 0.5382,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 79.0,
+      "x2": 147.0,
+      "y2": 95.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Weight",
+    "confidence": 0.7031,
+    "bounding_box": {
+      "x1": 237.0,
+      "y1": 77.0,
+      "x2": 283.0,
+      "y2": 97.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "59.",
+    "confidence": 0.9947,
+    "bounding_box": {
+      "x1": 395.0,
+      "y1": 81.0,
+      "x2": 417.0,
+      "y2": 97.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "(43.9",
+    "confidence": 0.5937,
+    "bounding_box": {
+      "x1": 431.0,
+      "y1": 79.0,
+      "x2": 471.0,
+      "y2": 97.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "59.51",
+    "confidence": 0.9043,
+    "bounding_box": {
+      "x1": 483.0,
+      "y1": 81.0,
+      "x2": 517.0,
+      "y2": 97.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Weight Control",
+    "confidence": 0.7125,
+    "bounding_box": {
+      "x1": 553.0,
+      "y1": 91.0,
+      "x2": 661.0,
+      "y2": 111.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Target Weight",
+    "confidence": 0.5728,
+    "bounding_box": {
+      "x1": 553.0,
+      "y1": 112.0,
+      "x2": 629.0,
+      "y2": 132.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "51.7 kg",
+    "confidence": 0.404,
+    "bounding_box": {
+      "x1": 680.0,
+      "y1": 111.0,
+      "x2": 729.0,
+      "y2": 131.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Muscle-Fat Analysis",
+    "confidence": 0.7194,
+    "bounding_box": {
+      "x1": 42.0,
+      "y1": 134.0,
+      "x2": 186.0,
+      "y2": 158.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Wleight Control",
+    "confidence": 0.544,
+    "bounding_box": {
+      "x1": 554.0,
+      "y1": 130.0,
+      "x2": 633.0,
+      "y2": 150.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "-74kg",
+    "confidence": 0.6382,
+    "bounding_box": {
+      "x1": 680.0,
+      "y1": 129.0,
+      "x2": 729.0,
+      "y2": 149.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "Fat Ccnim",
+    "confidence": 0.4902,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 151.0,
+      "x2": 611.0,
+      "y2": 165.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "9,9 kg",
+    "confidence": 0.5688,
+    "bounding_box": {
+      "x1": 687.0,
+      "y1": 147.0,
+      "x2": 729.0,
+      "y2": 165.0
+    },
+    "section": "body_composition_pre_False"
+  },
+  {
+    "text": "For strengthening bones",
+    "confidence": 0.5155,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 17.0,
+      "x2": 183.0,
+      "y2": 33.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Minorals",
+    "confidence": 0.5211,
+    "bounding_box": {
+      "x1": 239.0,
+      "y1": 17.0,
+      "x2": 291.0,
+      "y2": 33.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "K9)",
+    "confidence": 0.0824,
+    "bounding_box": {
+      "x1": 345.0,
+      "y1": 19.0,
+      "x2": 367.0,
+      "y2": 33.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "2.63 (2.44",
+    "confidence": 0.7478,
+    "bounding_box": {
+      "x1": 393.0,
+      "y1": 15.0,
+      "x2": 469.0,
+      "y2": 35.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "2.98)",
+    "confidence": 0.6875,
+    "bounding_box": {
+      "x1": 483.0,
+      "y1": 17.0,
+      "x2": 517.0,
+      "y2": 33.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "68/100",
+    "confidence": 0.9637,
+    "bounding_box": {
+      "x1": 629.0,
+      "y1": 0.0,
+      "x2": 709.0,
+      "y2": 35.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Toul xolt",
+    "confidence": 0.3937,
+    "bounding_box": {
+      "x1": 567.0,
+      "y1": 33.0,
+      "x2": 621.0,
+      "y2": 45.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "thal nllat H",
+    "confidence": 0.1132,
+    "bounding_box": {
+      "x1": 623.0,
+      "y1": 33.0,
+      "x2": 699.0,
+      "y2": 45.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Calualion of Eudy",
+    "confidence": 0.1252,
+    "bounding_box": {
+      "x1": 701.0,
+      "y1": 33.0,
+      "x2": 791.0,
+      "y2": 45.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "For sloring axcess enargy",
+    "confidence": 0.4542,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 43.0,
+      "x2": 189.0,
+      "y2": 59.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Body Fat Kass",
+    "confidence": 0.6506,
+    "bounding_box": {
+      "x1": 239.0,
+      "y1": 43.0,
+      "x2": 327.0,
+      "y2": 59.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Kq)",
+    "confidence": 0.0959,
+    "bounding_box": {
+      "x1": 345.0,
+      "y1": 45.0,
+      "x2": 367.0,
+      "y2": 59.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "21.8 (10.3",
+    "confidence": 0.6144,
+    "bounding_box": {
+      "x1": 395.0,
+      "y1": 41.0,
+      "x2": 469.0,
+      "y2": 59.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "16.5)",
+    "confidence": 0.4816,
+    "bounding_box": {
+      "x1": 481.0,
+      "y1": 41.0,
+      "x2": 517.0,
+      "y2": 59.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "compotition",
+    "confidence": 0.4553,
+    "bounding_box": {
+      "x1": 566.0,
+      "y1": 44.0,
+      "x2": 625.0,
+      "y2": 58.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "nucoulit Deron muy",
+    "confidence": 0.063,
+    "bounding_box": {
+      "x1": 639.0,
+      "y1": 45.0,
+      "x2": 739.0,
+      "y2": 57.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Lnec",
+    "confidence": 0.0186,
+    "bounding_box": {
+      "x1": 742.0,
+      "y1": 48.0,
+      "x2": 766.0,
+      "y2": 54.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Oyc",
+    "confidence": 0.0944,
+    "bounding_box": {
+      "x1": 768.0,
+      "y1": 48.0,
+      "x2": 786.0,
+      "y2": 54.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "100 ponts;",
+    "confidence": 0.1742,
+    "bounding_box": {
+      "x1": 567.0,
+      "y1": 57.0,
+      "x2": 619.0,
+      "y2": 71.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Sum of Ine above",
+    "confidence": 0.5382,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 67.0,
+      "x2": 147.0,
+      "y2": 83.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Weight",
+    "confidence": 0.7031,
+    "bounding_box": {
+      "x1": 237.0,
+      "y1": 65.0,
+      "x2": 283.0,
+      "y2": 85.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Kg)",
+    "confidence": 0.1528,
+    "bounding_box": {
+      "x1": 347.0,
+      "y1": 69.0,
+      "x2": 367.0,
+      "y2": 83.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "59.",
+    "confidence": 0.9947,
+    "bounding_box": {
+      "x1": 395.0,
+      "y1": 69.0,
+      "x2": 417.0,
+      "y2": 85.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "(43.9",
+    "confidence": 0.8935,
+    "bounding_box": {
+      "x1": 431.0,
+      "y1": 65.0,
+      "x2": 469.0,
+      "y2": 85.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "59.51",
+    "confidence": 0.9043,
+    "bounding_box": {
+      "x1": 483.0,
+      "y1": 69.0,
+      "x2": 517.0,
+      "y2": 85.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Weight Control",
+    "confidence": 0.7125,
+    "bounding_box": {
+      "x1": 553.0,
+      "y1": 79.0,
+      "x2": 661.0,
+      "y2": 99.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Target Weight",
+    "confidence": 0.5728,
+    "bounding_box": {
+      "x1": 553.0,
+      "y1": 100.0,
+      "x2": 629.0,
+      "y2": 120.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "51.7 kg",
+    "confidence": 0.7123,
+    "bounding_box": {
+      "x1": 680.0,
+      "y1": 99.0,
+      "x2": 731.0,
+      "y2": 119.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Muscle-Fat Analysis",
+    "confidence": 0.8611,
+    "bounding_box": {
+      "x1": 45.0,
+      "y1": 125.0,
+      "x2": 185.0,
+      "y2": 145.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Wleight Control",
+    "confidence": 0.7088,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 119.0,
+      "x2": 633.0,
+      "y2": 137.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "\"74kg",
+    "confidence": 0.3831,
+    "bounding_box": {
+      "x1": 681.0,
+      "y1": 119.0,
+      "x2": 729.0,
+      "y2": 135.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Fat Ccnim",
+    "confidence": 0.4902,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 139.0,
+      "x2": 611.0,
+      "y2": 153.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "9,9 kg",
+    "confidence": 0.5688,
+    "bounding_box": {
+      "x1": 687.0,
+      "y1": 135.0,
+      "x2": 729.0,
+      "y2": 153.0
+    },
+    "section": "muscle_fat_pre_False"
+  },
+  {
+    "text": "Musde Conuol",
+    "confidence": 0.6335,
+    "bounding_box": {
+      "x1": 554.0,
+      "y1": 2.0,
+      "x2": 633.0,
+      "y2": 20.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "25 kg",
+    "confidence": 0.6747,
+    "bounding_box": {
+      "x1": 687.0,
+      "y1": 0.0,
+      "x2": 729.0,
+      "y2": 19.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Wcight",
+    "confidence": 0.8852,
+    "bounding_box": {
+      "x1": 47.0,
+      "y1": 19.0,
+      "x2": 93.0,
+      "y2": 37.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "(kol",
+    "confidence": 0.5006,
+    "bounding_box": {
+      "x1": 119.0,
+      "y1": 19.0,
+      "x2": 139.0,
+      "y2": 33.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "59",
+    "confidence": 0.9494,
+    "bounding_box": {
+      "x1": 293.0,
+      "y1": 21.0,
+      "x2": 315.0,
+      "y2": 41.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Research Parameters",
+    "confidence": 0.9068,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 30.0,
+      "x2": 703.0,
+      "y2": 50.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "SmM",
+    "confidence": 0.2513,
+    "bounding_box": {
+      "x1": 47.0,
+      "y1": 49.0,
+      "x2": 83.0,
+      "y2": 65.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Ii0",
+    "confidence": 0.1898,
+    "bounding_box": {
+      "x1": 287.0,
+      "y1": 45.0,
+      "x2": 305.0,
+      "y2": 59.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "19,6",
+    "confidence": 0.7916,
+    "bounding_box": {
+      "x1": 233.0,
+      "y1": 57.0,
+      "x2": 267.0,
+      "y2": 73.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Basz  Metabolic Raie",
+    "confidence": 0.1356,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 55.0,
+      "x2": 663.0,
+      "y2": 69.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "1176 kcal",
+    "confidence": 0.5746,
+    "bounding_box": {
+      "x1": 677.0,
+      "y1": 53.0,
+      "x2": 737.0,
+      "y2": 71.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Wlaist-H p Ratio",
+    "confidence": 0.3492,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 73.0,
+      "x2": 637.0,
+      "y2": 89.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "0.92",
+    "confidence": 0.9309,
+    "bounding_box": {
+      "x1": 679.0,
+      "y1": 73.0,
+      "x2": 709.0,
+      "y2": 87.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "(075 - 0e",
+    "confidence": 0.1693,
+    "bounding_box": {
+      "x1": 741.0,
+      "y1": 71.0,
+      "x2": 791.0,
+      "y2": 85.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Body Fat Mass (kal",
+    "confidence": 0.3275,
+    "bounding_box": {
+      "x1": 47.0,
+      "y1": 85.0,
+      "x2": 141.0,
+      "y2": 101.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "21.8",
+    "confidence": 0.9382,
+    "bounding_box": {
+      "x1": 319.0,
+      "y1": 91.0,
+      "x2": 353.0,
+      "y2": 107.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Viscera",
+    "confidence": 0.9985,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 91.0,
+      "x2": 595.0,
+      "y2": 107.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Fat Level",
+    "confidence": 0.9928,
+    "bounding_box": {
+      "x1": 597.0,
+      "y1": 91.0,
+      "x2": 647.0,
+      "y2": 107.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "12",
+    "confidence": 0.7429,
+    "bounding_box": {
+      "x1": 691.0,
+      "y1": 91.0,
+      "x2": 709.0,
+      "y2": 105.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "e U",
+    "confidence": 0.0584,
+    "bounding_box": {
+      "x1": 758.0,
+      "y1": 92.0,
+      "x2": 782.0,
+      "y2": 100.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Obesily Degree",
+    "confidence": 0.6474,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 108.0,
+      "x2": 637.0,
+      "y2": 128.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "14 \"",
+    "confidence": 0.4151,
+    "bounding_box": {
+      "x1": 685.0,
+      "y1": 109.0,
+      "x2": 727.0,
+      "y2": 125.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "M-II",
+    "confidence": 0.2373,
+    "bounding_box": {
+      "x1": 751.0,
+      "y1": 109.0,
+      "x2": 787.0,
+      "y2": 123.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Results Interpretation",
+    "confidence": 0.9423,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 139.0,
+      "x2": 705.0,
+      "y2": 157.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Obesity Analysis",
+    "confidence": 0.9963,
+    "bounding_box": {
+      "x1": 39.0,
+      "y1": 143.0,
+      "x2": 160.0,
+      "y2": 168.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Body Composition Analysis",
+    "confidence": 0.9944,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 159.0,
+      "x2": 713.0,
+      "y2": 175.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "U",
+    "confidence": 0.2502,
+    "bounding_box": {
+      "x1": 171.0,
+      "y1": 169.0,
+      "x2": 207.0,
+      "y2": 183.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Nomna",
+    "confidence": 0.3327,
+    "bounding_box": {
+      "x1": 243.0,
+      "y1": 169.0,
+      "x2": 285.0,
+      "y2": 183.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "3",
+    "confidence": 0.0138,
+    "bounding_box": {
+      "x1": 398.0,
+      "y1": 172.0,
+      "x2": 424.0,
+      "y2": 180.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Body welghl Is the aum ol Total Bocy Water; Prole",
+    "confidence": 0.2412,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 174.0,
+      "x2": 791.0,
+      "y2": 193.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "\"0",
+    "confidence": 0.8991,
+    "bounding_box": {
+      "x1": 155.0,
+      "y1": 187.0,
+      "x2": 175.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "15 0",
+    "confidence": 0.5774,
+    "bounding_box": {
+      "x1": 189.0,
+      "y1": 187.0,
+      "x2": 209.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "210",
+    "confidence": 0.2167,
+    "bounding_box": {
+      "x1": 253.0,
+      "y1": 187.0,
+      "x2": 275.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "25 0",
+    "confidence": 0.2829,
+    "bounding_box": {
+      "x1": 287.0,
+      "y1": 187.0,
+      "x2": 309.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "80",
+    "confidence": 0.2661,
+    "bounding_box": {
+      "x1": 321.0,
+      "y1": 187.0,
+      "x2": 343.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "35 0",
+    "confidence": 0.4223,
+    "bounding_box": {
+      "x1": 353.0,
+      "y1": 187.0,
+      "x2": 375.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "o0",
+    "confidence": 0.2256,
+    "bounding_box": {
+      "x1": 387.0,
+      "y1": 187.0,
+      "x2": 409.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "46 0",
+    "confidence": 0.1778,
+    "bounding_box": {
+      "x1": 421.0,
+      "y1": 187.0,
+      "x2": 443.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "S0",
+    "confidence": 0.0473,
+    "bounding_box": {
+      "x1": 455.0,
+      "y1": 187.0,
+      "x2": 475.0,
+      "y2": 201.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "30",
+    "confidence": 0.3102,
+    "bounding_box": {
+      "x1": 487.0,
+      "y1": 187.0,
+      "x2": 509.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "BMI",
+    "confidence": 0.9937,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 193.0,
+      "x2": 77.0,
+      "y2": 207.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "(olm)",
+    "confidence": 0.3814,
+    "bounding_box": {
+      "x1": 105.0,
+      "y1": 195.0,
+      "x2": 141.0,
+      "y2": 211.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Minerals",
+    "confidence": 0.8836,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 193.0,
+      "x2": 601.0,
+      "y2": 207.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "and Body Fa: Mass:",
+    "confidence": 0.2158,
+    "bounding_box": {
+      "x1": 603.0,
+      "y1": 193.0,
+      "x2": 703.0,
+      "y2": 207.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "24.0",
+    "confidence": 0.7222,
+    "bounding_box": {
+      "x1": 295.0,
+      "y1": 199.0,
+      "x2": 331.0,
+      "y2": 215.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Mainain",
+    "confidence": 0.9169,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 209.0,
+      "x2": 601.0,
+      "y2": 223.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "balancad body campostton * Stay",
+    "confidence": 0.2471,
+    "bounding_box": {
+      "x1": 609.0,
+      "y1": 209.0,
+      "x2": 783.0,
+      "y2": 225.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Lad",
+    "confidence": 0.0025,
+    "bounding_box": {
+      "x1": 156.0,
+      "y1": 222.0,
+      "x2": 170.0,
+      "y2": 230.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "1ad",
+    "confidence": 0.0584,
+    "bounding_box": {
+      "x1": 188.0,
+      "y1": 222.0,
+      "x2": 206.0,
+      "y2": 230.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Vio",
+    "confidence": 0.1132,
+    "bounding_box": {
+      "x1": 221.0,
+      "y1": 219.0,
+      "x2": 243.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "210",
+    "confidence": 0.2719,
+    "bounding_box": {
+      "x1": 253.0,
+      "y1": 221.0,
+      "x2": 275.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "28 0",
+    "confidence": 0.1552,
+    "bounding_box": {
+      "x1": 287.0,
+      "y1": 219.0,
+      "x2": 309.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "o",
+    "confidence": 0.2063,
+    "bounding_box": {
+      "x1": 319.0,
+      "y1": 221.0,
+      "x2": 341.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "3ad",
+    "confidence": 0.0726,
+    "bounding_box": {
+      "x1": 353.0,
+      "y1": 221.0,
+      "x2": 375.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "10",
+    "confidence": 0.5934,
+    "bounding_box": {
+      "x1": 387.0,
+      "y1": 221.0,
+      "x2": 409.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Lad",
+    "confidence": 0.2236,
+    "bounding_box": {
+      "x1": 422.0,
+      "y1": 222.0,
+      "x2": 440.0,
+      "y2": 230.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "0d",
+    "confidence": 0.1692,
+    "bounding_box": {
+      "x1": 453.0,
+      "y1": 221.0,
+      "x2": 475.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "4d",
+    "confidence": 0.0893,
+    "bounding_box": {
+      "x1": 488.0,
+      "y1": 222.0,
+      "x2": 506.0,
+      "y2": 230.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "PBF",
+    "confidence": 0.9966,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 225.0,
+      "x2": 79.0,
+      "y2": 239.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "(931",
+    "confidence": 0.1837,
+    "bounding_box": {
+      "x1": 121.0,
+      "y1": 229.0,
+      "x2": 141.0,
+      "y2": 243.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "36.9",
+    "confidence": 0.5644,
+    "bounding_box": {
+      "x1": 355.0,
+      "y1": 231.0,
+      "x2": 389.0,
+      "y2": 247.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "realty:",
+    "confidence": 0.9067,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 225.0,
+      "x2": 597.0,
+      "y2": 241.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Mornel",
+    "confidence": 0.0221,
+    "bounding_box": {
+      "x1": 76.0,
+      "y1": 238.0,
+      "x2": 106.0,
+      "y2": 246.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Musclc-Fat Analysis",
+    "confidence": 0.5531,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 247.0,
+      "x2": 669.0,
+      "y2": 263.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Comnale Ine Dal",
+    "confidence": 0.1709,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 263.0,
+      "x2": 645.0,
+      "y2": 274.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "Srelela",
+    "confidence": 0.3851,
+    "bounding_box": {
+      "x1": 693.0,
+      "y1": 263.0,
+      "x2": 733.0,
+      "y2": 274.0
+    },
+    "section": "obesity_pre_False"
+  },
+  {
+    "text": "For strengthening bones",
+    "confidence": 0.7627,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 17.0,
+      "x2": 183.0,
+      "y2": 33.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Minorals",
+    "confidence": 0.8283,
+    "bounding_box": {
+      "x1": 239.0,
+      "y1": 17.0,
+      "x2": 291.0,
+      "y2": 33.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "2.63 (2.44",
+    "confidence": 0.6291,
+    "bounding_box": {
+      "x1": 393.0,
+      "y1": 15.0,
+      "x2": 469.0,
+      "y2": 35.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "2.98)",
+    "confidence": 0.7236,
+    "bounding_box": {
+      "x1": 479.0,
+      "y1": 15.0,
+      "x2": 517.0,
+      "y2": 35.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "68/100",
+    "confidence": 0.8743,
+    "bounding_box": {
+      "x1": 629.0,
+      "y1": 0.0,
+      "x2": 709.0,
+      "y2": 35.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Toul xol",
+    "confidence": 0.3357,
+    "bounding_box": {
+      "x1": 567.0,
+      "y1": 33.0,
+      "x2": 621.0,
+      "y2": 45.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "thal nllau H Ealualion of budy",
+    "confidence": 0.188,
+    "bounding_box": {
+      "x1": 623.0,
+      "y1": 33.0,
+      "x2": 791.0,
+      "y2": 45.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "For slonng excess",
+    "confidence": 0.4143,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 43.0,
+      "x2": 151.0,
+      "y2": 59.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Body Fat Mass",
+    "confidence": 0.9487,
+    "bounding_box": {
+      "x1": 237.0,
+      "y1": 40.0,
+      "x2": 327.0,
+      "y2": 60.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "21.8 (10.3",
+    "confidence": 0.7905,
+    "bounding_box": {
+      "x1": 393.0,
+      "y1": 41.0,
+      "x2": 469.0,
+      "y2": 61.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "16.5)",
+    "confidence": 0.9251,
+    "bounding_box": {
+      "x1": 481.0,
+      "y1": 41.0,
+      "x2": 517.0,
+      "y2": 59.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "compotition",
+    "confidence": 0.5608,
+    "bounding_box": {
+      "x1": 566.0,
+      "y1": 44.0,
+      "x2": 625.0,
+      "y2": 58.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "nueculi perton muy",
+    "confidence": 0.0296,
+    "bounding_box": {
+      "x1": 639.0,
+      "y1": 44.0,
+      "x2": 739.0,
+      "y2": 57.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Eorc OlCi",
+    "confidence": 0.0726,
+    "bounding_box": {
+      "x1": 741.0,
+      "y1": 45.0,
+      "x2": 789.0,
+      "y2": 57.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "100 poits",
+    "confidence": 0.3674,
+    "bounding_box": {
+      "x1": 567.0,
+      "y1": 57.0,
+      "x2": 619.0,
+      "y2": 71.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Sum ofine above",
+    "confidence": 0.609,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 67.0,
+      "x2": 147.0,
+      "y2": 83.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Weight",
+    "confidence": 0.9905,
+    "bounding_box": {
+      "x1": 235.0,
+      "y1": 65.0,
+      "x2": 283.0,
+      "y2": 85.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "59.1",
+    "confidence": 0.9976,
+    "bounding_box": {
+      "x1": 395.0,
+      "y1": 69.0,
+      "x2": 427.0,
+      "y2": 85.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "(43.9",
+    "confidence": 0.4739,
+    "bounding_box": {
+      "x1": 431.0,
+      "y1": 65.0,
+      "x2": 469.0,
+      "y2": 85.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "59.51",
+    "confidence": 0.7402,
+    "bounding_box": {
+      "x1": 483.0,
+      "y1": 69.0,
+      "x2": 517.0,
+      "y2": 85.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Weight Control",
+    "confidence": 0.8404,
+    "bounding_box": {
+      "x1": 553.0,
+      "y1": 79.0,
+      "x2": 661.0,
+      "y2": 99.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Target Wieight",
+    "confidence": 0.5356,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 101.0,
+      "x2": 629.0,
+      "y2": 119.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "51.7 kg",
+    "confidence": 0.7219,
+    "bounding_box": {
+      "x1": 681.0,
+      "y1": 101.0,
+      "x2": 731.0,
+      "y2": 117.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Muscle-Fat Analysis",
+    "confidence": 0.9592,
+    "bounding_box": {
+      "x1": 41.0,
+      "y1": 120.0,
+      "x2": 184.0,
+      "y2": 146.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Wleight Control",
+    "confidence": 0.7772,
+    "bounding_box": {
+      "x1": 553.0,
+      "y1": 117.0,
+      "x2": 633.0,
+      "y2": 137.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "\"74kg",
+    "confidence": 0.5386,
+    "bounding_box": {
+      "x1": 681.0,
+      "y1": 117.0,
+      "x2": 731.0,
+      "y2": 135.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Fat Contr",
+    "confidence": 0.5561,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 137.0,
+      "x2": 611.0,
+      "y2": 153.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "9.9 kg",
+    "confidence": 0.9372,
+    "bounding_box": {
+      "x1": 687.0,
+      "y1": 133.0,
+      "x2": 729.0,
+      "y2": 153.0
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "cnongy",
+    "confidence": 0.3682,
+    "bounding_box": {
+      "x1": 148.0,
+      "y1": 41.1,
+      "x2": 189.0,
+      "y2": 59.9
+    },
+    "section": "muscle_fat_pre_True"
+  },
+  {
+    "text": "Musde Contol",
+    "confidence": 0.8268,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 3.0,
+      "x2": 633.0,
+      "y2": 17.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "25k8",
+    "confidence": 0.6695,
+    "bounding_box": {
+      "x1": 685.0,
+      "y1": 0.0,
+      "x2": 729.0,
+      "y2": 19.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Woight",
+    "confidence": 0.8944,
+    "bounding_box": {
+      "x1": 45.0,
+      "y1": 17.0,
+      "x2": 93.0,
+      "y2": 37.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "(l",
+    "confidence": 0.2124,
+    "bounding_box": {
+      "x1": 119.0,
+      "y1": 19.0,
+      "x2": 137.0,
+      "y2": 33.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "59",
+    "confidence": 1.0,
+    "bounding_box": {
+      "x1": 293.0,
+      "y1": 21.0,
+      "x2": 315.0,
+      "y2": 41.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Research Parameters",
+    "confidence": 0.9997,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 31.0,
+      "x2": 703.0,
+      "y2": 49.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "SMie",
+    "confidence": 0.0729,
+    "bounding_box": {
+      "x1": 44.0,
+      "y1": 47.0,
+      "x2": 99.0,
+      "y2": 73.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "19,6",
+    "confidence": 0.5803,
+    "bounding_box": {
+      "x1": 233.0,
+      "y1": 57.0,
+      "x2": 267.0,
+      "y2": 73.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Basa Metabolc Rate",
+    "confidence": 0.3979,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 53.0,
+      "x2": 663.0,
+      "y2": 69.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "176 kaal",
+    "confidence": 0.465,
+    "bounding_box": {
+      "x1": 675.0,
+      "y1": 53.0,
+      "x2": 737.0,
+      "y2": 71.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Waist-H p Rato",
+    "confidence": 0.6666,
+    "bounding_box": {
+      "x1": 551.0,
+      "y1": 69.0,
+      "x2": 637.0,
+      "y2": 89.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "0.92",
+    "confidence": 0.5747,
+    "bounding_box": {
+      "x1": 679.0,
+      "y1": 71.0,
+      "x2": 709.0,
+      "y2": 89.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "(075 ~ 02",
+    "confidence": 0.2381,
+    "bounding_box": {
+      "x1": 739.0,
+      "y1": 69.0,
+      "x2": 791.0,
+      "y2": 85.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Body Fat Mass(k9l",
+    "confidence": 0.3642,
+    "bounding_box": {
+      "x1": 47.0,
+      "y1": 85.0,
+      "x2": 141.0,
+      "y2": 101.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "21.8",
+    "confidence": 0.9635,
+    "bounding_box": {
+      "x1": 319.0,
+      "y1": 91.0,
+      "x2": 353.0,
+      "y2": 107.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Visceral Fat Level",
+    "confidence": 0.9917,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 91.0,
+      "x2": 647.0,
+      "y2": 107.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "12",
+    "confidence": 0.875,
+    "bounding_box": {
+      "x1": 691.0,
+      "y1": 91.0,
+      "x2": 711.0,
+      "y2": 105.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Obesily Degree",
+    "confidence": 0.6577,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 108.0,
+      "x2": 637.0,
+      "y2": 128.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "14 %",
+    "confidence": 0.2308,
+    "bounding_box": {
+      "x1": 683.0,
+      "y1": 107.0,
+      "x2": 727.0,
+      "y2": 125.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "X-I",
+    "confidence": 0.1382,
+    "bounding_box": {
+      "x1": 751.0,
+      "y1": 109.0,
+      "x2": 789.0,
+      "y2": 123.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Results Interpretation",
+    "confidence": 1.0,
+    "bounding_box": {
+      "x1": 552.0,
+      "y1": 134.0,
+      "x2": 706.0,
+      "y2": 159.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Obesity Analysis",
+    "confidence": 0.8433,
+    "bounding_box": {
+      "x1": 39.0,
+      "y1": 143.0,
+      "x2": 160.0,
+      "y2": 169.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Body Composition Analysis",
+    "confidence": 0.9986,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 157.0,
+      "x2": 713.0,
+      "y2": 175.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Undo",
+    "confidence": 0.2592,
+    "bounding_box": {
+      "x1": 169.0,
+      "y1": 169.0,
+      "x2": 209.0,
+      "y2": 183.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Nommal",
+    "confidence": 0.5568,
+    "bounding_box": {
+      "x1": 243.0,
+      "y1": 169.0,
+      "x2": 285.0,
+      "y2": 183.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Body weghl Is te su 0 Toal",
+    "confidence": 0.2181,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 175.0,
+      "x2": 703.0,
+      "y2": 193.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Water; Frole",
+    "confidence": 0.5457,
+    "bounding_box": {
+      "x1": 729.0,
+      "y1": 173.0,
+      "x2": 791.0,
+      "y2": 193.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "30",
+    "confidence": 0.0898,
+    "bounding_box": {
+      "x1": 153.0,
+      "y1": 187.0,
+      "x2": 175.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "4D",
+    "confidence": 0.1075,
+    "bounding_box": {
+      "x1": 188.0,
+      "y1": 188.0,
+      "x2": 206.0,
+      "y2": 196.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "35 0",
+    "confidence": 0.5838,
+    "bounding_box": {
+      "x1": 287.0,
+      "y1": 185.0,
+      "x2": 309.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "4o0",
+    "confidence": 0.0239,
+    "bounding_box": {
+      "x1": 319.0,
+      "y1": 187.0,
+      "x2": 343.0,
+      "y2": 199.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "350",
+    "confidence": 0.6362,
+    "bounding_box": {
+      "x1": 353.0,
+      "y1": 187.0,
+      "x2": 377.0,
+      "y2": 201.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Jod",
+    "confidence": 0.1088,
+    "bounding_box": {
+      "x1": 387.0,
+      "y1": 187.0,
+      "x2": 409.0,
+      "y2": 201.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "460",
+    "confidence": 0.4792,
+    "bounding_box": {
+      "x1": 421.0,
+      "y1": 187.0,
+      "x2": 443.0,
+      "y2": 201.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Ed",
+    "confidence": 0.0371,
+    "bounding_box": {
+      "x1": 453.0,
+      "y1": 187.0,
+      "x2": 475.0,
+      "y2": 201.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "BMI",
+    "confidence": 0.995,
+    "bounding_box": {
+      "x1": 47.0,
+      "y1": 193.0,
+      "x2": 77.0,
+      "y2": 207.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "(om)",
+    "confidence": 0.8747,
+    "bounding_box": {
+      "x1": 103.0,
+      "y1": 195.0,
+      "x2": 141.0,
+      "y2": 211.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Minerals",
+    "confidence": 0.9241,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 193.0,
+      "x2": 601.0,
+      "y2": 207.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "and Body Fa: Mass",
+    "confidence": 0.4743,
+    "bounding_box": {
+      "x1": 603.0,
+      "y1": 191.0,
+      "x2": 703.0,
+      "y2": 207.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "24.0",
+    "confidence": 0.9847,
+    "bounding_box": {
+      "x1": 295.0,
+      "y1": 199.0,
+      "x2": 331.0,
+      "y2": 215.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Mainain",
+    "confidence": 0.9735,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 207.0,
+      "x2": 601.0,
+      "y2": 223.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "balancad body camposton t Stay",
+    "confidence": 0.2222,
+    "bounding_box": {
+      "x1": 609.0,
+      "y1": 209.0,
+      "x2": 783.0,
+      "y2": 225.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "280",
+    "confidence": 0.5644,
+    "bounding_box": {
+      "x1": 285.0,
+      "y1": 219.0,
+      "x2": 309.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "410",
+    "confidence": 0.1208,
+    "bounding_box": {
+      "x1": 319.0,
+      "y1": 219.0,
+      "x2": 343.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "3ad",
+    "confidence": 0.026,
+    "bounding_box": {
+      "x1": 353.0,
+      "y1": 221.0,
+      "x2": 375.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "410",
+    "confidence": 0.8014,
+    "bounding_box": {
+      "x1": 387.0,
+      "y1": 221.0,
+      "x2": 409.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "4d",
+    "confidence": 0.1207,
+    "bounding_box": {
+      "x1": 453.0,
+      "y1": 221.0,
+      "x2": 475.0,
+      "y2": 233.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "3d",
+    "confidence": 0.035,
+    "bounding_box": {
+      "x1": 488.0,
+      "y1": 222.0,
+      "x2": 506.0,
+      "y2": 230.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "PBF",
+    "confidence": 0.9955,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 225.0,
+      "x2": 79.0,
+      "y2": 241.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "(931",
+    "confidence": 0.4348,
+    "bounding_box": {
+      "x1": 119.0,
+      "y1": 229.0,
+      "x2": 141.0,
+      "y2": 243.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "36.9",
+    "confidence": 0.9701,
+    "bounding_box": {
+      "x1": 353.0,
+      "y1": 229.0,
+      "x2": 389.0,
+      "y2": 247.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "realthy:",
+    "confidence": 0.8048,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 225.0,
+      "x2": 597.0,
+      "y2": 241.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Musclc -Fat Analysis",
+    "confidence": 0.4028,
+    "bounding_box": {
+      "x1": 557.0,
+      "y1": 247.0,
+      "x2": 669.0,
+      "y2": 263.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Comoare Ihe dan",
+    "confidence": 0.0932,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 263.0,
+      "x2": 645.0,
+      "y2": 274.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Sreleta",
+    "confidence": 0.2985,
+    "bounding_box": {
+      "x1": 693.0,
+      "y1": 263.0,
+      "x2": 733.0,
+      "y2": 274.0
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Boc}'",
+    "confidence": 0.0489,
+    "bounding_box": {
+      "x1": 702.2,
+      "y1": 173.3,
+      "x2": 734.8,
+      "y2": 194.7
+    },
+    "section": "obesity_pre_True"
+  },
+  {
+    "text": "Targel Wieignt",
+    "confidence": 0.7276,
+    "bounding_box": {
+      "x1": 185.0,
+      "y1": 7.0,
+      "x2": 257.0,
+      "y2": 23.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "51.7kg",
+    "confidence": 0.4526,
+    "bounding_box": {
+      "x1": 311.0,
+      "y1": 5.0,
+      "x2": 359.0,
+      "y2": 23.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Wleight Control",
+    "confidence": 0.7732,
+    "bounding_box": {
+      "x1": 181.0,
+      "y1": 23.0,
+      "x2": 261.0,
+      "y2": 41.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "74kg",
+    "confidence": 0.5907,
+    "bounding_box": {
+      "x1": 317.0,
+      "y1": 23.0,
+      "x2": 359.0,
+      "y2": 41.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Fat Ccntr\"",
+    "confidence": 0.4594,
+    "bounding_box": {
+      "x1": 183.0,
+      "y1": 43.0,
+      "x2": 243.0,
+      "y2": 59.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "9,9 kg",
+    "confidence": 0.4097,
+    "bounding_box": {
+      "x1": 317.0,
+      "y1": 41.0,
+      "x2": 359.0,
+      "y2": 59.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Musde Contoll",
+    "confidence": 0.372,
+    "bounding_box": {
+      "x1": 183.0,
+      "y1": 61.0,
+      "x2": 263.0,
+      "y2": 77.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "2.5 k8",
+    "confidence": 0.3212,
+    "bounding_box": {
+      "x1": 317.0,
+      "y1": 59.0,
+      "x2": 359.0,
+      "y2": 77.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Research Parameters",
+    "confidence": 0.9976,
+    "bounding_box": {
+      "x1": 185.0,
+      "y1": 89.0,
+      "x2": 333.0,
+      "y2": 107.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Basa Metabolc Rate",
+    "confidence": 0.3128,
+    "bounding_box": {
+      "x1": 183.0,
+      "y1": 113.0,
+      "x2": 293.0,
+      "y2": 129.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "176 kcal",
+    "confidence": 0.7114,
+    "bounding_box": {
+      "x1": 303.0,
+      "y1": 111.0,
+      "x2": 367.0,
+      "y2": 129.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Wlaist-Hp Ratio",
+    "confidence": 0.6884,
+    "bounding_box": {
+      "x1": 183.0,
+      "y1": 131.0,
+      "x2": 265.0,
+      "y2": 147.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "0.92",
+    "confidence": 0.8485,
+    "bounding_box": {
+      "x1": 307.0,
+      "y1": 129.0,
+      "x2": 339.0,
+      "y2": 147.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "(075 ~ 0as)",
+    "confidence": 0.2736,
+    "bounding_box": {
+      "x1": 369.0,
+      "y1": 129.0,
+      "x2": 433.0,
+      "y2": 145.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Visceral Fat Level",
+    "confidence": 0.9965,
+    "bounding_box": {
+      "x1": 183.0,
+      "y1": 149.0,
+      "x2": 275.0,
+      "y2": 165.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "12",
+    "confidence": 0.6545,
+    "bounding_box": {
+      "x1": 321.0,
+      "y1": 149.0,
+      "x2": 339.0,
+      "y2": 165.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "1-9",
+    "confidence": 0.4654,
+    "bounding_box": {
+      "x1": 385.0,
+      "y1": 149.0,
+      "x2": 413.0,
+      "y2": 163.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Obesly Degree",
+    "confidence": 0.965,
+    "bounding_box": {
+      "x1": 185.0,
+      "y1": 169.0,
+      "x2": 265.0,
+      "y2": 185.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "114 \"",
+    "confidence": 0.1618,
+    "bounding_box": {
+      "x1": 313.0,
+      "y1": 167.0,
+      "x2": 355.0,
+      "y2": 183.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "X-IIO",
+    "confidence": 0.0979,
+    "bounding_box": {
+      "x1": 381.0,
+      "y1": 167.0,
+      "x2": 427.0,
+      "y2": 181.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Results Interpretation",
+    "confidence": 0.7536,
+    "bounding_box": {
+      "x1": 183.0,
+      "y1": 195.0,
+      "x2": 333.0,
+      "y2": 215.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Body Composition Analysis",
+    "confidence": 0.9686,
+    "bounding_box": {
+      "x1": 185.0,
+      "y1": 217.0,
+      "x2": 341.0,
+      "y2": 233.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "9|",
+    "confidence": 0.0383,
+    "bounding_box": {
+      "x1": 28.0,
+      "y1": 230.0,
+      "x2": 52.0,
+      "y2": 238.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "welnl Is te wm o Ioal Boc Waler;_",
+    "confidence": 0.0943,
+    "bounding_box": {
+      "x1": 211.0,
+      "y1": 235.0,
+      "x2": 395.0,
+      "y2": 248.0
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Bool",
+    "confidence": 0.2089,
+    "bounding_box": {
+      "x1": 181.1,
+      "y1": 232.3,
+      "x2": 214.9,
+      "y2": 252.7
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Roen",
+    "confidence": 0.4984,
+    "bounding_box": {
+      "x1": 390.1,
+      "y1": 232.3,
+      "x2": 429.9,
+      "y2": 253.7
+    },
+    "section": "research_params_pre_False"
+  },
+  {
+    "text": "Results Interpretation",
+    "confidence": 0.9423,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 19.0,
+      "x2": 705.0,
+      "y2": 37.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Obesity Analysis",
+    "confidence": 0.9963,
+    "bounding_box": {
+      "x1": 39.0,
+      "y1": 23.0,
+      "x2": 160.0,
+      "y2": 48.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Body Composition Analysis",
+    "confidence": 0.9944,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 39.0,
+      "x2": 713.0,
+      "y2": 55.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "U",
+    "confidence": 0.2502,
+    "bounding_box": {
+      "x1": 171.0,
+      "y1": 49.0,
+      "x2": 207.0,
+      "y2": 63.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Nouna",
+    "confidence": 0.5419,
+    "bounding_box": {
+      "x1": 243.0,
+      "y1": 49.0,
+      "x2": 283.0,
+      "y2": 63.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "3",
+    "confidence": 0.0138,
+    "bounding_box": {
+      "x1": 398.0,
+      "y1": 52.0,
+      "x2": 424.0,
+      "y2": 60.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Body welghl Is the aum ol Total Bocy Water; Prole",
+    "confidence": 0.2412,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 54.0,
+      "x2": 791.0,
+      "y2": 73.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "\"0",
+    "confidence": 0.8991,
+    "bounding_box": {
+      "x1": 155.0,
+      "y1": 67.0,
+      "x2": 175.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "JGA",
+    "confidence": 0.0172,
+    "bounding_box": {
+      "x1": 188.0,
+      "y1": 68.0,
+      "x2": 206.0,
+      "y2": 76.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Tu 5",
+    "confidence": 0.0048,
+    "bounding_box": {
+      "x1": 222.0,
+      "y1": 68.0,
+      "x2": 240.0,
+      "y2": 76.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "210",
+    "confidence": 0.2167,
+    "bounding_box": {
+      "x1": 253.0,
+      "y1": 67.0,
+      "x2": 275.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "25 0",
+    "confidence": 0.2829,
+    "bounding_box": {
+      "x1": 287.0,
+      "y1": 67.0,
+      "x2": 309.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "80",
+    "confidence": 0.2661,
+    "bounding_box": {
+      "x1": 321.0,
+      "y1": 67.0,
+      "x2": 343.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "35 0",
+    "confidence": 0.5311,
+    "bounding_box": {
+      "x1": 353.0,
+      "y1": 67.0,
+      "x2": 377.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "o0",
+    "confidence": 0.2256,
+    "bounding_box": {
+      "x1": 387.0,
+      "y1": 67.0,
+      "x2": 409.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "4e0",
+    "confidence": 0.2647,
+    "bounding_box": {
+      "x1": 421.0,
+      "y1": 67.0,
+      "x2": 443.0,
+      "y2": 81.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "S0",
+    "confidence": 0.0473,
+    "bounding_box": {
+      "x1": 455.0,
+      "y1": 67.0,
+      "x2": 475.0,
+      "y2": 81.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "40",
+    "confidence": 0.3943,
+    "bounding_box": {
+      "x1": 488.0,
+      "y1": 68.0,
+      "x2": 506.0,
+      "y2": 76.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "BMI",
+    "confidence": 0.9937,
+    "bounding_box": {
+      "x1": 49.0,
+      "y1": 73.0,
+      "x2": 77.0,
+      "y2": 87.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "(olm)",
+    "confidence": 0.3814,
+    "bounding_box": {
+      "x1": 105.0,
+      "y1": 75.0,
+      "x2": 141.0,
+      "y2": 91.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Minerals",
+    "confidence": 0.8836,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 73.0,
+      "x2": 601.0,
+      "y2": 87.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "and Body Fa: Mass:",
+    "confidence": 0.2158,
+    "bounding_box": {
+      "x1": 603.0,
+      "y1": 73.0,
+      "x2": 703.0,
+      "y2": 87.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "24.0",
+    "confidence": 0.7554,
+    "bounding_box": {
+      "x1": 297.0,
+      "y1": 79.0,
+      "x2": 331.0,
+      "y2": 95.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Mainain",
+    "confidence": 0.9169,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 89.0,
+      "x2": 601.0,
+      "y2": 103.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "balancad body campostton * Stay",
+    "confidence": 0.2471,
+    "bounding_box": {
+      "x1": 609.0,
+      "y1": 89.0,
+      "x2": 783.0,
+      "y2": 105.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "1ad",
+    "confidence": 0.0584,
+    "bounding_box": {
+      "x1": 188.0,
+      "y1": 102.0,
+      "x2": 206.0,
+      "y2": 110.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Vio",
+    "confidence": 0.1132,
+    "bounding_box": {
+      "x1": 221.0,
+      "y1": 99.0,
+      "x2": 243.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "210",
+    "confidence": 0.2719,
+    "bounding_box": {
+      "x1": 253.0,
+      "y1": 101.0,
+      "x2": 275.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "28 0",
+    "confidence": 0.1552,
+    "bounding_box": {
+      "x1": 287.0,
+      "y1": 99.0,
+      "x2": 309.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "o",
+    "confidence": 0.2063,
+    "bounding_box": {
+      "x1": 319.0,
+      "y1": 101.0,
+      "x2": 341.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "7a=",
+    "confidence": 0.0758,
+    "bounding_box": {
+      "x1": 354.0,
+      "y1": 102.0,
+      "x2": 372.0,
+      "y2": 110.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "10",
+    "confidence": 0.5934,
+    "bounding_box": {
+      "x1": 387.0,
+      "y1": 101.0,
+      "x2": 409.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "40",
+    "confidence": 0.5758,
+    "bounding_box": {
+      "x1": 421.0,
+      "y1": 101.0,
+      "x2": 441.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "0d",
+    "confidence": 0.1692,
+    "bounding_box": {
+      "x1": 453.0,
+      "y1": 101.0,
+      "x2": 475.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "40",
+    "confidence": 0.6401,
+    "bounding_box": {
+      "x1": 487.0,
+      "y1": 101.0,
+      "x2": 509.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "PBF Nol Fu",
+    "confidence": 0.202,
+    "bounding_box": {
+      "x1": 48.0,
+      "y1": 104.0,
+      "x2": 108.0,
+      "y2": 128.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "36.9",
+    "confidence": 0.5644,
+    "bounding_box": {
+      "x1": 355.0,
+      "y1": 111.0,
+      "x2": 389.0,
+      "y2": 127.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "realty:",
+    "confidence": 0.9067,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 105.0,
+      "x2": 597.0,
+      "y2": 121.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Musclc-Fat Analysis",
+    "confidence": 0.5451,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 127.0,
+      "x2": 671.0,
+      "y2": 143.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Compare Ihe bar lengihs 0\" Sreletal Knxscle Ma",
+    "confidence": 0.1595,
+    "bounding_box": {
+      "x1": 554.0,
+      "y1": 141.0,
+      "x2": 791.0,
+      "y2": 160.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "and Body Fal Mass: The longer Ihe Skelelal Mus",
+    "confidence": 0.37,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 159.0,
+      "x2": 789.0,
+      "y2": 175.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Segmental Lean Analysis",
+    "confidence": 0.9904,
+    "bounding_box": {
+      "x1": 41.0,
+      "y1": 172.0,
+      "x2": 226.0,
+      "y2": 197.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Segmental Fat Analysis",
+    "confidence": 0.941,
+    "bounding_box": {
+      "x1": 293.0,
+      "y1": 171.0,
+      "x2": 466.0,
+      "y2": 197.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Mass baris compared \"0 the Boty Fat Mtass bar;\"",
+    "confidence": 0.1323,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 174.0,
+      "x2": 787.0,
+      "y2": 192.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "stronger Ihe body F",
+    "confidence": 0.2015,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 191.0,
+      "x2": 645.0,
+      "y2": 207.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "94k9_",
+    "confidence": 0.8718,
+    "bounding_box": {
+      "x1": 78.0,
+      "y1": 218.0,
+      "x2": 120.0,
+      "y2": 242.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "2.02 k9 _",
+    "confidence": 0.4273,
+    "bounding_box": {
+      "x1": 203.0,
+      "y1": 221.0,
+      "x2": 255.0,
+      "y2": 241.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "6 kg",
+    "confidence": 0.9926,
+    "bounding_box": {
+      "x1": 335.0,
+      "y1": 221.0,
+      "x2": 365.0,
+      "y2": 239.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "1.5 kg",
+    "confidence": 0.5234,
+    "bounding_box": {
+      "x1": 461.0,
+      "y1": 221.0,
+      "x2": 501.0,
+      "y2": 239.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Obcsity Analysis",
+    "confidence": 0.8434,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 215.0,
+      "x2": 651.0,
+      "y2": 231.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "BMi e",
+    "confidence": 0.3009,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 231.0,
+      "x2": 579.0,
+      "y2": 245.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "an ndex used  celemne obesily by us ng",
+    "confidence": 0.324,
+    "bounding_box": {
+      "x1": 585.0,
+      "y1": 231.0,
+      "x2": 791.0,
+      "y2": 247.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "98 ,",
+    "confidence": 0.53,
+    "bounding_box": {
+      "x1": 69.0,
+      "y1": 241.0,
+      "x2": 91.0,
+      "y2": 257.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "%0",
+    "confidence": 0.1939,
+    "bounding_box": {
+      "x1": 103.0,
+      "y1": 245.0,
+      "x2": 117.0,
+      "y2": 257.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "102.2 %",
+    "confidence": 0.9737,
+    "bounding_box": {
+      "x1": 199.0,
+      "y1": 239.0,
+      "x2": 257.0,
+      "y2": 259.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "183,0 %",
+    "confidence": 0.5841,
+    "bounding_box": {
+      "x1": 315.0,
+      "y1": 239.0,
+      "x2": 373.0,
+      "y2": 257.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "178.0 %",
+    "confidence": 0.9227,
+    "bounding_box": {
+      "x1": 453.0,
+      "y1": 241.0,
+      "x2": 509.0,
+      "y2": 259.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "reight and welght",
+    "confidence": 0.39,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 247.0,
+      "x2": 649.0,
+      "y2": 263.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Normal",
+    "confidence": 0.8753,
+    "bounding_box": {
+      "x1": 71.0,
+      "y1": 265.0,
+      "x2": 115.0,
+      "y2": 279.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "17.7",
+    "confidence": 0.9694,
+    "bounding_box": {
+      "x1": 137.0,
+      "y1": 265.0,
+      "x2": 173.0,
+      "y2": 285.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Norma",
+    "confidence": 0.8215,
+    "bounding_box": {
+      "x1": 207.0,
+      "y1": 265.0,
+      "x2": 247.0,
+      "y2": 279.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Over",
+    "confidence": 0.9974,
+    "bounding_box": {
+      "x1": 329.0,
+      "y1": 263.0,
+      "x2": 361.0,
+      "y2": 279.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "11.7 kg",
+    "confidence": 0.4543,
+    "bounding_box": {
+      "x1": 391.0,
+      "y1": 267.0,
+      "x2": 441.0,
+      "y2": 285.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Over",
+    "confidence": 0.9346,
+    "bounding_box": {
+      "x1": 465.0,
+      "y1": 265.0,
+      "x2": 497.0,
+      "y2": 279.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "PBF",
+    "confidence": 0.7525,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 263.0,
+      "x2": 579.0,
+      "y2": 277.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "the percantag0 af body fat compared Io DDC",
+    "confidence": 0.1957,
+    "bounding_box": {
+      "x1": 587.0,
+      "y1": 262.0,
+      "x2": 791.0,
+      "y2": 280.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "09",
+    "confidence": 0.1453,
+    "bounding_box": {
+      "x1": 171.0,
+      "y1": 271.0,
+      "x2": 189.0,
+      "y2": 287.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "weicht",
+    "confidence": 0.7908,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 279.0,
+      "x2": 593.0,
+      "y2": 295.0
+    },
+    "section": "segmental_lean_pre_False"
+  },
+  {
+    "text": "Results Interpretation",
+    "confidence": 0.9992,
+    "bounding_box": {
+      "x1": 552.0,
+      "y1": 14.0,
+      "x2": 706.0,
+      "y2": 38.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Obesity Analysis",
+    "confidence": 0.8886,
+    "bounding_box": {
+      "x1": 39.0,
+      "y1": 23.0,
+      "x2": 160.0,
+      "y2": 49.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Body Composition Analysis",
+    "confidence": 0.9991,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 37.0,
+      "x2": 713.0,
+      "y2": 55.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Uno",
+    "confidence": 0.1181,
+    "bounding_box": {
+      "x1": 169.0,
+      "y1": 49.0,
+      "x2": 209.0,
+      "y2": 65.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Nommal",
+    "confidence": 0.4027,
+    "bounding_box": {
+      "x1": 243.0,
+      "y1": 49.0,
+      "x2": 287.0,
+      "y2": 63.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "H",
+    "confidence": 0.004,
+    "bounding_box": {
+      "x1": 398.0,
+      "y1": 52.0,
+      "x2": 426.0,
+      "y2": 60.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Body weghl Is te s 0 Toal",
+    "confidence": 0.3183,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 55.0,
+      "x2": 703.0,
+      "y2": 73.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Water; Rrole",
+    "confidence": 0.5622,
+    "bounding_box": {
+      "x1": 729.0,
+      "y1": 53.0,
+      "x2": 791.0,
+      "y2": 73.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "40",
+    "confidence": 0.1153,
+    "bounding_box": {
+      "x1": 153.0,
+      "y1": 67.0,
+      "x2": 175.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "150",
+    "confidence": 0.7454,
+    "bounding_box": {
+      "x1": 187.0,
+      "y1": 67.0,
+      "x2": 209.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "109",
+    "confidence": 0.2295,
+    "bounding_box": {
+      "x1": 221.0,
+      "y1": 67.0,
+      "x2": 243.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "210",
+    "confidence": 0.3139,
+    "bounding_box": {
+      "x1": 253.0,
+      "y1": 67.0,
+      "x2": 275.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "35 0",
+    "confidence": 0.4724,
+    "bounding_box": {
+      "x1": 287.0,
+      "y1": 65.0,
+      "x2": 309.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "20",
+    "confidence": 0.0846,
+    "bounding_box": {
+      "x1": 321.0,
+      "y1": 67.0,
+      "x2": 343.0,
+      "y2": 79.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "350",
+    "confidence": 0.8393,
+    "bounding_box": {
+      "x1": 353.0,
+      "y1": 67.0,
+      "x2": 377.0,
+      "y2": 81.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Jod",
+    "confidence": 0.2007,
+    "bounding_box": {
+      "x1": 387.0,
+      "y1": 67.0,
+      "x2": 409.0,
+      "y2": 81.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "450",
+    "confidence": 0.5077,
+    "bounding_box": {
+      "x1": 421.0,
+      "y1": 67.0,
+      "x2": 443.0,
+      "y2": 81.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Ed",
+    "confidence": 0.0729,
+    "bounding_box": {
+      "x1": 453.0,
+      "y1": 67.0,
+      "x2": 477.0,
+      "y2": 81.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "550",
+    "confidence": 0.3739,
+    "bounding_box": {
+      "x1": 487.0,
+      "y1": 67.0,
+      "x2": 509.0,
+      "y2": 81.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "BMI",
+    "confidence": 0.9926,
+    "bounding_box": {
+      "x1": 47.0,
+      "y1": 73.0,
+      "x2": 77.0,
+      "y2": 89.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "(om)",
+    "confidence": 0.8995,
+    "bounding_box": {
+      "x1": 103.0,
+      "y1": 75.0,
+      "x2": 141.0,
+      "y2": 91.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "24.0",
+    "confidence": 0.9176,
+    "bounding_box": {
+      "x1": 295.0,
+      "y1": 77.0,
+      "x2": 331.0,
+      "y2": 95.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Minerals",
+    "confidence": 0.9415,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 73.0,
+      "x2": 601.0,
+      "y2": 87.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "and Body Fa: Mass",
+    "confidence": 0.4818,
+    "bounding_box": {
+      "x1": 603.0,
+      "y1": 71.0,
+      "x2": 703.0,
+      "y2": 87.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Mainain",
+    "confidence": 0.9812,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 87.0,
+      "x2": 601.0,
+      "y2": 103.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "balancad body camposton t Stay",
+    "confidence": 0.2046,
+    "bounding_box": {
+      "x1": 609.0,
+      "y1": 89.0,
+      "x2": 783.0,
+      "y2": 105.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Vio",
+    "confidence": 0.0783,
+    "bounding_box": {
+      "x1": 221.0,
+      "y1": 99.0,
+      "x2": 243.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "20",
+    "confidence": 0.3143,
+    "bounding_box": {
+      "x1": 253.0,
+      "y1": 101.0,
+      "x2": 275.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "28 0",
+    "confidence": 0.5643,
+    "bounding_box": {
+      "x1": 287.0,
+      "y1": 99.0,
+      "x2": 309.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "40",
+    "confidence": 0.2638,
+    "bounding_box": {
+      "x1": 319.0,
+      "y1": 99.0,
+      "x2": 343.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "410",
+    "confidence": 0.7011,
+    "bounding_box": {
+      "x1": 387.0,
+      "y1": 101.0,
+      "x2": 409.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "4d",
+    "confidence": 0.3129,
+    "bounding_box": {
+      "x1": 421.0,
+      "y1": 101.0,
+      "x2": 443.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "4d",
+    "confidence": 0.0772,
+    "bounding_box": {
+      "x1": 453.0,
+      "y1": 101.0,
+      "x2": 475.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "{0",
+    "confidence": 0.1827,
+    "bounding_box": {
+      "x1": 487.0,
+      "y1": 101.0,
+      "x2": 509.0,
+      "y2": 113.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "PBF",
+    "confidence": 0.9768,
+    "bounding_box": {
+      "x1": 47.0,
+      "y1": 103.0,
+      "x2": 79.0,
+      "y2": 121.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "36.9",
+    "confidence": 0.9575,
+    "bounding_box": {
+      "x1": 353.0,
+      "y1": 109.0,
+      "x2": 389.0,
+      "y2": 127.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "realtzy",
+    "confidence": 0.5379,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 105.0,
+      "x2": 597.0,
+      "y2": 119.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Musclc-Fat Analysis",
+    "confidence": 0.8143,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 127.0,
+      "x2": 669.0,
+      "y2": 145.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Compare the bar lengins 0 Skeletal Kiscle Ma",
+    "confidence": 0.2714,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 141.0,
+      "x2": 791.0,
+      "y2": 159.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "and Body Fal Mass: The longer the Skelelal Mus",
+    "confidence": 0.2887,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 157.0,
+      "x2": 789.0,
+      "y2": 175.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Segmental Lean Analysis",
+    "confidence": 0.9126,
+    "bounding_box": {
+      "x1": 39.0,
+      "y1": 171.0,
+      "x2": 226.0,
+      "y2": 197.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Segmental Fat Analysis",
+    "confidence": 0.9975,
+    "bounding_box": {
+      "x1": 291.0,
+      "y1": 171.0,
+      "x2": 466.0,
+      "y2": 199.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Mass baris comparea\"o the[",
+    "confidence": 0.2701,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 175.0,
+      "x2": 693.0,
+      "y2": 191.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Boty Fat Mtass bar;5",
+    "confidence": 0.1523,
+    "bounding_box": {
+      "x1": 690.0,
+      "y1": 171.0,
+      "x2": 787.0,
+      "y2": 192.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "slrotger Ihe body[5",
+    "confidence": 0.1766,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 191.0,
+      "x2": 655.0,
+      "y2": 207.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "2941",
+    "confidence": 0.1944,
+    "bounding_box": {
+      "x1": 76.0,
+      "y1": 218.0,
+      "x2": 120.0,
+      "y2": 242.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "2.02 k9",
+    "confidence": 0.3652,
+    "bounding_box": {
+      "x1": 201.0,
+      "y1": 219.0,
+      "x2": 255.0,
+      "y2": 239.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "1.5kg",
+    "confidence": 0.7136,
+    "bounding_box": {
+      "x1": 457.0,
+      "y1": 219.0,
+      "x2": 501.0,
+      "y2": 239.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Obcsity Analysis",
+    "confidence": 0.9766,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 215.0,
+      "x2": 651.0,
+      "y2": 231.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "BMI Ba ndex used 0 Celemmne obesily by Us ng",
+    "confidence": 0.2448,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 229.0,
+      "x2": 791.0,
+      "y2": 247.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "98.",
+    "confidence": 0.8526,
+    "bounding_box": {
+      "x1": 69.0,
+      "y1": 241.0,
+      "x2": 95.0,
+      "y2": 257.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "102.2",
+    "confidence": 0.6685,
+    "bounding_box": {
+      "x1": 197.0,
+      "y1": 239.0,
+      "x2": 243.0,
+      "y2": 259.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "\"7850 5",
+    "confidence": 0.2409,
+    "bounding_box": {
+      "x1": 314.0,
+      "y1": 236.0,
+      "x2": 374.0,
+      "y2": 260.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "178.0 %",
+    "confidence": 0.8773,
+    "bounding_box": {
+      "x1": 451.0,
+      "y1": 241.0,
+      "x2": 509.0,
+      "y2": 257.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "helght and welght",
+    "confidence": 0.3386,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 247.0,
+      "x2": 649.0,
+      "y2": 263.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Normal",
+    "confidence": 0.7447,
+    "bounding_box": {
+      "x1": 71.0,
+      "y1": 265.0,
+      "x2": 113.0,
+      "y2": 279.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "17789",
+    "confidence": 0.2043,
+    "bounding_box": {
+      "x1": 135.0,
+      "y1": 262.0,
+      "x2": 190.0,
+      "y2": 288.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Norma",
+    "confidence": 0.9457,
+    "bounding_box": {
+      "x1": 207.0,
+      "y1": 263.0,
+      "x2": 247.0,
+      "y2": 279.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Over",
+    "confidence": 0.9969,
+    "bounding_box": {
+      "x1": 329.0,
+      "y1": 263.0,
+      "x2": 361.0,
+      "y2": 279.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "11.7k9",
+    "confidence": 0.9246,
+    "bounding_box": {
+      "x1": 389.0,
+      "y1": 265.0,
+      "x2": 441.0,
+      "y2": 285.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Over",
+    "confidence": 0.8939,
+    "bounding_box": {
+      "x1": 465.0,
+      "y1": 265.0,
+      "x2": 497.0,
+      "y2": 279.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "PBF I$ the percantag0 of body fal compaed lo DOC",
+    "confidence": 0.1316,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 263.0,
+      "x2": 791.0,
+      "y2": 279.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "weicht",
+    "confidence": 0.8146,
+    "bounding_box": {
+      "x1": 555.0,
+      "y1": 279.0,
+      "x2": 593.0,
+      "y2": 295.0
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "Boo}\"",
+    "confidence": 0.0542,
+    "bounding_box": {
+      "x1": 702.2,
+      "y1": 53.3,
+      "x2": 734.8,
+      "y2": 74.7
+    },
+    "section": "segmental_lean_pre_True"
+  },
+  {
+    "text": "1.619",
+    "confidence": 0.529,
+    "bounding_box": {
+      "x1": 321.1,
+      "y1": 216.2,
+      "x2": 366.9,
+      "y2": 242.8
+    },
+    "section": "segmental_lean_pre_True"
+  }
+]

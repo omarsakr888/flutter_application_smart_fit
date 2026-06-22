@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 
-import '../models/plan_result.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/responsive_utils.dart';
 
 class AiCoachScreen extends StatefulWidget {
   const AiCoachScreen({super.key});
@@ -13,61 +12,19 @@ class AiCoachScreen extends StatefulWidget {
 }
 
 class _AiCoachScreenState extends State<AiCoachScreen> {
-  // Never hardcode the key in source. Pass it at build/run time:
-  //   flutter run  --dart-define=GEMINI_API_KEY=your_key_here
-  //   flutter build apk --dart-define=GEMINI_API_KEY=your_key_here
-  // Get a free key at https://aistudio.google.com/app/apikey
-  static const _apiKey = String.fromEnvironment('GEMINI_API_KEY');
-
-  late final GenerativeModel _model;
-  ChatSession? _chat;
-
   final _messages = <_ChatMessage>[];
   final _controller = TextEditingController();
   final _scrollCtrl = ScrollController();
 
-  bool _loadingPlan = true;
   bool _sending = false;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _initModel();
-    _loadContext();
+    _startChat();
   }
 
-  void _initModel() {
-    if (_apiKey.isEmpty) {
-      setState(() => _error =
-          'Missing API key.\n\nRun the app with:\n  flutter run --dart-define=GEMINI_API_KEY=your_key\n\nGet a free key at aistudio.google.com/app/apikey');
-      return;
-    }
-    _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
-      apiKey: _apiKey,
-    );
-  }
-
-  Future<void> _loadContext() async {
-    if (_apiKey.isEmpty) {
-      setState(() => _loadingPlan = false);
-      return;
-    }
-    try {
-      final plan = await UserService.instance.getPlan();
-      _startChat(plan);
-    } catch (_) {
-      _startChat(null);
-    }
-    if (mounted) setState(() => _loadingPlan = false);
-  }
-
-  void _startChat(PlanResult? plan) {
-    final systemPrompt = _buildSystemPrompt(plan);
-    _chat = _model.startChat(history: [
-      Content.system(systemPrompt),
-    ]);
+  void _startChat() {
     _messages.add(const _ChatMessage(
       text:
           "Hi! I'm your Smart Fit AI coach. I can help you with your workout plan, nutrition, recovery, or any fitness question. What's on your mind?",
@@ -75,40 +32,9 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     ));
   }
 
-  String _buildSystemPrompt(PlanResult? plan) {
-    final buf = StringBuffer(
-      'You are a certified personal trainer and nutritionist AI coach named Smart Fit Coach. '
-      'You are supportive, motivating, and scientifically accurate. Keep responses concise and actionable. ',
-    );
-
-    if (plan != null) {
-      buf.write('The user has an active fitness plan. ');
-      if (plan.focusZone.isNotEmpty) {
-        buf.write('Focus zone: ${plan.focusZone}. ');
-      }
-      buf.write(
-          'Daily calorie target: ${plan.targetCaloriesKcal.round()} kcal. ');
-      buf.write(
-          'Macros — protein: ${plan.macros.proteinG.round()} g, '
-          'carbs: ${plan.macros.carbsG.round()} g, '
-          'fat: ${plan.macros.fatG.round()} g. ');
-      if (plan.intensityReason.isNotEmpty) {
-        buf.write('Training intensity note: ${plan.intensityReason}. ');
-      }
-      buf.write('Preferred training days per week: ${plan.preferredDays}. ');
-    }
-
-    buf.write(
-      'Always tailor advice to the user\'s specific data. '
-      'If you don\'t have enough info, ask a clarifying question. '
-      'Never provide medical diagnoses.',
-    );
-    return buf.toString();
-  }
-
   Future<void> _send() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _sending || _chat == null) return;
+    if (text.isEmpty || _sending) return;
 
     _controller.clear();
     setState(() {
@@ -118,8 +44,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     _scrollToBottom();
 
     try {
-      final response = await _chat!.sendMessage(Content.text(text));
-      final reply = response.text ?? 'Sorry, I could not generate a response.';
+      final reply = await UserService.instance.sendChatMessage(text);
       if (mounted) {
         setState(() {
           _messages.add(_ChatMessage(text: reply, isUser: false));
@@ -130,7 +55,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _messages.add(_ChatMessage(
+          _messages.add(const _ChatMessage(
             text: 'Something went wrong. Please try again.',
             isUser: false,
             isError: true,
@@ -210,17 +135,13 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
           ],
         ),
       ),
-      body: _error != null
-          ? _ErrorBody(message: _error!)
-          : _loadingPlan
-              ? const Center(
-                  child: CircularProgressIndicator(color: AppColors.teal))
-              : Column(
+      body: Column(
                   children: [
                     Expanded(
                       child: ListView.builder(
                         controller: _scrollCtrl,
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        padding: EdgeInsetsDirectional.fromSTEB(
+                            context.widthPct(0.04), 16, context.widthPct(0.04), 8),
                         itemCount: _messages.length,
                         itemBuilder: (_, i) =>
                             _BubbleTile(msg: _messages[i], isDark: isDark),
@@ -290,7 +211,7 @@ class _BubbleTile extends StatelessWidget {
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.78,
+          maxWidth: context.isTablet ? context.widthPct(0.55) : context.widthPct(0.78),
         ),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
@@ -409,39 +330,6 @@ class _InputBar extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Error ─────────────────────────────────────────────────────────────────────
-
-class _ErrorBody extends StatelessWidget {
-  const _ErrorBody({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.warning_amber_rounded,
-                size: 52, color: Color(0xFFB80000)),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFFB80000),
-                    height: 1.5,
-                  ),
-            ),
-          ],
         ),
       ),
     );

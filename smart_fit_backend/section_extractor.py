@@ -32,9 +32,20 @@ class SectionBlock:
         return (self.y1 + self.y2) / 2
 
 
-def blocks_from_crop(engine: EasyOcrEngine, crop: np.ndarray) -> list[SectionBlock]:
+def blocks_from_crop(engine: EasyOcrEngine, crop: np.ndarray, preprocess: bool = False) -> list[SectionBlock]:
     if crop.size == 0:
         return []
+        
+    if preprocess:
+        import cv2
+        # Apply CLAHE
+        lab = cv2.cvtColor(crop, cv2.COLOR_BGR2LAB)
+        l, a, b_ch = cv2.split(lab)
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        cl = clahe.apply(l)
+        limg = cv2.merge((cl, a, b_ch))
+        crop = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+
     scaled = upscale_for_ocr(crop, min_height=80)
     raw = engine.extract_blocks(scaled)
     sh, sw = scaled.shape[:2]
@@ -61,11 +72,15 @@ def blocks_from_crop(engine: EasyOcrEngine, crop: np.ndarray) -> list[SectionBlo
 
 def _match_label(text: str, synonyms: list[str]) -> bool:
     t = text.lower().strip().rstrip(":")
+    if not t:
+        return False
     for syn in synonyms:
         s = syn.lower().strip()
-        if s in t or t in s:
+        if s in t:
             return True
-        if len(s) >= 4 and SequenceMatcher(None, t, s).ratio() >= 0.78:
+        if len(t) >= 4 and t in s:
+            return True
+        if len(s) >= 4 and SequenceMatcher(None, t, s).ratio() >= 0.65:
             return True
     return False
 
@@ -113,7 +128,7 @@ def extract_label_value(
                     for b in blocks
                     if b is not anchor
                     and b.y1 >= anchor.y2 - 3
-                    and abs(b.cx - anchor.cx) < (anchor.x2 - anchor.x1) * 2.5
+                    and abs(b.cx - anchor.cx) < max(15.0, (anchor.x2 - anchor.x1) * 0.8)
                 ],
                 key=lambda b: b.y1,
             )[:3]
@@ -123,20 +138,41 @@ def extract_label_value(
         if value_type == "gender_word":
             for cand in candidates[:2]:
                 low = cand.text.lower()
-                if "female" in low or low == "f":
+                if "female" in low or low == "f" or (len(low) >= 4 and SequenceMatcher(None, low, "female").ratio() >= 0.65):
                     return 0.0, cand.confidence, cand.text
-                if "male" in low or low == "m":
+                if "male" in low or low == "m" or (len(low) >= 4 and SequenceMatcher(None, low, "male").ratio() >= 0.65):
                     return 1.0, cand.confidence, cand.text
             continue
 
-        # Collect numeric tokens on same row (handles split "156." + "9cm")
+        # Collect numeric tokens on same row (handles split "156." + "9cm" and "47"+"6"→"47.6")
         numeric_parts: list[str] = []
         confs: list[float] = []
-        for cand in candidates[:4]:
+        first_num = None
+        prev_cand = None
+
+        for cand in candidates[:6]:
             cleaned = cand.text.replace("cm", "").replace("kg", "").replace("kcal", "").strip()
             if re.search(r"\d", cleaned):
-                numeric_parts.append(cand.text)
-                confs.append(cand.confidence)
+                if first_num is None:
+                    first_num = cand
+                    numeric_parts.append(cand.text)
+                    confs.append(cand.confidence)
+                    prev_cand = cand
+                elif abs(cand.cy - first_num.cy) <= 8.0:
+                    # Detect adjacent split tokens: e.g. "47" followed by "6" with small gap → "47.6"
+                    horiz_gap = cand.x1 - prev_cand.x2
+                    prev_clean = prev_cand.text.strip()
+                    curr_clean = cand.text.strip()
+                    # Join with '.' if: small gap AND previous token looks like integer AND next is 1 digit
+                    if (horiz_gap <= 15
+                            and re.fullmatch(r'\d{1,3}', prev_clean)
+                            and re.fullmatch(r'\d', curr_clean)):
+                        # Replace last part with merged decimal form
+                        numeric_parts[-1] = f"{prev_clean}.{curr_clean}"
+                    else:
+                        numeric_parts.append(cand.text)
+                    confs.append(cand.confidence)
+                    prev_cand = cand
 
         if not numeric_parts:
             continue
@@ -174,6 +210,7 @@ def _parse_height(text: str) -> Optional[float]:
 def extract_bar_end_value(
     blocks: list[SectionBlock],
     label_synonyms: list[str],
+    validator: Optional[Callable[[float], bool]] = None,
 ) -> tuple[Optional[float], float, str]:
     """Extract numeric value at the end of a muscle-fat / obesity bar row."""
     labels = [b for b in blocks if _match_label(b.text, label_synonyms)]
@@ -190,13 +227,21 @@ def extract_bar_end_value(
                 continue
             val = parse_normalized_float(cand.text)
             if val is not None:
-                numeric.append((cand, val))
+                if validator is None or validator(val):
+                    numeric.append((cand, val))
 
         if not numeric:
             continue
 
-        # Bar-end value is the rightmost numeric on the row
-        cand, val = max(numeric, key=lambda item: item[0].x1)
+        # Bar-end value is the highest confidence valid numeric, prioritizing numbers with decimals over integer tick marks
+        def _score(item):
+            c, v = item
+            from ocr_normalizer import normalize_numeric_text
+            norm_text = normalize_numeric_text(c.text)
+            has_decimal = "." in norm_text
+            return (1 if has_decimal else 0, c.confidence)
+
+        cand, val = max(numeric, key=_score)
         conf = anchor.confidence * 0.4 + cand.confidence * 0.6
         if conf > best[1]:
             best = (val, conf, cand.text)
@@ -214,13 +259,16 @@ def extract_trunk_from_segmental(
 
     best: tuple[Optional[float], float, str] = (None, 0.0, "")
     for anchor in trunk_anchors:
-        y_tol = max(8.0, (anchor.y2 - anchor.y1) * 0.9)
+        # Use a generous y_tol (1.5× row height) to catch bar-end values
+        # that may sit slightly above or below the label baseline
+        y_tol = max(15.0, (anchor.y2 - anchor.y1) * 1.5)
         row = _row_blocks(blocks, anchor, y_tol)
         for cand in row:
             if cand.x1 <= anchor.x2:
                 continue
             val = parse_normalized_float(cand.text)
-            if val is not None and val > 1.0:
+            # Filter for plausible absolute trunk mass (5-100kg/lb) to ignore scale % values (>100%)
+            if val is not None and 5 <= val <= 100:
                 conf = anchor.confidence * 0.4 + cand.confidence * 0.6
                 if conf > best[1]:
                     best = (val, conf, cand.text)

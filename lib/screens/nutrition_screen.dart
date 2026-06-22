@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../app/app_scope.dart';
 import '../models/plan_result.dart';
 import '../router/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/responsive_utils.dart';
 import '../widgets/ai_chat_fab.dart';
+import '../widgets/smart_fit_app_bar.dart';
+import '../widgets/smart_fit_drawer.dart';
 
 class NutritionScreen extends StatefulWidget {
   const NutritionScreen({super.key});
@@ -191,7 +193,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scope = AppScope.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final meals = _buildMeals(isDark);
@@ -203,6 +204,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
     final fatG = _plan?.macros.fatG.round() ?? 75;
 
     return Scaffold(
+      appBar: const SmartFitAppBar(),
+      drawer: const SmartFitDrawer(),
       backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF4F4F4),
       bottomNavigationBar: const _BottomNav(),
       floatingActionButton: const AiChatFab(),
@@ -210,12 +213,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
         bottom: false,
         child: Column(
           children: [
-            _NutritionHeader(
-              isDark: isDark,
-              onLight: () => scope.setThemeBrightness(Brightness.light),
-              onDark: () => scope.setThemeBrightness(Brightness.dark),
-              onMenu: () => context.push(AppRoutes.settings),
-            ),
             if (_loading)
               LinearProgressIndicator(
                 minHeight: 2,
@@ -228,7 +225,12 @@ class _NutritionScreenState extends State<NutritionScreen> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(20, isDark ? 30 : 54, 20, 32),
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  context.widthPct(0.05),
+                  isDark ? context.heightPct(0.04) : context.heightPct(0.06),
+                  context.widthPct(0.05),
+                  context.heightPct(0.04),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -251,7 +253,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                           ),
                         ],
                       ),
-                    if (!isDark) const SizedBox(height: 54),
+                    if (!isDark) SizedBox(height: context.heightPct(0.06)),
                     _MacrosCard(
                       caloriesConsumed: caloriesConsumed,
                       caloriesTarget: caloriesTarget,
@@ -259,7 +261,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                       carbsG: carbsG,
                       fatG: fatG,
                     ),
-                    SizedBox(height: isDark ? 48 : 54),
+                    SizedBox(height: isDark ? context.heightPct(0.05) : context.heightPct(0.06)),
                     Row(
                       children: [
                         Expanded(
@@ -273,7 +275,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         if (isDark) const _TodayPill(),
                       ],
                     ),
-                    const SizedBox(height: 22),
+                    SizedBox(height: context.heightPct(0.025)),
                     for (var i = 0; i < meals.length; i++) ...[
                       _MealTile(
                         meal: meals[i],
@@ -285,19 +287,19 @@ class _NutritionScreenState extends State<NutritionScreen> {
                           extra: _plan?.dailyMeals.elementAtOrNull(i),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.heightPct(0.02)),
                     ],
                     if (isDark) ...[
-                      const SizedBox(height: 22),
+                      SizedBox(height: context.heightPct(0.025)),
                       _HydrationPanel(
                         cups: _hydrationCups,
                         target: _hydrationTarget,
                         onAdd: _addHydration,
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: context.heightPct(0.02)),
                       _NextMealPanel(countdown: _countdownText),
                     ],
-                    const SizedBox(height: 24),
+                    SizedBox(height: context.heightPct(0.03)),
                   ],
                 ),
               ),
@@ -317,140 +319,6 @@ class _Meal {
   final String badge;
   final IconData icon;
   final bool done;
-}
-
-class _NutritionHeader extends StatelessWidget {
-  const _NutritionHeader({
-    required this.isDark,
-    required this.onLight,
-    required this.onDark,
-    required this.onMenu,
-  });
-
-  final bool isDark;
-  final VoidCallback onLight;
-  final VoidCallback onDark;
-  final VoidCallback onMenu;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: isDark ? 76 : 98,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(20, isDark ? 8 : 14, 24, 12),
-        child: Row(
-          children: [
-            if (isDark)
-              Expanded(
-                child: Text(
-                  'Nutrition',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: const Color(0xFF31D39E),
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              )
-            else ...[
-              IconButton(
-                tooltip: 'Settings',
-                onPressed: onMenu,
-                icon: const Icon(Icons.menu_rounded, color: AppColors.teal, size: 34),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  'Smart Fit',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.teal,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-            _ThemeSegment(
-              isDark: isDark,
-              onLight: onLight,
-              onDark: onDark,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ThemeSegment extends StatelessWidget {
-  const _ThemeSegment({
-    required this.isDark,
-    required this.onLight,
-    required this.onDark,
-  });
-
-  final bool isDark;
-  final VoidCallback onLight;
-  final VoidCallback onDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF202124) : const Color(0xFFEFF4EF),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(5),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _ThemeButton(
-              selected: !isDark,
-              icon: Icons.wb_sunny_outlined,
-              onTap: onLight,
-            ),
-            const SizedBox(width: 4),
-            _ThemeButton(
-              selected: isDark,
-              icon: Icons.dark_mode_rounded,
-              onTap: onDark,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ThemeButton extends StatelessWidget {
-  const _ThemeButton({
-    required this.selected,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final bool selected;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final idle = isDark ? Colors.white38 : const Color(0xFF899098);
-
-    return Material(
-      color: selected ? AppColors.teal : Colors.transparent,
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: isDark ? 46 : 54,
-          height: isDark ? 46 : 54,
-          child: Icon(icon, color: selected ? Colors.white : idle, size: isDark ? 25 : 28),
-        ),
-      ),
-    );
-  }
 }
 
 class _MacrosCard extends StatelessWidget {
@@ -792,6 +660,15 @@ class _MealTile extends StatelessWidget {
                   : (isDark ? (isLogged ? AppColors.teal.withValues(alpha: 0.18) : const Color(0xFF2B2B2D)) : const Color(0xFFF0F1F1)),
               width: focused ? 2 : 1,
             ),
+            boxShadow: isDark
+                ? []
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Padding(
             padding: EdgeInsets.fromLTRB(isDark ? 20 : 24, isDark ? 18 : 26, 22, isDark ? 18 : 26),

@@ -11,6 +11,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
+import json
+import os
 from confidence_engine import enrich_field, extraction_confidence, fields_needing_verification
 from document_analyser import DocumentLayout
 from field_extractor import FIELD_DESCRIPTORS
@@ -33,6 +35,15 @@ CANONICAL_FIELD_MAP: Dict[str, str] = {
     "PBF_(Percent_Body_Fat)": "pbf_percent",
 }
 
+# Load version metrics
+_VERSION_METRICS_PATH = os.path.join(os.path.dirname(__file__), "config", "version_metrics.json")
+try:
+    with open(_VERSION_METRICS_PATH, "r", encoding="utf-8") as f:
+        VERSION_METRICS = json.load(f)
+except Exception as e:
+    logger.warning("Could not load version_metrics.json: %s", e)
+    VERSION_METRICS = {"versions": {}}
+
 
 class ResponseBuilder:
     """Converts raw extracted fields into the final extraction dict."""
@@ -48,17 +59,35 @@ class ResponseBuilder:
         imputed_fields = self._impute_missing_fields(validated_fields)
 
         enriched_fields: Dict[str, dict] = {}
+        report_type = layout.model.replace("-class", "")
+        
+        # Determine unsupported metrics for this version
+        version_config = VERSION_METRICS.get("versions", {}).get(report_type, {})
+        unsupported_keys = set(version_config.get("unsupported", []))
+
+        # Derive BMI/PBF if missing but dependents exist
+        self._derive_metrics(imputed_fields)
+
         for key, fdata in imputed_fields.items():
             enriched_fields[key] = enrich_field(
+                key,
                 fdata,
                 cross_validated=key not in failed_keys,
             )
             if fdata.get("is_imputed"):
                 enriched_fields[key]["extraction_method"] = "imputed"
+            
+            # Apply unsupported flag and override review actions
+            if key in unsupported_keys:
+                enriched_fields[key]["unsupported"] = True
+                enriched_fields[key]["needs_review"] = False
+                enriched_fields[key]["validation_status"] = "missing"
+                enriched_fields[key]["review_action"] = "auto_accept"
+
 
         missing: List[str] = [
             key for key, fdata in enriched_fields.items()
-            if fdata.get("value") is None
+            if fdata.get("value") is None and not fdata.get("unsupported", False)
         ]
 
         warnings = list(validation_warnings)
@@ -126,28 +155,70 @@ class ResponseBuilder:
         canonical: Dict[str, dict[str, Any]] = {}
         for legacy_key, canon_key in CANONICAL_FIELD_MAP.items():
             fdata = fields.get(legacy_key, {})
+            # Skip metrics strictly unsupported by this hardware version
+            if fdata.get("unsupported", False):
+                continue
+                
             value = fdata.get("value")
             if canon_key == "gender" and value is not None:
                 display_value: Any = "male" if float(value) == 1.0 else "female"
             else:
                 display_value = value
+                
+            extraction_method = fdata.get("extraction_method", "extracted")
+            if extraction_method == "mathematical_derivation":
+                source = "derived"
+            elif extraction_method in {"imputed", "estimated"}:
+                source = "estimated"
+            elif extraction_method == "none":
+                source = "extracted"
+            else:
+                source = "extracted"
+                
             canonical[canon_key] = {
                 "value": display_value,
                 "confidence": fdata.get("confidence", 0.0),
-                "source_region": fdata.get("source_region", ""),
-                "extraction_method": fdata.get("extraction_method", "none"),
-                "validation_status": fdata.get("validation_status", "missing"),
+                "source": source,
+                "needs_review": fdata.get("needs_review", display_value is None),
             }
         return canonical
 
-    _MASS_FIELDS = frozenset({
-        "Weight",
-        "SMM_(Skeletal_Muscle_Mass)",
-        "BFM_(Body_Fat_Mass)",
-        "FFM_of_Trunk",
-    })
+    _MASS_FIELDS = frozenset({"Weight", "SMM_(Skeletal_Muscle_Mass)", "BFM_(Body_Fat_Mass)", "FFM_of_Trunk"})
     _WATER_FIELDS = frozenset({"TBW_(Total_Body_Water)"})
 
+    def _derive_metrics(self, fields: Dict[str, dict]) -> None:
+        """Derive mathematically exact metrics if extraction failed and inputs exist."""
+        # 1. BMI = Weight / Height^2
+        weight_fdata = fields.get("Weight", {})
+        height_fdata = fields.get("Height", {})
+        weight = weight_fdata.get("value")
+        height = height_fdata.get("value")
+        bmi_field = fields.get("BMI")
+        if bmi_field and bmi_field.get("value") is None and weight and height and height > 0:
+            bmi_val = round(weight / ((height / 100) ** 2), 1)
+            bmi_field["value"] = bmi_val
+            # Inherit minimum confidence from dependencies
+            w_conf = weight_fdata.get("confidence", 0.0)
+            h_conf = height_fdata.get("confidence", 0.0)
+            bmi_field["confidence"] = min(w_conf, h_conf)
+            bmi_field["source"] = "derived"
+            bmi_field["extraction_method"] = "mathematical_derivation"
+        
+        # 2. PBF = (BFM / Weight) * 100
+        bfm_fdata = fields.get("BFM_(Body_Fat_Mass)", {})
+        bfm = bfm_fdata.get("value")
+        pbf_field = fields.get("PBF_(Percent_Body_Fat)")
+        
+        if pbf_field and pbf_field.get("value") is None and weight and bfm and weight > 0:
+            pbf_val = round((bfm / weight) * 100, 2)
+            pbf_field["value"] = pbf_val
+            # Inherit minimum confidence from dependencies
+            w_conf = weight_fdata.get("confidence", 0.0)
+            b_conf = bfm_fdata.get("confidence", 0.0)
+            pbf_field["confidence"] = min(w_conf, b_conf)
+            pbf_field["source"] = "derived"
+            pbf_field["extraction_method"] = "mathematical_derivation"
+            
     def _convert_to_metric(
         self,
         raw_fields: Dict[str, dict],
@@ -166,6 +237,7 @@ class ResponseBuilder:
                 "is_imputed": False,
                 "source_region": fdata.get("source_region", ""),
                 "extraction_method": fdata.get("extraction_method", "none"),
+                "needs_review": fdata.get("needs_review", False),
             }
 
             if val is None or units == "metric":
@@ -272,6 +344,20 @@ class ResponseBuilder:
         age = val("Age")
         height = val("Height")
         gender = val("Gender")
+        bmr = val("BMR_(Basal_Metabolic_Rate)")
+
+        if bmr is None and weight is not None and bfm is not None:
+            lbm = weight - bfm
+            imputed_bmr = 370 + (21.6 * lbm)
+            result["BMR_(Basal_Metabolic_Rate)"] = {
+                "value": round(imputed_bmr, 0),
+                "unit": "kcal",
+                "confidence": 0.70,
+                "is_imputed": True,
+                "source_region": "imputed",
+                "extraction_method": "estimated",
+                "needs_review": True,
+            }
 
         if tbw is None and weight is not None:
             imputed_tbw = None
@@ -291,7 +377,8 @@ class ResponseBuilder:
                     "confidence": 0.55,
                     "is_imputed": True,
                     "source_region": "imputed",
-                    "extraction_method": "imputed",
+                    "extraction_method": "estimated",
+                    "needs_review": True,
                 }
 
         if ecw_tbw is None and age is not None:
@@ -302,7 +389,8 @@ class ResponseBuilder:
                 "confidence": 0.55,
                 "is_imputed": True,
                 "source_region": "imputed",
-                "extraction_method": "imputed",
+                "extraction_method": "estimated",
+                "needs_review": True,
             }
 
         if (
@@ -324,7 +412,8 @@ class ResponseBuilder:
                 "confidence": 0.55,
                 "is_imputed": True,
                 "source_region": "imputed",
-                "extraction_method": "imputed",
+                "extraction_method": "estimated",
+                "needs_review": True,
             }
 
         return result

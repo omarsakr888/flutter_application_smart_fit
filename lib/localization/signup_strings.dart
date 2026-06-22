@@ -48,7 +48,7 @@ class SignupStrings {
       : '© $year Smart Fit. All rights reserved.';
 
   static String acceptPrivacy(Locale l) => _isAr(l)
-      ? 'ارجع الموافقة على الخصوصية أولًا'
+      ? 'الرجاء الموافقة على شروط الخصوصية أولاً'
       : 'Please accept privacy terms';
 
   static String passwordsMismatch(Locale l) => _isAr(l)

@@ -7,13 +7,12 @@ from __future__ import annotations
 
 from typing import Any
 
-# Thresholds per PDF Step 8
-AUTO_ACCEPT = 0.80
-VERIFY = 0.50
-
+CRITICAL_METRICS = {"Weight", "SMM_(Skeletal_Muscle_Mass)", "BFM_(Body_Fat_Mass)", "PBF_(Percent_Body_Fat)", "BMR_(Basal_Metabolic_Rate)"}
+IDENTITY_METRICS = {"Age", "Height", "Gender"}
 
 def validation_status(
     *,
+    key: str,
     value: float | str | None,
     confidence: float,
     is_imputed: bool,
@@ -27,11 +26,16 @@ def validation_status(
         return "imputed"
     if not passed_range or not cross_validated:
         return "failed_validation"
-    if confidence >= AUTO_ACCEPT:
+        
+    threshold = 0.60
+    if key in CRITICAL_METRICS:
+        threshold = 0.80
+    elif key in IDENTITY_METRICS:
+        threshold = 0.75
+        
+    if confidence >= threshold:
         return "valid"
-    if confidence >= VERIFY:
-        return "uncertain"
-    return "failed_validation"
+    return "uncertain"
 
 
 def review_action(status: str) -> str:
@@ -44,6 +48,7 @@ def review_action(status: str) -> str:
 
 
 def enrich_field(
+    key: str,
     field: dict[str, Any],
     *,
     passed_range: bool = True,
@@ -54,6 +59,7 @@ def enrich_field(
     confidence = float(field.get("confidence", 0.0))
     is_imputed = bool(field.get("is_imputed", False))
     status = validation_status(
+        key=key,
         value=value,
         confidence=confidence,
         is_imputed=is_imputed,
@@ -63,6 +69,7 @@ def enrich_field(
     enriched = dict(field)
     enriched["validation_status"] = status
     enriched["review_action"] = review_action(status)
+    enriched["needs_review"] = enriched["review_action"] in {"request_verification", "mark_uncertain"}
     return enriched
 
 

@@ -109,26 +109,31 @@ class MathEngine:
         gender: float,          # 1.0 = male, 0.0 = female
         weight_kg: float,
         height_cm: float,
-        smm_kg: float,          # skeletal muscle mass
-        ecw_tbw: float,         # extracellular water ratio
-        phase_angle: float,     # bioelectrical phase angle (degrees)
+        smm_kg: float | None,          # skeletal muscle mass
+        ecw_tbw: float | None,         # extracellular water ratio
+        phase_angle: float | None,     # bioelectrical phase angle (degrees)
         goal: str,
         preferred_days: int,    # 0-7 workout days per week
+        ocr_bmr: float | None = None,  # Top priority BMR from OCR
         extra_caloric_adjustment: float = 0.0,
     ) -> MathEngineResult:
         """Run the full deterministic pipeline and return a MathEngineResult."""
 
-        # 1. Mifflin-St Jeor BMR
-        bmr = self._mifflin_st_jeor(
-            weight_kg=weight_kg,
-            height_cm=height_cm,
-            age=age,
-            is_male=(gender >= 0.5),
-        )
+        # 1. BMR Priority: OCR BMR > Mifflin-St Jeor
+        if ocr_bmr is not None and ocr_bmr > 500.0:
+            bmr = ocr_bmr
+        else:
+            bmr = self._mifflin_st_jeor(
+                weight_kg=weight_kg,
+                height_cm=height_cm,
+                age=age,
+                is_male=(gender >= 0.5),
+            )
 
         # 2. SMM bias: lean athletes have higher metabolic rate; scale proportionally
         # Reference average SMM: 30 kg.  Each extra kg of SMM adds ~22 kcal/day.
-        smm_bias = (smm_kg - 30.0) * 22.0
+        smm_val = smm_kg if smm_kg is not None else 30.0
+        smm_bias = (smm_val - 30.0) * 22.0
         bmr_adjusted = max(bmr + smm_bias, bmr * 0.85)   # never drop below 85% of raw
 
         # 3. Activity multiplier
@@ -207,8 +212,8 @@ class MathEngine:
     @staticmethod
     def _intensity_multiplier(
         *,
-        ecw_tbw: float,
-        phase_angle: float,
+        ecw_tbw: float | None,
+        phase_angle: float | None,
     ) -> tuple[float, str]:
         """Determine workout intensity modifier from hydration & cellular health.
 
@@ -216,12 +221,12 @@ class MathEngine:
         """
         reasons: list[str] = []
 
-        if ecw_tbw > _ECW_TBW_HIGH_THRESHOLD:
+        if ecw_tbw is not None and ecw_tbw > _ECW_TBW_HIGH_THRESHOLD:
             reasons.append(
                 f"ECW/TBW={ecw_tbw:.3f} > {_ECW_TBW_HIGH_THRESHOLD} "
                 "(elevated extracellular water — possible inflammation or overtraining)"
             )
-        if phase_angle < _PHASE_ANGLE_LOW_THRESHOLD:
+        if phase_angle is not None and phase_angle < _PHASE_ANGLE_LOW_THRESHOLD:
             reasons.append(
                 f"Phase angle={phase_angle:.1f}° < {_PHASE_ANGLE_LOW_THRESHOLD}° "
                 "(low cellular integrity — prioritise recovery)"

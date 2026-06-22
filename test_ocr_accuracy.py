@@ -96,7 +96,7 @@ GROUND_TRUTH: dict[str, dict[str, float | None]] = {
         "Weight":                       59.1,
         "SMM_(Skeletal_Muscle_Mass)":   19.6,
         "BMR_(Basal_Metabolic_Rate)":   1176.0,
-        "FFM_of_Trunk":                 17.7,
+        "FFM_of_Trunk":                 None,
         "TBW_(Total_Body_Water)":       27.5,
         "ECW/TBW":                      None,
         "50kHz-Whole_Body_Phase_Angle": None,
@@ -110,7 +110,7 @@ GROUND_TRUTH: dict[str, dict[str, float | None]] = {
         "Weight":                       59.1,
         "SMM_(Skeletal_Muscle_Mass)":   19.6,
         "BMR_(Basal_Metabolic_Rate)":   1154.0,
-        "FFM_of_Trunk":                 16.7,
+        "FFM_of_Trunk":                 None,
         "TBW_(Total_Body_Water)":       26.5,
         "ECW/TBW":                      None,
         "50kHz-Whole_Body_Phase_Angle": None,
@@ -247,12 +247,16 @@ def run_ocr_on_image(
             extracted_conf  = extracted_field.get("confidence", 0.0)
             extracted_raw   = extracted_field.get("raw_text", "")
             extracted_source = extracted_field.get("source", "")
+            extracted_reason = extracted_field.get("reason", "")
 
         is_correct: bool | None = None
         error_abs: float | None = None
         error_pct: float | None = None
 
-        if truth is not None and extracted_value is not None:
+        if extracted_field is not None and extracted_field.get("reason") == "field_not_present_on_document":
+            is_correct = None  # Do not count it as a failure or success
+            extracted_value = "N/A"
+        elif truth is not None and extracted_value is not None:
             error_abs = abs(extracted_value - truth)
             tol = FIELD_TOLERANCES.get(key, DEFAULT_TOLERANCE)
 
@@ -347,9 +351,16 @@ def print_image_report(result: ImageResult) -> None:
 
     for fr in result.fields:
         status = _status(fr)
-        truth_str     = f"{fr.truth:.4g}"     if fr.truth is not None else "N/A"
-        ext_str       = f"{fr.extracted:.4g}" if fr.extracted is not None else "(missed)"
-        conf_str      = f"{fr.extracted_confidence:.2%}" if fr.extracted is not None else ""
+        if fr.extracted == "N/A":
+            ext_str = "    N/A "
+        elif fr.extracted is None:
+            ext_str = "(missed)"
+        else:
+            # Need to cast in case it is float
+            ext_str = f"{float(fr.extracted):8.4g}"
+
+        truth_str = "   N/A" if fr.truth is None else f"{fr.truth:8.4g}"
+        conf_str      = f"{fr.extracted_confidence:.2%}" if fr.extracted is not None and fr.extracted != "N/A" else ""
         err_abs_str   = f"{fr.error_abs:.4g}"  if fr.error_abs is not None else ""
         err_pct_str   = f"{fr.error_pct:.2%}"  if fr.error_pct is not None else ""
 

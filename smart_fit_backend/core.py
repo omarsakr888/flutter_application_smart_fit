@@ -24,6 +24,9 @@ MEALS_SAMPLE_SIZE = 60_000
 
 TEMPLATES_DIR = BASE_DIR / "templates"
 
+# ── Upload limits ──────────────────────────────────────────────────────────────
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+
 REQUIRED_INPUT_FEATURES = (
     "Age",
     "Gender",
@@ -38,6 +41,13 @@ REQUIRED_INPUT_FEATURES = (
     "BFM_(Body_Fat_Mass)",
     "PBF_(Percent_Body_Fat)",
     "User_Goal",
+)
+
+CORE_REQUIRED_FIELDS = (
+    "Age",
+    "Gender",
+    "Height",
+    "Weight",
 )
 
 

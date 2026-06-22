@@ -41,14 +41,14 @@ class ProfileSetupStrings {
       _isAr(l) ? '🔥 فقدان الدهون' : '🔥 Lose fat';
 
   static String goalLoseSubtitle(Locale l) => _isAr(l)
-      ? 'حرق دهون وحدة كارديو'
+      ? 'حرق الدهون وتمارين الكارديو'
       : 'Fat-burning focus & cardio';
 
   static String goalMuscleTitle(Locale l) =>
       _isAr(l) ? '💪 بناء العضلات' : '💪 Build muscle';
 
   static String goalMuscleSubtitle(Locale l) => _isAr(l)
-      ? 'رفع القوة والحجم'
+      ? 'زيادة القوة والحجم العضلي'
       : 'Increase strength & volume';
 
   static String goalMaintainTitle(Locale l) =>
@@ -65,11 +65,11 @@ class ProfileSetupStrings {
       : 'Enter age between 13 and 120';
 
   static String badHeight(Locale l) => _isAr(l)
-      ? 'أدخل طولًا منطقيًا (بالسم)'
+      ? 'الرجاء إدخال طول منطقي (سم)'
       : 'Enter a realistic height (cm)';
 
   static String badWeight(Locale l) => _isAr(l)
-      ? 'أدخل وزنًا منطقيًا (كلغ)'
+      ? 'الرجاء إدخال وزن منطقي (كغ)'
       : 'Enter a realistic weight (kg)';
 
   static String badgeKgFromCurrent(Locale l, int delta) {

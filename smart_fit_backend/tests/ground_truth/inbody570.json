@@ -1,0 +1,14 @@
+{
+  "Age": 31.0,
+  "Gender": 0.0,
+  "Height": 165.1,
+  "Weight": 61.42,
+  "SMM_(Skeletal_Muscle_Mass)": 21.59,
+  "BMR_(Basal_Metabolic_Rate)": 1231.0,
+  "FFM_of_Trunk": 17.96,
+  "TBW_(Total_Body_Water)": 29.12,
+  "ECW/TBW": 0.376,
+  "50kHz-Whole_Body_Phase_Angle": null,
+  "BFM_(Body_Fat_Mass)": 21.51,
+  "PBF_(Percent_Body_Fat)": 35.0
+}

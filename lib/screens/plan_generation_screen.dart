@@ -125,15 +125,19 @@ class _PlanGenerationScreenState extends State<PlanGenerationScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(20, isDark ? 28 : 36, 20, 28),
-                child: _loading
-                    ? _LoadingBody(activeStep: _activeStep, isDark: isDark)
-                    : _error != null
-                        ? _ErrorBody(
-                            message: _error!,
-                            onRetry: _generatePlan,
-                            isDark: isDark,
-                          )
-                        : _PlanBody(plan: _plan!, isDark: isDark),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 800),
+                  child: _loading
+                      ? _LoadingBody(key: const ValueKey('loading'), activeStep: _activeStep, isDark: isDark)
+                      : _error != null
+                          ? _ErrorBody(
+                              key: const ValueKey('error'),
+                              message: _error!,
+                              onRetry: _generatePlan,
+                              isDark: isDark,
+                            )
+                          : _PlanBody(key: const ValueKey('plan'), plan: _plan!, isDark: isDark),
+                ),
               ),
             ),
             if (!_loading && _plan != null)
@@ -144,9 +148,20 @@ class _PlanGenerationScreenState extends State<PlanGenerationScreen> {
                   20,
                   14 + MediaQuery.paddingOf(context).bottom,
                 ),
-                child: SizedBox(
+                child: Container(
                   width: double.infinity,
                   height: 56,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(isDark ? 8 : 7),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.teal.withValues(alpha: 0.4),
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: FilledButton(
                     onPressed: () => context.go(AppRoutes.homeDashboard),
                     style: FilledButton.styleFrom(
@@ -158,7 +173,7 @@ class _PlanGenerationScreenState extends State<PlanGenerationScreen> {
                     ),
                     child: const Text(
                       'Go to Dashboard',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: 0.5),
                     ),
                   ),
                 ),
@@ -171,7 +186,7 @@ class _PlanGenerationScreenState extends State<PlanGenerationScreen> {
 }
 
 class _LoadingBody extends StatelessWidget {
-  const _LoadingBody({required this.activeStep, required this.isDark});
+  const _LoadingBody({super.key, required this.activeStep, required this.isDark});
 
   final int activeStep;
   final bool isDark;
@@ -229,7 +244,7 @@ class _LoadingBody extends StatelessWidget {
 }
 
 class _PlanBody extends StatelessWidget {
-  const _PlanBody({required this.plan, required this.isDark});
+  const _PlanBody({super.key, required this.plan, required this.isDark});
 
   final PlanResult plan;
   final bool isDark;
@@ -241,41 +256,65 @@ class _PlanBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Your personalised plans',
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-            height: 1.15,
+        _StaggeredFade(
+          delay: const Duration(milliseconds: 100),
+          child: Text(
+            'Your personalised plans',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              height: 1.15,
+            ),
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          'Generated from your InBody scan and AI engines.',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: isDark ? Colors.white60 : const Color(0xFF7B7D85),
+        _StaggeredFade(
+          delay: const Duration(milliseconds: 200),
+          child: Text(
+            'Generated from your InBody scan and AI engines.',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: isDark ? Colors.white60 : const Color(0xFF7B7D85),
+            ),
           ),
         ),
         const SizedBox(height: 28),
-        _SummaryCard(plan: plan, isDark: isDark),
+        _StaggeredFade(
+          delay: const Duration(milliseconds: 400),
+          child: _SummaryCard(plan: plan, isDark: isDark),
+        ),
         const SizedBox(height: 24),
-        _SectionHeader(
-          icon: Icons.restaurant_rounded,
-          title: 'Nutrition Plan',
-          subtitle: '${plan.dailyMeals.length} meals · ${plan.targetCaloriesKcal.round()} kcal/day',
+        _StaggeredFade(
+          delay: const Duration(milliseconds: 700),
+          child: _SectionHeader(
+            icon: Icons.restaurant_rounded,
+            title: 'Nutrition Plan',
+            subtitle: '${plan.dailyMeals.length} meals · ${plan.targetCaloriesKcal.round()} kcal/day',
+          ),
         ),
         const SizedBox(height: 12),
-        _NutritionCard(plan: plan, isDark: isDark),
+        _StaggeredFade(
+          delay: const Duration(milliseconds: 800),
+          child: _NutritionCard(plan: plan, isDark: isDark),
+        ),
         const SizedBox(height: 24),
-        _SectionHeader(
-          icon: Icons.fitness_center_rounded,
-          title: 'Workout Plan',
-          subtitle: '${plan.preferredDays} days/week · ${plan.workoutSplit.length} sessions',
+        _StaggeredFade(
+          delay: const Duration(milliseconds: 1000),
+          child: _SectionHeader(
+            icon: Icons.fitness_center_rounded,
+            title: 'Workout Plan',
+            subtitle: '${plan.preferredDays} days/week · ${plan.workoutSplit.length} sessions',
+          ),
         ),
         const SizedBox(height: 12),
-        _WorkoutCard(plan: plan, isDark: isDark),
+        _StaggeredFade(
+          delay: const Duration(milliseconds: 1100),
+          child: _WorkoutCard(plan: plan, isDark: isDark),
+        ),
         if (plan.warnings.isNotEmpty) ...[
           const SizedBox(height: 20),
-          _WarningsCard(warnings: plan.warnings, isDark: isDark),
+          _StaggeredFade(
+            delay: const Duration(milliseconds: 1200),
+            child: _WarningsCard(warnings: plan.warnings, isDark: isDark),
+          ),
         ],
         const SizedBox(height: 16),
       ],
@@ -307,6 +346,14 @@ class _SummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
+            _getFocusZoneExplanation(plan.focusZone),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: isDark ? Colors.white70 : const Color(0xFF5A5E66),
+                  height: 1.35,
+                ),
+          ),
+          const SizedBox(height: 8),
+          _TypewriterText(
             plan.intensityReason,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: isDark ? Colors.white70 : const Color(0xFF5A5E66),
@@ -336,12 +383,10 @@ class _SummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            plan.intensityMultiplier < 1.0
-                ? "Take it easy and avoid overworking due to your recovery ratio."
-                : "Your biomarkers indicate excellent recovery. Full intensity training is cleared!",
+            _getIntensityExplanation(plan.intensityMultiplier),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: isDark ? Colors.white70 : const Color(0xFF333A3C),
-                  fontWeight: FontWeight.w500,
+                  height: 1.35,
                 ),
           ),
           const SizedBox(height: 16),
@@ -354,6 +399,25 @@ class _SummaryCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getFocusZoneExplanation(String zone) {
+    final l = zone.toLowerCase();
+    if (l.contains('upper')) return 'Focusing on upper body strength will help correct your muscle imbalances and improve posture.';
+    if (l.contains('lower')) return 'Strengthening your lower body provides a solid foundation, boosting metabolism and athletic performance.';
+    if (l.contains('core')) return 'Core-focused training stabilizes your spine and improves all-around athletic movements.';
+    if (l.contains('recovery') || l.contains('rehab')) return 'Prioritizing recovery allows your central nervous system to heal, reducing injury risk.';
+    return 'A balanced approach ensures holistic muscle development and optimal cardiovascular health.';
+  }
+
+  String _getIntensityExplanation(double multiplier) {
+    if (multiplier < 0.8) {
+      return 'Low Intensity: Your scan indicates high fatigue or recovery needs. We will focus on active recovery and light movements to protect your joints and CNS.';
+    } else if (multiplier <= 1.0) {
+      return 'Moderate Intensity: You are in a balanced state. Workouts will be challenging but manageable, optimizing steady progress without overtraining.';
+    } else {
+      return 'High Intensity: Your biomarkers show excellent recovery capacity. You are cleared for maximum effort training to push your limits and accelerate results.';
+    }
   }
 }
 
@@ -452,6 +516,7 @@ class _WorkoutCard extends StatelessWidget {
 
 class _ErrorBody extends StatelessWidget {
   const _ErrorBody({
+    super.key,
     required this.message,
     required this.onRetry,
     required this.isDark,
@@ -639,13 +704,22 @@ class _CardShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121816) : Colors.white,
         borderRadius: BorderRadius.circular(isDark ? 14 : 16),
         border: Border.all(
           color: isDark ? const Color(0xFF1E2624) : const Color(0xFFECEEEF),
         ),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -861,6 +935,99 @@ class _TopBar extends StatelessWidget {
             _ThemeSegment(isDark: isDark, onLight: onLight, onDark: onDark),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TypewriterText extends StatefulWidget {
+  final String text;
+  final TextStyle? style;
+  const _TypewriterText(this.text, {this.style});
+
+  @override
+  State<_TypewriterText> createState() => _TypewriterTextState();
+}
+
+class _TypewriterTextState extends State<_TypewriterText> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<int> _lengthAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
+    _lengthAnimation = IntTween(begin: 0, end: widget.text.length).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Opacity(
+          opacity: 0,
+          child: Text(widget.text, style: widget.style),
+        ),
+        AnimatedBuilder(
+          animation: _lengthAnimation,
+          builder: (context, child) {
+            return Text(
+              widget.text.substring(0, _lengthAnimation.value),
+              style: widget.style,
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _StaggeredFade extends StatefulWidget {
+  final Widget child;
+  final Duration delay;
+  const _StaggeredFade({required this.child, required this.delay});
+
+  @override
+  State<_StaggeredFade> createState() => _StaggeredFadeState();
+}
+
+class _StaggeredFadeState extends State<_StaggeredFade> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacity;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _opacity = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _slide = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    
+    Future.delayed(widget.delay, () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
       ),
     );
   }

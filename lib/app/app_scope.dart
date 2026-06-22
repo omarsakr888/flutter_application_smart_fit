@@ -7,6 +7,7 @@ class AppScope extends InheritedWidget {
     required this.themeMode,
     required this.locale,
     required this.setThemeBrightness,
+    required this.setThemeMode,
     required this.toggleLocaleEnAr,
     required super.child,
   });
@@ -14,6 +15,7 @@ class AppScope extends InheritedWidget {
   final ThemeMode themeMode;
   final Locale locale;
   final ValueChanged<Brightness?> setThemeBrightness;
+  final ValueChanged<ThemeMode> setThemeMode;
 
   /// Switches between English and Arabic (`Locale('ar')` without country code).
   final VoidCallback toggleLocaleEnAr;

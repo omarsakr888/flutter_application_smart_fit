@@ -2,12 +2,14 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../app/app_scope.dart';
 import '../models/user_profile.dart';
 import '../router/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/responsive_utils.dart';
 import '../widgets/ai_chat_fab.dart';
+import '../widgets/smart_fit_app_bar.dart';
+import '../widgets/smart_fit_drawer.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -61,7 +63,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scope = AppScope.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final p = _progress;
@@ -70,6 +71,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
     final muscleGained = p?.muscleGainedKg ?? 1.1;
 
     return Scaffold(
+      appBar: const SmartFitAppBar(),
+      drawer: const SmartFitDrawer(),
       backgroundColor:
           isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF4F4F4),
       bottomNavigationBar: const _BottomNav(),
@@ -78,22 +81,16 @@ class _ProgressScreenState extends State<ProgressScreen> {
         bottom: false,
         child: Column(
           children: [
-            _ProgressHeader(
-              isDark: isDark,
-              onLight: () => scope.setThemeBrightness(Brightness.light),
-              onDark: () => scope.setThemeBrightness(Brightness.dark),
-            ),
-            Divider(
-              height: 1,
-              color: isDark ? const Color(0xFF2A2A2A) : Colors.transparent,
-            ),
             Expanded(
               child: _loading
                   ? const Center(
                       child: CircularProgressIndicator(color: AppColors.teal))
                   : SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                          20, isDark ? 24 : 0, 20, 34),
+                      padding: EdgeInsetsDirectional.fromSTEB(
+                          context.widthPct(0.05),
+                          isDark ? context.heightPct(0.03) : 0,
+                          context.widthPct(0.05),
+                          context.heightPct(0.04)),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -114,7 +111,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                                 height: 1.35,
                               ),
                             ),
-                            const SizedBox(height: 42),
+                            SizedBox(height: context.heightPct(0.05)),
                           ],
                           // ── Live charts section ──────────────────────────
                           if (p != null && p.scanDates.length >= 2) ...[
@@ -143,22 +140,35 @@ class _ProgressScreenState extends State<ProgressScreen> {
                               color: const Color(0xFF1565C0),
                               isDark: isDark,
                             ),
-                            SizedBox(height: isDark ? 30 : 42),
+                            SizedBox(height: isDark ? context.heightPct(0.04) : context.heightPct(0.05)),
                           ] else ...[
                             _EmptyChartsCard(isDark: isDark),
-                            SizedBox(height: isDark ? 30 : 42),
+                            SizedBox(height: isDark ? context.heightPct(0.04) : context.heightPct(0.05)),
                           ],
                           // ── Stat cards ───────────────────────────────────
-                          Row(
-                            children: [
-                              Expanded(child: _StatCard.fatLost(value: fatLost)),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                  child: _StatCard.muscleGained(
-                                      value: muscleGained)),
-                            ],
+                          Builder(
+                            builder: (context) {
+                              if (context.isSmallPhone) {
+                                return Column(
+                                  children: [
+                                    _StatCard.fatLost(value: fatLost),
+                                    SizedBox(height: context.heightPct(0.02)),
+                                    _StatCard.muscleGained(value: muscleGained),
+                                  ],
+                                );
+                              }
+                              return Row(
+                                children: [
+                                  Expanded(child: _StatCard.fatLost(value: fatLost)),
+                                  SizedBox(width: context.widthPct(0.04)),
+                                  Expanded(
+                                      child: _StatCard.muscleGained(
+                                          value: muscleGained)),
+                                ],
+                              );
+                            },
                           ),
-                          SizedBox(height: isDark ? 30 : 42),
+                          SizedBox(height: isDark ? context.heightPct(0.04) : context.heightPct(0.05)),
                           _BeforeAfterCard(
                             firstDate: p != null && p.scanDates.isNotEmpty
                                 ? _fmtScanDate(p.scanDates.first)
@@ -167,7 +177,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                                 ? _fmtScanDate(p.scanDates.last)
                                 : 'Latest Scan',
                           ),
-                          SizedBox(height: isDark ? 30 : 38),
+                          SizedBox(height: isDark ? context.heightPct(0.04) : context.heightPct(0.05)),
                           _ReportActions(onExport: _showExportSnackbar),
                           const SizedBox(height: 24),
                         ],
@@ -449,145 +459,6 @@ class _EmptyChartsCard extends StatelessWidget {
 }
 
 // ── Header ────────────────────────────────────────────────────────────────────
-
-class _ProgressHeader extends StatelessWidget {
-  const _ProgressHeader({
-    required this.isDark,
-    required this.onLight,
-    required this.onDark,
-  });
-
-  final bool isDark;
-  final VoidCallback onLight;
-  final VoidCallback onDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: isDark ? 68 : 130,
-      child: Padding(
-        padding:
-            EdgeInsets.fromLTRB(20, isDark ? 10 : 26, 20, isDark ? 10 : 24),
-        child: Row(
-          children: [
-            IconButton(
-              tooltip: 'Settings',
-              onPressed: () => context.push(AppRoutes.settings),
-              icon: Icon(Icons.menu_rounded,
-                  color: isDark ? Colors.white70 : AppColors.teal, size: 34),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Progress',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: isDark
-                          ? const Color(0xFF31D39E)
-                          : AppColors.teal,
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-            ),
-            IconButton(
-              tooltip: 'Achievements',
-              onPressed: () => context.push(AppRoutes.achievements),
-              icon: Icon(
-                Icons.emoji_events_outlined,
-                color: isDark ? const Color(0xFF31D39E) : AppColors.teal,
-                size: 28,
-              ),
-            ),
-            if (isDark)
-              IconButton(
-                tooltip: 'Light theme',
-                onPressed: onLight,
-                icon: const Icon(Icons.dark_mode_rounded,
-                    color: Color(0xFF31D39E), size: 34),
-              )
-            else
-              _ThemeSegment(
-                  isDark: isDark, onLight: onLight, onDark: onDark),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ThemeSegment extends StatelessWidget {
-  const _ThemeSegment({
-    required this.isDark,
-    required this.onLight,
-    required this.onDark,
-  });
-
-  final bool isDark;
-  final VoidCallback onLight;
-  final VoidCallback onDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFFEFF4EF),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(5),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _ThemeButton(
-                selected: !isDark,
-                icon: Icons.wb_sunny_outlined,
-                onTap: onLight),
-            const SizedBox(width: 4),
-            _ThemeButton(
-                selected: isDark,
-                icon: Icons.dark_mode_rounded,
-                onTap: onDark),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ThemeButton extends StatelessWidget {
-  const _ThemeButton({
-    required this.selected,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final bool selected;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.teal : Colors.transparent,
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: 58,
-          height: 58,
-          child: Icon(
-            icon,
-            color: selected ? Colors.white : const Color(0xFF6F727A),
-            size: 31,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Stat Cards ────────────────────────────────────────────────────────────────
 
 class _StatCard extends StatelessWidget {
   _StatCard.fatLost({double? value})

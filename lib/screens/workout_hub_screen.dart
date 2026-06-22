@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:string_similarity/string_similarity.dart';
 
-import '../app/app_scope.dart';
 import '../models/plan_result.dart';
 import '../router/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/responsive_utils.dart';
 import '../widgets/ai_chat_fab.dart';
+import '../widgets/smart_fit_app_bar.dart';
+import '../widgets/smart_fit_drawer.dart';
 
 class WorkoutHubScreen extends StatefulWidget {
   const WorkoutHubScreen({super.key});
@@ -110,7 +113,6 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scope = AppScope.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -124,6 +126,8 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
     final completed = _checkedExercises.length;
 
     return Scaffold(
+      appBar: const SmartFitAppBar(),
+      drawer: const SmartFitDrawer(),
       backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF7FCF8),
       bottomNavigationBar: const _BottomNav(),
       floatingActionButton: const AiChatFab(),
@@ -131,14 +135,6 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
         bottom: false,
         child: Column(
           children: [
-            _WorkoutHeader(
-              isDark: isDark,
-              onLight: () => scope.setThemeBrightness(Brightness.light),
-              onDark: () => scope.setThemeBrightness(Brightness.dark),
-              onDownload: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Plan export coming soon.')),
-              ),
-            ),
             if (_loading)
               LinearProgressIndicator(
                 minHeight: 2,
@@ -151,12 +147,17 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(20, isDark ? 24 : 42, 20, 32),
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  context.widthPct(0.05),
+                  isDark ? context.heightPct(0.03) : context.heightPct(0.05),
+                  context.widthPct(0.05),
+                  context.heightPct(0.04),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const _DateStrip(),
-                    SizedBox(height: isDark ? 60 : 72),
+                    SizedBox(height: isDark ? context.heightPct(0.07) : context.heightPct(0.08)),
                     if (isDark)
                       _WorkoutSummaryCard(
                         dayLabel: dayLabel,
@@ -171,7 +172,7 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
                         total: exercises.length,
                         intensityMultiplier: intensity,
                       ),
-                    SizedBox(height: isDark ? 34 : 30),
+                    SizedBox(height: isDark ? context.heightPct(0.04) : context.heightPct(0.035)),
                     for (var i = 0; i < exercises.length; i++) ...[
                       _ExerciseTile(
                         exercise: exercises[i],
@@ -184,9 +185,9 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
                           }
                         }),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.heightPct(0.02)),
                     ],
-                    const SizedBox(height: 20),
+                    SizedBox(height: context.heightPct(0.025)),
                     _CompleteWorkoutButton(
                       completing: _completing,
                       checkedCount: _checkedExercises.length,
@@ -212,130 +213,6 @@ class _Exercise {
   final String tag;
   final IconData icon;
   final bool done;
-}
-
-class _WorkoutHeader extends StatelessWidget {
-  const _WorkoutHeader({
-    required this.isDark,
-    required this.onLight,
-    required this.onDark,
-    required this.onDownload,
-  });
-
-  final bool isDark;
-  final VoidCallback onLight;
-  final VoidCallback onDark;
-  final VoidCallback onDownload;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: isDark ? 88 : 102,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(24, isDark ? 14 : 20, 24, 14),
-        child: Row(
-          children: [
-            const _ProfilePhoto(),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Text(
-                'Workout Hub',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: isDark ? const Color(0xFF31D39E) : AppColors.teal,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            IconButton(
-              tooltip: 'Export Plan',
-              onPressed: onDownload,
-              icon: Icon(
-                Icons.file_download_outlined,
-                color: isDark ? Colors.white70 : const Color(0xFF6D7079),
-                size: isDark ? 30 : 32,
-              ),
-            ),
-            const SizedBox(width: 12),
-            IconButton(
-              tooltip: isDark ? 'Light theme' : 'Dark theme',
-              onPressed: isDark ? onLight : onDark,
-              icon: Icon(
-                isDark ? Icons.wb_sunny_outlined : Icons.dark_mode_rounded,
-                color: isDark ? const Color(0xFF31D39E) : const Color(0xFF6D7079),
-                size: isDark ? 34 : 36,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfilePhoto extends StatelessWidget {
-  const _ProfilePhoto();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return ClipOval(
-      child: SizedBox(
-        width: isDark ? 46 : 50,
-        height: isDark ? 46 : 50,
-        child: CustomPaint(painter: _ProfilePainter(isDark: isDark)),
-      ),
-    );
-  }
-}
-
-class _ProfilePainter extends CustomPainter {
-  const _ProfilePainter({required this.isDark});
-
-  final bool isDark;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: isDark
-              ? [const Color(0xFF102421), const Color(0xFF050606)]
-              : [const Color(0xFFE2F5F0), const Color(0xFF0B5F59)],
-        ).createShader(Offset.zero & size),
-    );
-    final skin = Paint()..color = const Color(0xFFC58D72);
-    final shirt = Paint()..color = AppColors.teal;
-    final hair = Paint()..color = const Color(0xFF17110F);
-    final center = Offset(size.width / 2, size.height * 0.45);
-    canvas.drawCircle(center.translate(0, -8), size.width * 0.13, skin);
-    canvas.drawArc(
-      Rect.fromCircle(center: center.translate(0, -10), radius: size.width * 0.14),
-      3.15,
-      3.2,
-      false,
-      hair..style = PaintingStyle.stroke..strokeWidth = 4,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: center.translate(0, 16), width: size.width * 0.36, height: size.height * 0.34),
-        const Radius.circular(8),
-      ),
-      shirt,
-    );
-    final arm = Paint()
-      ..color = skin.color
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(center.translate(-8, 12), center.translate(-18, 24), arm);
-    canvas.drawLine(center.translate(8, 12), center.translate(18, 24), arm);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _DateStrip extends StatelessWidget {
@@ -645,6 +522,35 @@ class _IntensityPill extends StatelessWidget {
   }
 }
 
+const _availableGifs = [
+  'Chest_Supported_Dumbbell_Curl',
+  'Degree_Leg_Press',
+  'Dumbbell_Preacher_Curl',
+  'Hanging_Knee_Raise',
+  'Incline_Bench_Press',
+  'Incline_Dumbbell_Shoulder_Press',
+  'Lat_Pulldown',
+  'Lateral_Raise',
+  'Leg_Press_Calf_Raise',
+  'Lying_Leg_Press',
+  'Lying_Triceps_Extension',
+  'Oblique_Knee_Raise',
+  'Prone_Triceps_Extension',
+  'Seated_Overhead_Triceps_Extension',
+  'Smith_Machine_Incline_Press',
+  'Standing_Barbell_Curl',
+  'Standing_Front_Raise',
+];
+
+String? _findGifPath(String exerciseName) {
+  final options = _availableGifs.map((e) => e.replaceAll('_', ' ').toLowerCase()).toList();
+  final bestMatch = StringSimilarity.findBestMatch(exerciseName.toLowerCase(), options);
+  if (bestMatch.bestMatch.rating! >= 0.5) {
+    return 'assets/gifs/${_availableGifs[bestMatch.bestMatchIndex]}.gif';
+  }
+  return null;
+}
+
 class _ExerciseTile extends StatelessWidget {
   const _ExerciseTile({
     required this.exercise,
@@ -676,6 +582,15 @@ class _ExerciseTile extends StatelessWidget {
                     : (isDark ? const Color(0xFF2B2B2D) : const Color(0xFFE8ECEB)),
             width: isChecked || focused ? 1.4 : 1,
           ),
+          boxShadow: isDark
+              ? []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         child: Padding(
           padding: EdgeInsets.symmetric(
@@ -689,41 +604,60 @@ class _ExerciseTile extends StatelessWidget {
                   ? _DarkExerciseContent(exercise: exercise, focused: focused, isChecked: isChecked)
                   : _LightExerciseContent(exercise: exercise, isChecked: isChecked),
               const SizedBox(height: 18),
-              Container(
-                height: 100,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF18181A) : const Color(0xFFF4F7F6),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE4E9E7),
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.play_circle_outline_rounded,
-                      color: isDark ? const Color(0xFF2DB994) : AppColors.teal,
-                      size: 26,
+              Builder(
+                builder: (context) {
+                  final gifPath = _findGifPath(exercise.title);
+                  if (gifPath != null) {
+                    return Container(
+                      height: 160,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF18181A) : const Color(0xFFF4F7F6),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE4E9E7),
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset(gifPath, fit: BoxFit.cover, width: double.infinity),
+                    );
+                  }
+                  return Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF18181A) : const Color(0xFFF4F7F6),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE4E9E7),
+                      ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Exercise Instruction Placeholder (Video/GIF)',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isDark ? Colors.white54 : const Color(0xFF5A605E),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.play_circle_outline_rounded,
+                          color: isDark ? const Color(0xFF2DB994) : AppColors.teal,
+                          size: 26,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Exercise Instruction Placeholder',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: isDark ? Colors.white54 : const Color(0xFF5A605E),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                        ),
+                        Text(
+                          'No GIF matched for "${exercise.title}"',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: isDark ? Colors.white30 : const Color(0xFF8A908E),
+                                fontSize: 11,
+                              ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      'Demonstration instructions will be added here',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isDark ? Colors.white30 : const Color(0xFF8A908E),
-                            fontSize: 11,
-                          ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
             ],
           ),

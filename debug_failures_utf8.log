@@ -1,0 +1,306 @@
+﻿
+======================================
+  inbody120.png
+======================================
+
+--- Section: header ---
+[InBody] (conf: 0.80) x1:39.0 y1:30.0 cx:139.5 cy:69.5
+[([InBody120]] (conf: 0.59) x1:449.0 y1:77.0 cx:492.0 cy:87.0
+[athletehome"] (conf: 0.95) x1:575.0 y1:77.0 cx:686.0 cy:99.0
+[ID] (conf: 1.00) x1:55.0 y1:107.0 cx:64.0 cy:115.0
+[He ght] (conf: 0.87) x1:200.0 y1:106.0 cx:221.5 cy:116.0
+[Age] (conf: 0.98) x1:291.0 y1:109.0 cx:304.0 cy:117.0
+[Gender] (conf: 0.98) x1:349.0 y1:107.0 cx:371.0 cy:115.0
+[Tesi Dale & Tme] (conf: 0.69) x1:405.0 y1:107.0 cx:454.0 cy:115.0
+[SM2OO8] (conf: 0.37) x1:57.0 y1:123.0 cx:88.0 cy:133.0
+[156,9cm] (conf: 0.78) x1:201.0 y1:123.0 cx:234.0 cy:133.0
+[51] (conf: 1.00) x1:293.0 y1:127.0 cx:303.0 cy:135.0
+[Female] (conf: 0.65) x1:349.0 y1:125.0 cx:374.0 cy:133.0
+[2012.05.04.09] (conf: 0.78) x1:405.0 y1:123.0 cx:459.0 cy:133.0
+[46] (conf: 1.00) x1:519.0 y1:123.0 cx:531.0 cy:133.0
+
+--- Section: body_composition ---
+[Body Composition Analysis] (conf: 0.96) x1:39.0 y1:33.0 cx:134.0 cy:43.0
+[Tote] (conf: 0.38) x1:45.0 y1:63.0 cx:58.0 cy:70.0
+[amaunt of waler In boCy] (conf: 0.31) x1:73.0 y1:61.0 cx:139.0 cy:70.0
+[Tolal Body Water] (conf: 0.81) x1:235.0 y1:63.0 cx:285.0 cy:71.0
+[27.5 (26.3 ~ 31.4)] (conf: 0.47) x1:389.0 y1:59.0 cx:451.0 cy:69.0
+[InBe] (conf: 0.70) x1:551.0 y1:71.0 cx:564.0 cy:79.0
+[For building muscles] (conf: 0.79) x1:45.0 y1:85.0 cx:102.0 cy:95.0
+[Protein] (conf: 1.00) x1:235.0 y1:87.0 cx:258.0 cy:95.0
+[7.2] (conf: 0.42) x1:397.0 y1:85.0 cx:411.0 cy:95.0
+[7.0 - 8.6] (conf: 0.37) x1:443.0 y1:87.0 cx:473.0 cy:96.0
+[For strengthening bones] (conf: 0.52) x1:45.0 y1:113.0 cx:112.0 cy:121.0
+[Minorals] (conf: 0.52) x1:235.0 y1:113.0 cx:261.0 cy:121.0
+[2.63 (2.44] (conf: 0.75) x1:389.0 y1:111.0 cx:427.0 cy:121.0
+[2.98)] (conf: 0.81) x1:475.0 y1:111.0 cx:494.0 cy:120.0
+[For sloring axcess enargy] (conf: 0.45) x1:45.0 y1:139.0 cx:115.0 cy:147.0
+[Body Fat Kass] (conf: 0.65) x1:235.0 y1:139.0 cx:279.0 cy:147.0
+[21.8 (10.3] (conf: 0.82) x1:391.0 y1:139.0 cx:428.0 cy:147.0
+[16.5)] (conf: 0.48) x1:477.0 y1:137.0 cx:495.0 cy:146.0
+[E0 1] (conf: 0.25) x1:391.0 y1:163.0 cx:407.0 cy:168.5
+[{4 0 _ 50 5i] (conf: 0.15) x1:429.0 y1:163.0 cx:470.0 cy:168.5
+
+--- Section: muscle_fat ---
+[avei] (conf: 0.02) x1:551.0 y1:0.0 cx:564.0 cy:5.5
+[Musele-Fat Analysis] (conf: 0.79) x1:39.0 y1:39.0 cx:110.0 cy:49.0
+[Kleig"] (conf: 0.22) x1:551.0 y1:35.0 cx:565.0 cy:43.0
+[Fat] (conf: 0.46) x1:551.0 y1:53.0 cx:562.0 cy:61.0
+[3] (conf: 0.01) x1:165.0 y1:65.0 cx:184.0 cy:71.0
+[Nomal] (conf: 0.33) x1:237.0 y1:65.0 cx:259.0 cy:71.0
+[3] (conf: 0.01) x1:392.0 y1:66.0 cx:406.0 cy:70.0
+[Musc] (conf: 0.99) x1:551.0 y1:73.0 cx:564.0 cy:80.0
+[Wcight] (conf: 0.89) x1:43.0 y1:89.0 cx:66.0 cy:97.0
+[(kol] (conf: 0.46) x1:113.0 y1:89.0 cx:123.0 cy:96.0
+[59] (conf: 0.98) x1:289.0 y1:91.0 cx:300.0 cy:100.0
+[Rese] (conf: 0.61) x1:551.0 y1:99.0 cx:565.5 cy:108.0
+[Taro-] (conf: 0.29) x1:549.1 y1:16.2 cx:563.5 cy:24.5
+
+--- Section: obesity ---
+[SMM] (conf: 0.21) x1:43.0 y1:0.0 cx:61.0 cy:6.5
+[19,6] (conf: 0.35) x1:227.0 y1:5.0 cx:245.0 cy:14.0
+[Basa] (conf: 0.80) x1:551.0 y1:3.0 cx:565.0 cy:11.0
+[2] (conf: 0.07) x1:351.0 y1:29.0 cx:359.0 cy:35.0
+[Lod] (conf: 0.21) x1:418.0 y1:30.0 cx:425.0 cy:34.0
+[Wlais] (conf: 0.49) x1:551.0 y1:21.0 cx:565.0 cy:29.0
+[Body Fat Mass (k9l] (conf: 0.41) x1:43.0 y1:35.0 cx:88.0 cy:43.0
+[21.8] (conf: 1.00) x1:313.0 y1:37.0 cx:331.0 cy:47.0
+[Visce] (conf: 0.62) x1:551.0 y1:39.0 cx:564.0 cy:47.0
+[Opes] (conf: 0.61) x1:551.0 y1:59.0 cx:564.0 cy:66.0
+[Obesity Analysis] (conf: 0.78) x1:39.0 y1:95.0 cx:97.0 cy:105.0
+[Rest] (conf: 0.39) x1:548.1 y1:84.2 cx:565.5 cy:96.0
+[Body] (conf: 0.40) x1:549.0 y1:106.2 cx:564.5 cy:114.5
+
+--- Section: segmental_lean ---
+[L] (conf: 0.46) x1:161.0 y1:0.0 cx:179.0 cy:6.5
+[Nownal] (conf: 0.47) x1:233.0 y1:0.0 cx:254.0 cy:6.5
+["0] (conf: 0.90) x1:145.0 y1:17.0 cx:155.0 cy:23.0
+[15 0] (conf: 0.58) x1:179.0 y1:17.0 cx:189.0 cy:23.0
+["5] (conf: 0.18) x1:211.0 y1:15.0 cx:222.0 cy:22.0
+[BMI] (conf: 0.99) x1:39.0 y1:23.0 cx:53.0 cy:30.0
+[(olm)] (conf: 0.30) x1:93.0 y1:25.0 cx:112.0 cy:33.0
+[1ad] (conf: 0.06) x1:178.0 y1:52.0 cx:187.0 cy:56.0
+["0] (conf: 0.14) x1:211.0 y1:49.0 cx:221.0 cy:55.0
+[PBF] (conf: 0.99) x1:39.0 y1:55.0 cx:54.0 cy:63.0
+[(931] (conf: 0.18) x1:111.0 y1:59.0 cx:121.0 cy:66.0
+[Nola Fe] (conf: 0.01) x1:65.0 y1:67.0 cx:82.0 cy:73.0
+[Segmental Lean Analysis] (conf: 0.94) x1:31.0 y1:122.0 cx:123.5 cy:135.5
+[1.94 kg]] (conf: 0.13) x1:59.0 y1:171.0 cx:84.0 cy:180.0
+[2.02 kg] (conf: 0.89) x1:193.0 y1:171.0 cx:219.0 cy:180.0
+
+--- Section: research_params ---
+[iGel Wieignt] (conf: 0.24) x1:0.0 y1:5.0 cx:29.5 cy:14.0
+[51.7 kg] (conf: 0.78) x1:111.0 y1:3.0 cx:136.0 cy:13.0
+[ight Control] (conf: 0.61) x1:0.0 y1:21.0 cx:31.5 cy:31.0
+[74kg] (conf: 0.61) x1:119.0 y1:23.0 cx:140.0 cy:31.0
+[t Ccntm"] (conf: 0.39) x1:0.0 y1:41.0 cx:22.5 cy:49.0
+[9.9 kg] (conf: 0.91) x1:117.0 y1:39.0 cx:139.0 cy:49.0
+[Isde Contol] (conf: 0.51) x1:0.0 y1:61.0 cx:32.5 cy:69.0
+[25kg] (conf: 0.55) x1:117.0 y1:57.0 cx:139.0 cy:67.0
+[esearch Parameters] (conf: 0.65) x1:0.0 y1:88.0 cx:67.5 cy:98.0
+[5] (conf: 0.92) x1:0.0 y1:113.0 cx:7.5 cy:120.0
+[Metabolc Rate] (conf: 0.80) x1:17.0 y1:111.0 cx:56.0 cy:119.0
+[176 kcal] (conf: 0.75) x1:105.0 y1:109.0 cx:136.0 cy:119.0
+[ist-Hp Rati] (conf: 0.70) x1:0.0 y1:129.0 cx:33.5 cy:138.0
+[0.92] (conf: 0.94) x1:109.0 y1:131.0 cx:125.0 cy:138.0
+[(075 ~- 0asi] (conf: 0.16) x1:171.0 y1:129.0 cx:203.0 cy:136.0
+[ceral Fat Level] (conf: 0.88) x1:1.0 y1:149.0 cx:39.0 cy:157.0
+[12] (conf: 0.75) x1:123.0 y1:149.0 cx:132.0 cy:156.0
+
+======================================
+  inbody270.png
+======================================
+
+--- Section: header ---
+[InBody] (conf: 0.61) x1:55.0 y1:44.0 cx:151.5 cy:81.5
+[[InBody270]] (conf: 0.75) x1:451.0 y1:87.0 cx:495.0 cy:97.0
+[ID] (conf: 0.95) x1:71.0 y1:117.0 cx:80.0 cy:125.0
+[Height] (conf: 0.99) x1:210.0 y1:113.0 cx:232.0 cy:125.0
+[Age] (conf: 0.30) x1:301.0 y1:119.0 cx:313.0 cy:127.0
+[Gender] (conf: 0.92) x1:355.0 y1:117.0 cx:378.0 cy:125.0
+[Test Dae & Tme] (conf: 0.56) x1:413.0 y1:117.0 cx:459.0 cy:125.0
+[FVW ibody com] (conf: 0.10) x1:631.0 y1:129.0 cx:681.0 cy:136.0
+[156 Ocun] (conf: 0.22) x1:217.0 y1:135.0 cx:245.0 cy:141.5
+[Female] (conf: 0.49) x1:359.0 y1:137.0 cx:381.0 cy:142.5
+[D0is 04 03] (conf: 0.18) x1:413.0 y1:135.0 cx:451.0 cy:141.5
+[0q] (conf: 0.69) x1:493.0 y1:137.0 cx:503.0 cy:142.5
+
+--- Section: body_composition ---
+[Jallc Doc] (conf: 0.22) x1:67.0 y1:0.0 cx:100.0 cy:6.5
+[190.JCIn] (conf: 0.19) x1:211.0 y1:0.0 cx:241.0 cy:6.5
+[4 9] (conf: 0.11) x1:285.0 y1:0.0 cx:300.0 cy:6.5
+[Fcmalc] (conf: 0.55) x1:351.0 y1:0.0 cx:376.0 cy:6.5
+[Zuio.UU)_] (conf: 0.12) x1:409.0 y1:0.0 cx:446.0 cy:6.5
+[Uy] (conf: 0.33) x1:487.0 y1:0.0 cx:497.0 cy:5.5
+[30] (conf: 0.24) x1:511.0 y1:0.0 cx:522.0 cy:5.5
+[Body Composition Analysis] (conf: 0.99) x1:65.0 y1:45.0 cx:170.0 cy:55.0
+[Total amount of wrater in body] (conf: 0.51) x1:67.0 y1:72.0 cx:144.0 cy:81.0
+[Total [] (conf: 0.26) x1:229.0 y1:75.0 cx:245.0 cy:82.0
+[IBody Water] (conf: 0.94) x1:254.0 y1:69.0 cx:291.0 cy:81.0
+[26.5 ( 26 4] (conf: 0.71) x1:399.0 y1:69.0 cx:436.0 cy:79.0
+[32.2 )] (conf: 0.42) x1:485.0 y1:73.0 cx:502.0 cy:81.0
+[For bulldng muscles] (conf: 0.78) x1:67.0 y1:97.0 cx:121.0 cy:105.0
+[Prolein] (conf: 0.99) x1:229.0 y1:99.0 cx:251.0 cy:107.0
+[7.2] (conf: 0.47) x1:407.0 y1:95.0 cx:420.0 cy:104.0
+[7.0 - 8.6 )] (conf: 0.71) x1:451.0 y1:97.0 cx:485.0 cy:105.0
+[For strengthenng bones] (conf: 0.43) x1:67.0 y1:123.0 cx:131.0 cy:131.0
+[Minera $] (conf: 0.74) x1:229.0 y1:123.0 cx:254.0 cy:131.0
+[2.64 (24] (conf: 0.66) x1:399.0 y1:119.0 cx:436.0 cy:128.0
+[2.98 )] (conf: 0.59) x1:483.0 y1:121.0 cx:501.0 cy:129.0
+[For stonng excess energy] (conf: 0.77) x1:67.0 y1:145.0 cx:135.0 cy:153.5
+[Body Fat Mass] (conf: 0.90) x1:229.0 y1:147.0 cx:272.0 cy:154.5
+[V] (conf: 0.01) x1:354.0 y1:148.0 cx:362.0 cy:152.0
+[22.8 ( 10.3 ~ 16 5)] (conf: 0.53) x1:399.0 y1:143.0 cx:459.0 cy:152.0
+
+--- Section: muscle_fat ---
+[Sum of Ine above] (conf: 0.55) x1:67.0 y1:3.0 cx:114.0 cy:10.0
+[Weight] (conf: 1.00) x1:228.0 y1:2.0 cx:250.5 cy:12.0
+[59.1] (conf: 0.91) x1:399.0 y1:0.0 cx:415.0 cy:9.5
+[(43.,9] (conf: 0.33) x1:435.0 y1:3.0 cx:454.0 cy:11.0
+[59.5)] (conf: 0.65) x1:483.0 y1:3.0 cx:500.0 cy:10.0
+[Muscle-Fat Analysis] (conf: 0.97) x1:65.0 y1:61.0 cx:143.0 cy:71.0
+[Under] (conf: 0.44) x1:179.0 y1:85.0 cx:200.0 cy:92.0
+[Normol] (conf: 0.45) x1:249.0 y1:85.0 cx:274.0 cy:92.0
+[Over] (conf: 0.75) x1:403.0 y1:85.0 cx:419.0 cy:92.0
+[105] (conf: 0.24) x1:268.0 y1:102.0 cx:275.0 cy:106.0
+[Ma] (conf: 0.06) x1:299.0 y1:101.0 cx:308.0 cy:107.0
+[13] (conf: 0.33) x1:331.0 y1:101.0 cx:340.0 cy:107.0
+[412] (conf: 0.16) x1:364.0 y1:102.0 cx:371.0 cy:106.0
+[JE]] (conf: 0.16) x1:398.0 y1:102.0 cx:405.0 cy:106.0
+[a] (conf: 0.43) x1:429.0 y1:101.0 cx:438.0 cy:107.0
+[130] (conf: 0.34) x1:461.0 y1:101.0 cx:470.0 cy:107.0
+[3] (conf: 0.53) x1:493.0 y1:101.0 cx:501.0 cy:107.0
+[Weight] (conf: 0.82) x1:67.0 y1:109.0 cx:88.0 cy:116.0
+[59] (conf: 0.94) x1:307.0 y1:111.0 cx:317.0 cy:117.5
+[BM] (conf: 0.44) x1:557.0 y1:107.0 cx:565.0 cy:114.0
+
+--- Section: obesity ---
+[J03] (conf: 0.07) x1:267.0 y1:13.0 cx:275.0 cy:19.0
+[19] (conf: 0.23) x1:363.0 y1:13.0 cx:372.0 cy:19.0
+[14] (conf: 0.99) x1:397.0 y1:13.0 cx:405.0 cy:19.0
+[F0] (conf: 0.11) x1:429.0 y1:13.0 cx:437.0 cy:19.0
+[150] (conf: 0.53) x1:461.0 y1:13.0 cx:470.0 cy:19.0
+[I0] (conf: 0.10) x1:493.0 y1:13.0 cx:502.0 cy:19.0
+[SHM] (conf: 0.79) x1:67.0 y1:17.0 cx:84.0 cy:24.0
+[0] (conf: 0.96) x1:137.0 y1:19.0 cx:146.0 cy:26.0
+[19.6] (conf: 0.87) x1:245.0 y1:21.0 cx:263.0 cy:30.0
+[Ton] (conf: 0.11) x1:268.0 y1:46.0 cx:275.0 cy:50.0
+[1] (conf: 0.93) x1:331.0 y1:45.0 cx:340.0 cy:51.0
+[20] (conf: 0.16) x1:361.0 y1:45.0 cx:371.0 cy:51.0
+[3] (conf: 0.02) x1:395.0 y1:45.0 cx:405.0 cy:51.0
+[40] (conf: 0.24) x1:429.0 y1:45.0 cx:437.0 cy:51.0
+[40] (conf: 0.62) x1:461.0 y1:45.0 cx:470.0 cy:51.0
+[0] (conf: 0.96) x1:493.0 y1:45.0 cx:502.0 cy:51.0
+[Body Fat Wass 0 3] (conf: 0.43) x1:67.0 y1:51.0 cx:111.0 cy:60.0
+[22.8] (conf: 0.62) x1:347.0 y1:51.0 cx:365.0 cy:61.0
+
+--- Section: segmental_lean ---
+[Obesity Analysis] (conf: 0.99) x1:57.0 y1:17.0 cx:122.0 cy:27.0
+[Undel] (conf: 0.97) x1:175.0 y1:41.0 cx:196.0 cy:48.0
+[Wow] (conf: 0.27) x1:245.0 y1:41.0 cx:264.0 cy:48.0
+[BMI] (conf: 0.98) x1:61.0 y1:61.0 cx:75.0 cy:68.0
+[130] (conf: 0.46) x1:163.0 y1:57.0 cx:173.0 cy:64.0
+[4Sf] (conf: 0.02) x1:196.0 y1:60.0 cx:204.0 cy:64.0
+[(kam )] (conf: 0.16) x1:115.0 y1:65.0 cx:133.0 cy:72.0
+[PBF] (conf: 0.99) x1:61.0 y1:93.0 cx:75.0 cy:100.0
+[Caeean] (conf: 0.00) x1:86.0 y1:106.0 cx:101.0 cy:109.0
+[Seginental Lean Analysis] (conf: 0.95) x1:59.0 y1:165.0 cx:155.0 cy:175.0
+
+--- Section: research_params ---
+[PBF] (conf: 0.89) x1:0.0 y1:1.0 cx:11.5 cy:9.0
+[DNomil D] (conf: 0.48) x1:61.0 y1:3.0 cx:93.0 cy:10.0
+['818] (conf: 0.11) x1:120.0 y1:0.0 cx:140.0 cy:11.0
+[Jor] (conf: 0.09) x1:177.0 y1:1.0 cx:195.0 cy:9.0
+[Waist-Hip Ratio] (conf: 0.91) x1:0.0 y1:32.0 cx:51.5 cy:41.5
+[0.75] (conf: 0.99) x1:151.0 y1:49.0 cx:164.0 cy:55.0
+[0.85] (conf: 0.84) x1:179.0 y1:47.0 cx:192.0 cy:54.0
+[0.91] (conf: 0.61) x1:35.0 y1:59.0 cx:50.0 cy:67.0
+[Visceral Fat Level] (conf: 0.84) x1:0.0 y1:91.0 cx:58.5 cy:100.0
+[Lov] (conf: 0.44) x1:117.0 y1:105.0 cx:130.0 cy:111.0
+[10] (conf: 0.55) x1:171.0 y1:107.0 cx:179.0 cy:113.0
+[Hizh] (conf: 0.34) x1:209.0 y1:105.0 cx:223.0 cy:112.0
+[11] (conf: 0.99) x1:35.0 y1:119.0 cx:44.0 cy:126.0
+
+======================================
+  inbody570.png
+======================================
+
+--- Section: header ---
+[InBedy] (conf: 0.68) x1:59.0 y1:61.0 cx:156.5 cy:95.5
+[[InBody570]] (conf: 1.00) x1:493.0 y1:101.0 cx:538.0 cy:111.0
+[SEE WHAT YOU'RE MADE OF] (conf: 0.74) x1:631.0 y1:111.0 cx:728.0 cy:121.0
+
+--- Section: body_composition ---
+[ID] (conf: 1.00) x1:69.0 y1:3.0 cx:77.0 cy:10.0
+[Height] (conf: 1.00) x1:215.0 y1:3.0 cx:237.0 cy:11.0
+[Age] (conf: 1.00) x1:305.0 y1:3.0 cx:318.0 cy:11.0
+[Gender] (conf: 1.00) x1:361.0 y1:3.0 cx:385.0 cy:10.0
+[Test Date] (conf: 1.00) x1:419.0 y1:1.0 cx:448.0 cy:9.0
+[Time] (conf: 0.73) x1:485.0 y1:1.0 cx:501.0 cy:9.0
+[Jane Doe] (conf: 0.87) x1:67.0 y1:23.0 cx:101.0 cy:31.0
+[5 ft 05.0 in] (conf: 0.67) x1:215.0 y1:19.0 cx:254.0 cy:29.0
+[31] (conf: 0.89) x1:303.0 y1:23.0 cx:313.0 cy:31.0
+[Female] (conf: 1.00) x1:359.0 y1:23.0 cx:386.0 cy:31.0
+[04.28.2021] (conf: 0.88) x1:417.0 y1:19.0 cx:456.0 cy:29.0
+[07.13] (conf: 0.80) x1:499.0 y1:19.0 cx:520.0 cy:29.0
+[Body Composition Analysis] (conf: 0.93) x1:62.0 y1:47.0 cx:172.0 cy:60.0
+[Values] (conf: 0.92) x1:215.0 y1:75.0 cx:235.0 cy:82.0
+[Total Body Water] (conf: 0.58) x1:287.0 y1:75.0 cx:333.0 cy:82.0
+[Lean Body Mass] (conf: 0.94) x1:383.0 y1:75.0 cx:429.0 cy:82.0
+[Wetght] (conf: 0.52) x1:503.0 y1:75.0 cx:524.0 cy:82.0
+[Intracellular Water] (conf: 0.77) x1:69.0 y1:97.0 cx:116.0 cy:105.0
+[39.9] (conf: 0.45) x1:215.0 y1:93.0 cx:233.0 cy:103.0
+[64.2] (conf: 0.81) x1:311.0 y1:105.0 cx:329.0 cy:115.0
+[Extracellular Water] (conf: 0.93) x1:69.0 y1:125.0 cx:117.0 cy:133.0
+[243] (conf: 0.77) x1:215.0 y1:121.0 cx:233.0 cy:131.0
+[88.0] (conf: 1.00) x1:409.0 y1:121.0 cx:427.0 cy:131.0
+
+--- Section: muscle_fat ---
+[135.4] (conf: 0.78) x1:501.0 y1:5.0 cx:523.0 cy:14.0
+[Dry Lean Mass] (conf: 0.99) x1:69.0 y1:19.0 cx:113.0 cy:28.0
+[23,8] (conf: 0.63) x1:217.0 y1:17.0 cx:234.0 cy:26.0
+[Body Fat Mass] (conf: 0.93) x1:69.0 y1:47.0 cx:113.0 cy:55.0
+[47,4] (conf: 0.67) x1:217.0 y1:45.0 cx:234.0 cy:54.0
+[Muscle-Fat Analysis] (conf: 0.76) x1:62.0 y1:74.0 cx:144.0 cy:86.0
+
+--- Section: obesity ---
+[Weight] (conf: 0.99) x1:69.0 y1:5.0 cx:93.0 cy:14.0
+[135.4] (conf: 0.55) x1:331.0 y1:5.0 cx:352.0 cy:15.0
+[SMM] (conf: 1.00) x1:69.0 y1:33.0 cx:87.0 cy:41.0
+[Llani] (conf: 0.04) x1:96.0 y1:48.0 cx:117.0 cy:52.0
+[47.6] (conf: 1.00) x1:281.0 y1:43.0 cx:298.0 cy:51.0
+[Body Fat Mass] (conf: 0.99) x1:69.0 y1:69.0 cx:113.0 cy:78.0
+[47.4] (conf: 0.82) x1:369.0 y1:77.0 cx:385.0 cy:85.0
+[Obesity Analysis] (conf: 0.98) x1:62.0 y1:100.0 cx:130.0 cy:112.0
+
+--- Section: segmental_lean ---
+[BMI] (conf: 0.92) x1:69.0 y1:25.0 cx:83.0 cy:33.0
+[Io] (conf: 0.15) x1:199.0 y1:23.0 cx:209.0 cy:29.0
+[Uber] (conf: 0.04) x1:88.0 y1:40.0 cx:106.0 cy:44.0
+[@Eu)] (conf: 0.16) x1:149.0 y1:33.0 cx:167.0 cy:40.0
+[22,5] (conf: 0.57) x1:331.0 y1:31.0 cx:349.0 cy:41.0
+[Ca] (conf: 0.00) x1:200.0 y1:58.0 cx:206.0 cy:62.0
+[PBF] (conf: 1.00) x1:69.0 y1:59.0 cx:84.0 cy:66.0
+[Weanlht] (conf: 0.00) x1:94.0 y1:74.0 cx:109.0 cy:77.0
+[35] (conf: 0.83) x1:397.0 y1:67.0 cx:407.0 cy:75.0
+[Segmental Lean Analysis] (conf: 1.00) x1:62.0 y1:93.0 cx:162.0 cy:105.0
+[Right Arm] (conf: 0.83) x1:67.0 y1:143.0 cx:101.0 cy:153.0
+[88] (conf: 0.99) x1:295.0 y1:157.0 cx:303.0 cy:164.0
+
+--- Section: ecw_tbw_section ---
+[Left Arm] (conf: 0.79) x1:67.5 y1:13.9 cx:96.2 cy:22.2
+[Trunk] (conf: 1.00) x1:67.5 y1:50.9 cx:87.9 cy:59.2
+
+--- Section: bmr_standalone ---
+[Lem Am] (conf: 0.39) x1:36.1 y1:0.0 cx:62.9 cy:6.0
+[ab )] (conf: 0.18) x1:121.2 y1:0.0 cx:141.6 cy:6.0
+[458870] (conf: 0.03) x1:226.7 y1:0.0 cx:248.0 cy:6.0
+[Trunk] (conf: 1.00) x1:36.1 y1:15.7 cx:55.5 cy:23.1
+[(24,0 m)] (conf: 0.52) x1:108.3 y1:15.7 cx:135.1 cy:23.1
+[202.20 0] (conf: 0.35) x1:243.4 y1:13.9 cx:264.6 cy:21.3
+[Right Leg] (conf: 1.00) x1:34.2 y1:29.6 cx:65.2 cy:40.7
+[733 m)] (conf: 0.29) x1:123.1 y1:34.2 cx:142.5 cy:41.6
+[432.890] (conf: 0.34) x1:211.9 y1:34.2 cx:233.2 cy:41.6
+[Left Leg] (conf: 0.68) x1:36.1 y1:49.0 cx:61.1 cy:58.3
+[7.1 W)e] (conf: 0.13) x1:121.2 y1:50.9 cx:142.5 cy:59.2
+[132.490] (conf: 0.65) x1:211.9 y1:52.7 cx:233.2 cy:60.1

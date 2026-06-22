@@ -23,12 +23,14 @@ class _LoginScreenState extends State<LoginScreen> {
   static const String _heroImageUrl =
       'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80';
 
+  final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final SocialAuthService _auth = SocialAuthService();
 
   bool _obscure = true;
   bool _busy = false;
+  String? _authError;
 
   @override
   void dispose() {
@@ -54,17 +56,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _onEmailLogin(Locale l) async {
+    setState(() => _authError = null);
+    if (!_formKey.currentState!.validate()) return;
+    
     final email = _email.text.trim();
     final pass = _password.text;
-    if (email.isEmpty || pass.isEmpty) {
-      _snack(_isAr(l) ? 'أدخل البريد وكلمة المرور' : 'Enter email and password');
-      return;
-    }
     await _runGuarded(() async {
       try {
         await AuthService.instance.login(email, pass);
       } catch (e) {
-        _snack('$e');
+        setState(() => _authError = e.toString());
         return;
       }
       if (!mounted) return;
@@ -98,13 +99,13 @@ class _LoginScreenState extends State<LoginScreen> {
           _snack(_isAr(l) ? 'Apple: تم تسجيل الدخول' : 'Apple: signed in');
         }
       } on StateError catch (e) {
-        _snack(e.message);
+        setState(() => _authError = e.message);
       } on UnsupportedError {
-        _snack(_isAr(l)
+        setState(() => _authError = _isAr(l)
             ? 'Apple غير متاح على المتصفح — استخدم Google أو البريد الإلكتروني.'
             : 'Apple Sign-In is not available on web. Use Google or email.');
       } catch (e) {
-        _snack('$e');
+        setState(() => _authError = e.toString());
       }
     });
   }
@@ -128,9 +129,11 @@ class _LoginScreenState extends State<LoginScreen> {
             SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -219,10 +222,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                     ),
                     const SizedBox(height: 8),
-                    TextField(
+                    TextFormField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? (_isAr(l) ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter your email')
+                          : null,
                       decoration: InputDecoration(
                         hintText: LoginStrings.emailHint(l),
                         hintStyle: TextStyle(color: ext.mutedText.withValues(alpha: 0.75)),
@@ -238,6 +245,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
                         ),
+                        errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.redAccent),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -248,10 +264,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                     ),
                     const SizedBox(height: 8),
-                    TextField(
+                    TextFormField(
                       controller: _password,
                       obscureText: _obscure,
                       autofillHints: const [AutofillHints.password],
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (v) => v == null || v.isEmpty
+                          ? (_isAr(l) ? 'الرجاء إدخال كلمة المرور' : 'Please enter your password')
+                          : null,
                       decoration: InputDecoration(
                         hintText: '••••••••',
                         hintStyle: TextStyle(color: ext.mutedText.withValues(alpha: 0.5)),
@@ -266,6 +286,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
+                        ),
+                        errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                        errorText: _authError,
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.redAccent),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
                         ),
                         suffixIcon: IconButton(
                           tooltip: _obscure ? 'Show password' : 'Hide password',
@@ -401,6 +431,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
+            ),
             ),
             if (_busy)
               const Positioned.fill(

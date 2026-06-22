@@ -1,13 +1,18 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/ocr_result.dart';
+import '../app/app_scope.dart';
 import '../models/plan_result.dart';
 import '../models/user_profile.dart';
 import '../router/app_routes.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/responsive_utils.dart';
 import '../widgets/ai_chat_fab.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -20,35 +25,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   DashboardData? _dashboard;
   PlanResult? _plan;
-
-  static OcrExtractResult _buildDemoScan() {
-    OcrFieldResult _f(double v) => OcrFieldResult(
-          value: v,
-          unit: '',
-          confidence: 1.0,
-          isImputed: false,
-        );
-
-    return OcrExtractResult(
-      extractionId: 'demo-scan-001',
-      fields: {
-        'Age': _f(28),
-        'Gender': _f(1),
-        'Height': _f(175),
-        'Weight': _f(78),
-        'SMM_(Skeletal_Muscle_Mass)': _f(35),
-        'BMR_(Basal_Metabolic_Rate)': _f(1750),
-        'FFM_of_Trunk': _f(28),
-        'TBW_(Total_Body_Water)': _f(45),
-        'ECW/TBW': _f(0.38),
-        '50kHz-Whole_Body_Phase_Angle': _f(5.7),
-        'BFM_(Body_Fat_Mass)': _f(15),
-        'PBF_(Percent_Body_Fat)': _f(19),
-      },
-      missingFields: const [],
-      warnings: const [],
-    );
-  }
 
   @override
   void initState() {
@@ -100,24 +76,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: EdgeInsets.symmetric(vertical: context.heightPct(0.02)),
         children: [
           // ── Profile summary card ──────────────────────────────────────────
           _SectionHeader('Your Profile', isDark),
           _ProfileCard(dashboard: d, plan: p, isDark: isDark),
           const SizedBox(height: 8),
-          // ── Demo & testing ────────────────────────────────────────────────
-          _SectionHeader('Demo & Testing', isDark),
+          // ── Preferences ───────────────────────────────────────────────────
+          _SectionHeader('Preferences', isDark),
           _SettingsTile(
-            icon: Icons.science_outlined,
-            iconColor: AppColors.teal,
-            title: 'Load Sample Scan',
-            subtitle: 'Open the AI analysis flow with demo InBody data',
+            icon: Icons.palette_outlined,
+            iconColor: Colors.purple,
+            title: 'Theme',
+            subtitle: _themeModeString(AppScope.of(context).themeMode),
             isDark: isDark,
-            onTap: () {
-              final demo = _buildDemoScan();
-              context.push(AppRoutes.planGeneration, extra: demo);
-            },
+            onTap: () => _showThemePicker(context),
           ),
           const SizedBox(height: 8),
           _SectionHeader('Activity', isDark),
@@ -141,6 +114,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  String _themeModeString(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.system:
+        return 'System Default';
+      case ThemeMode.light:
+        return 'Light Mode';
+      case ThemeMode.dark:
+        return 'Dark Mode';
+    }
+  }
+
+  void _showThemePicker(BuildContext context) {
+    final scope = AppScope.of(context);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 16),
+              Text(
+                'Select Theme',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.brightness_auto),
+                title: const Text('System Default'),
+                trailing: scope.themeMode == ThemeMode.system ? const Icon(Icons.check, color: AppColors.teal) : null,
+                onTap: () {
+                  scope.setThemeMode(ThemeMode.system);
+                  Navigator.pop(ctx);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.light_mode),
+                title: const Text('Light Mode'),
+                trailing: scope.themeMode == ThemeMode.light ? const Icon(Icons.check, color: AppColors.teal) : null,
+                onTap: () {
+                  scope.setThemeMode(ThemeMode.light);
+                  Navigator.pop(ctx);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.dark_mode),
+                title: const Text('Dark Mode'),
+                trailing: scope.themeMode == ThemeMode.dark ? const Icon(Icons.check, color: AppColors.teal) : null,
+                onTap: () {
+                  scope.setThemeMode(ThemeMode.dark);
+                  Navigator.pop(ctx);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -174,7 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-class _ProfileCard extends StatelessWidget {
+class _ProfileCard extends StatefulWidget {
   const _ProfileCard({
     required this.dashboard,
     required this.plan,
@@ -186,28 +223,60 @@ class _ProfileCard extends StatelessWidget {
   final bool isDark;
 
   @override
+  State<_ProfileCard> createState() => _ProfileCardState();
+}
+
+class _ProfileCardState extends State<_ProfileCard> {
+  String? _imagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _imagePath = prefs.getString('profile_image_path');
+    });
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('profile_image_path', pickedFile.path);
+      setState(() {
+        _imagePath = pickedFile.path;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final name = dashboard?.userName ?? '';
-    final streak = dashboard?.streak ?? 0;
-    final calories = plan?.targetCaloriesKcal.round();
-    final protein = plan?.macros.proteinG.round();
-    final carbs = plan?.macros.carbsG.round();
-    final fat = plan?.macros.fatG.round();
-    final focus = plan?.focusZone ?? '';
+    final name = widget.dashboard?.userName ?? '';
+    final streak = widget.dashboard?.streak ?? 0;
+    final calories = widget.plan?.targetCaloriesKcal.round();
+    final protein = widget.plan?.macros.proteinG.round();
+    final carbs = widget.plan?.macros.carbsG.round();
+    final fat = widget.plan?.macros.fatG.round();
+    final focus = widget.plan?.focusZone ?? '';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: context.widthPct(0.04), vertical: 4),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1F1F20) : Colors.white,
+          color: widget.isDark ? const Color(0xFF1F1F20) : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isDark ? const Color(0xFF2A2A2D) : const Color(0xFFE4E9E5),
+            color: widget.isDark ? const Color(0xFF2A2A2D) : const Color(0xFFE4E9E5),
           ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(18),
-          child: dashboard == null && plan == null
+          child: widget.dashboard == null && widget.plan == null
               ? const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
@@ -220,16 +289,20 @@ class _ProfileCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 26,
-                          backgroundColor: AppColors.teal,
-                          child: Text(
-                            name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                            ),
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: CircleAvatar(
+                            radius: 26,
+                            backgroundColor: AppColors.teal,
+                            backgroundImage: _imagePath != null ? FileImage(File(_imagePath!)) : null,
+                            child: _imagePath == null ? Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ) : null,
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -244,7 +317,7 @@ class _ProfileCard extends StatelessWidget {
                                     .titleMedium
                                     ?.copyWith(
                                       fontWeight: FontWeight.w800,
-                                      color: isDark
+                                      color: widget.isDark
                                           ? Colors.white
                                           : const Color(0xFF1A1A1A),
                                     ),
@@ -256,7 +329,7 @@ class _ProfileCard extends StatelessWidget {
                                       .textTheme
                                       .bodySmall
                                       ?.copyWith(
-                                        color: isDark
+                                        color: widget.isDark
                                             ? const Color(0xFF31D39E)
                                             : AppColors.teal,
                                         fontWeight: FontWeight.w600,
@@ -268,7 +341,7 @@ class _ProfileCard extends StatelessWidget {
                         if (streak > 0)
                           DecoratedBox(
                             decoration: BoxDecoration(
-                              color: isDark
+                              color: widget.isDark
                                   ? const Color(0xFF3B2818)
                                   : const Color(0xFFFFF3E8),
                               borderRadius: BorderRadius.circular(999),
@@ -304,7 +377,7 @@ class _ProfileCard extends StatelessWidget {
                       const SizedBox(height: 16),
                       Divider(
                         height: 1,
-                        color: isDark
+                        color: widget.isDark
                             ? const Color(0xFF2A2A2D)
                             : const Color(0xFFF0F1F2),
                       ),
@@ -315,19 +388,19 @@ class _ProfileCard extends StatelessWidget {
                           _StatChip(
                               label: 'Calories',
                               value: '$calories kcal',
-                              isDark: isDark),
+                              isDark: widget.isDark),
                           _StatChip(
                               label: 'Protein',
                               value: '${protein ?? 0}g',
-                              isDark: isDark),
+                              isDark: widget.isDark),
                           _StatChip(
                               label: 'Carbs',
                               value: '${carbs ?? 0}g',
-                              isDark: isDark),
+                              isDark: widget.isDark),
                           _StatChip(
                               label: 'Fat',
                               value: '${fat ?? 0}g',
-                              isDark: isDark),
+                              isDark: widget.isDark),
                         ],
                       ),
                     ],
