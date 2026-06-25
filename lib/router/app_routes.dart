@@ -15,5 +15,7 @@ abstract final class AppRoutes {
   static const progress = '/progress';
   static const aiCoach = '/ai-coach';
   static const achievements = '/achievements';
+  static const favorites = '/favorites';
   static const settings = '/settings';
+  static const exerciseDetail = '/exercise-detail';
 }

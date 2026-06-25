@@ -39,13 +39,15 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       _DietType.vegetarian => 'Vegetarian',
       _DietType.vegan => 'Vegan',
     };
-    UserService.instance.savePreferences(
-      dietType: dietStr,
-      preferredDays: _workoutDays.length.clamp(1, 7),
-      hydration: _hydration,
-      sleep: _sleep,
-      recovery: _recovery,
-    ).ignore();
+    UserService.instance
+        .savePreferences(
+          dietType: dietStr,
+          preferredDays: _workoutDays.length.clamp(1, 7),
+          hydration: _hydration,
+          sleep: _sleep,
+          recovery: _recovery,
+        )
+        .ignore();
     context.push(AppRoutes.inBodyScan);
   }
 
@@ -72,7 +74,10 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               onLight: () => scope.setThemeBrightness(Brightness.light),
               onDark: () => scope.setThemeBrightness(Brightness.dark),
             ),
-            Divider(height: 1, color: isDark ? const Color(0xFF2C3335) : const Color(0xFFF0F2F1)),
+            Divider(
+              height: 1,
+              color: isDark ? const Color(0xFF2C3335) : const Color(0xFFF0F2F1),
+            ),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 34, 24, 24),
@@ -110,7 +115,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     const SizedBox(height: 18),
                     _DietTile(
                       title: 'Omnivore',
-                      subtitle: isDark ? null : 'Balanced diet with all food groups',
+                      subtitle: isDark
+                          ? null
+                          : 'Balanced diet with all food groups',
                       icon: Icons.restaurant_rounded,
                       selected: _diet == _DietType.omnivore,
                       onTap: () => setState(() => _diet = _DietType.omnivore),
@@ -118,7 +125,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     const SizedBox(height: 20),
                     _DietTile(
                       title: 'Vegetarian',
-                      subtitle: isDark ? null : 'Plant-based with dairy and eggs',
+                      subtitle: isDark
+                          ? null
+                          : 'Plant-based with dairy and eggs',
                       icon: Icons.eco_outlined,
                       selected: _diet == _DietType.vegetarian,
                       onTap: () => setState(() => _diet = _DietType.vegetarian),
@@ -148,7 +157,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       hydration: _hydration,
                       sleep: _sleep,
                       recovery: _recovery,
-                      onHydration: (value) => setState(() => _hydration = value),
+                      onHydration: (value) =>
+                          setState(() => _hydration = value),
                       onSleep: (value) => setState(() => _sleep = value),
                       onRecovery: (value) => setState(() => _recovery = value),
                     ),
@@ -202,7 +212,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     Text(
                       'You can change these later in settings.',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall?.copyWith(color: ext.mutedText),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: ext.mutedText,
+                      ),
                     ),
                   ],
                 ],
@@ -242,11 +254,7 @@ class _Header extends StatelessWidget {
               icon: const Icon(Icons.arrow_back_rounded, size: 30),
             ),
             const Spacer(),
-            _ThemeSegment(
-              isDark: isDark,
-              onLight: onLight,
-              onDark: onDark,
-            ),
+            _ThemeSegment(isDark: isDark, onLight: onLight, onDark: onDark),
           ],
         ),
       ),
@@ -327,11 +335,7 @@ class _ThemeSegmentButton extends StatelessWidget {
         child: SizedBox(
           width: 46,
           height: 46,
-          child: Icon(
-            icon,
-            color: selected ? Colors.white : idle,
-            size: 25,
-          ),
+          child: Icon(icon, color: selected ? Colors.white : idle, size: 25),
         ),
       ),
     );
@@ -363,10 +367,7 @@ class _ProgressPair extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    required this.trailing,
-  });
+  const _SectionHeader({required this.title, required this.trailing});
 
   final String title;
   final String? trailing;
@@ -434,66 +435,78 @@ class _DietTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        child: Ink(
-          height: isDark ? 138 : 104,
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: border, width: selected ? 2 : 1),
-          ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isDark ? 34 : 22,
-              vertical: 20,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: isDark ? 138 : 104),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: fill,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: border, width: selected ? 2 : 1),
             ),
-            child: Row(
-              children: [
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: iconBg,
-                    borderRadius: BorderRadius.circular(isDark ? 14 : 999),
-                  ),
-                  child: SizedBox(
-                    width: isDark ? 66 : 60,
-                    height: isDark ? 66 : 60,
-                    child: Icon(icon, color: iconColor, size: isDark ? 30 : 28),
-                  ),
-                ),
-                SizedBox(width: isDark ? 22 : 20),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w400,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDark ? 34 : 22,
+                vertical: 20,
+              ),
+              child: IntrinsicHeight(
+                child: Row(
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: iconBg,
+                        borderRadius: BorderRadius.circular(isDark ? 14 : 999),
+                      ),
+                      child: SizedBox(
+                        width: isDark ? 66 : 60,
+                        height: isDark ? 66 : 60,
+                        child: Icon(
+                          icon,
+                          color: iconColor,
+                          size: isDark ? 30 : 28,
                         ),
                       ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: ext.mutedText,
-                            height: 1.25,
+                    ),
+                    SizedBox(width: isDark ? 22 : 20),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w400,
+                                ),
                           ),
-                        ),
-                      ],
-                    ],
-                  ),
+                          if (subtitle != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              subtitle!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: ext.mutedText,
+                                    height: 1.25,
+                                  ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Icon(
+                      selected
+                          ? Icons.check_circle_outline_rounded
+                          : Icons.circle_outlined,
+                      color: selected ? AppColors.teal : ext.inactiveTint,
+                      size: isDark ? 36 : 28,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Icon(
-                  selected ? Icons.check_circle_outline_rounded : Icons.circle_outlined,
-                  color: selected ? AppColors.teal : ext.inactiveTint,
-                  size: isDark ? 36 : 28,
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -503,10 +516,7 @@ class _DietTile extends StatelessWidget {
 }
 
 class _WorkoutDayRow extends StatelessWidget {
-  const _WorkoutDayRow({
-    required this.selectedDays,
-    required this.onTap,
-  });
+  const _WorkoutDayRow({required this.selectedDays, required this.onTap});
 
   final Set<int> selectedDays;
   final ValueChanged<int> onTap;
@@ -569,7 +579,9 @@ class _DayButton extends StatelessWidget {
                 child: Text(
                   label,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                    color: selected
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -700,11 +712,7 @@ class _NotificationTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: value ? AppColors.teal : ext.mutedText,
-              size: 28,
-            ),
+            Icon(icon, color: value ? AppColors.teal : ext.mutedText, size: 28),
             const SizedBox(width: 22),
             Expanded(
               child: Text(
@@ -719,8 +727,12 @@ class _NotificationTile extends StatelessWidget {
               value: value,
               activeThumbColor: Colors.white,
               activeTrackColor: AppColors.teal,
-              inactiveThumbColor: isDark ? const Color(0xFFD8DEDD) : Colors.white,
-              inactiveTrackColor: isDark ? const Color(0xFF26312F) : const Color(0xFFE2E3E6),
+              inactiveThumbColor: isDark
+                  ? const Color(0xFFD8DEDD)
+                  : Colors.white,
+              inactiveTrackColor: isDark
+                  ? const Color(0xFF26312F)
+                  : const Color(0xFFE2E3E6),
               trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
               onChanged: onChanged,
             ),

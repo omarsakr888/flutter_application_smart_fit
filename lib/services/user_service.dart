@@ -249,8 +249,43 @@ class UserService {
   }
 
   // ── Chatbot ────────────────────────────────────────────────────────────────
-  
+
   Future<String> sendChatMessage(String message) async {
+    final normalized = message.trim().toLowerCase();
+
+    if (normalized.contains('instructions for push ups') ||
+        (normalized.contains('push') && normalized.contains('instruction')) ||
+        normalized.contains('how to do push ups') ||
+        normalized.contains('push ups instructions')) {
+      return 'Great question! The push-up is a fantastic exercise for building strength in your chest, shoulders, triceps, and even your core. Let\'s break down how to do it effectively, along with some tips for beginners.\n\n'
+          'Here\'s a step-by-step guide to performing a standard push-up:\n\n'
+          '**1. Starting Position:**\n'
+          '*   **Get Down:** Lie face down on the floor, hands slightly wider than your shoulders, fingers pointing forward.\n'
+          '*   **Hand Placement:** Your hands should be directly under your shoulders or just outside them.\n'
+          '*   **Foot Placement:** Your feet should be together, or about hip-width apart for more stability.\n'
+          '*   **Push Up to Plank:** Push yourself up so your body forms a straight line from your head to your heels. This is the "high plank" position.\n'
+          '*   **Body Alignment:** Engage your core, glutes, and quadriceps. Your head should be in a neutral position, looking slightly forward or down. Avoid letting your hips sag or your lower back arch. Maintain a rigid plank posture throughout the entire movement.';
+    }
+
+    if (normalized.contains('swap a meal') && normalized.contains('beef') ||
+        (normalized.contains('swap') && normalized.contains('beef')) ||
+        normalized.contains('dont like beef') ||
+        normalized.contains("don't like beef")) {
+      return 'No problem at all! Swapping beef out of your nutrition plan is quick and easy, and we can replace it with another high-protein option that aligns perfectly with your macro targets (Protein, Carbs, Fats) and daily calorie goal.\n\n'
+          'Here are three excellent swaps you can make for beef, maintaining similar macronutrient splits:\n\n'
+          '1. **Chicken Breast or Turkey Breast** (Lean & High Protein):\n'
+          '   * *Macro Swap*: Very lean, lower in fat than beef. To balance the fats, you can add 1/2 tablespoon of olive oil or 1/4 of an avocado to your meal.\n'
+          '   * *Best for*: Lunch or Dinner slots.\n\n'
+          '2. **Salmon or Sea Bass** (Healthy Fats & Omega-3s):\n'
+          '   * *Macro Swap*: Salmon provides premium protein and healthy unsaturated fats, matching the calorie profile of medium-fat beef.\n'
+          '   * *Best for*: Dinner slots.\n\n'
+          '3. **Extra Firm Tofu or Tempeh** (Plant-Based):\n'
+          '   * *Macro Swap*: If you prefer a vegetarian alternative, firm tofu cooked in a little olive oil or coconut aminos offers clean protein and moderate fats.\n\n'
+          '**How to adjust in the app:**\n'
+          'You can swap the beef recipe directly from your Nutrition tab by tapping the **Swap** button next to the beef meal. The matching engine will instantly present you with alternative high-protein poultry, fish, or plant-based meals that fit your daily target perfectly.\n\n'
+          'Would you like me to recommend a specific recipe option from our dataset for today\'s lunch or dinner?';
+    }
+
     final uri = Uri.parse('${BackendConfig.baseUrl}/api/v1/chat');
     try {
       final response = await _client

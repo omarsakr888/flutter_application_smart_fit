@@ -9,6 +9,7 @@ import '../utils/responsive_utils.dart';
 import '../widgets/ai_chat_fab.dart';
 import '../widgets/smart_fit_app_bar.dart';
 import '../widgets/smart_fit_drawer.dart';
+import '../localization/app_strings.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({super.key});
@@ -36,7 +37,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not load dashboard data. Check your connection.')),
+          SnackBar(content: Text('Could not load dashboard data. Check your connection.'.tr(context))),
         );
       }
     }

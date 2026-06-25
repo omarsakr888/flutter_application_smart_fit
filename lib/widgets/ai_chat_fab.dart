@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import '../services/user_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../providers/chat_provider.dart';
 import '../theme/app_colors.dart';
+import 'typing_markdown.dart';
 
 /// Floating AI coach button. Add to Scaffold.floatingActionButton on any page.
 class AiChatFab extends StatelessWidget {
@@ -31,64 +34,23 @@ class AiChatFab extends StatelessWidget {
 
 // ── Sheet ─────────────────────────────────────────────────────────────────────
 
-class _AiChatSheet extends StatefulWidget {
+class _AiChatSheet extends ConsumerStatefulWidget {
   const _AiChatSheet();
 
   @override
-  State<_AiChatSheet> createState() => _AiChatSheetState();
+  ConsumerState<_AiChatSheet> createState() => _AiChatSheetState();
 }
 
-class _AiChatSheetState extends State<_AiChatSheet> {
-  final _messages = <_Msg>[];
+class _AiChatSheetState extends ConsumerState<_AiChatSheet> {
   final _controller = TextEditingController();
   final _scrollCtrl = ScrollController();
 
-  bool _sending = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _startChat();
-  }
-
-  void _startChat() {
-    _messages.add(const _Msg(
-      text: "Hi! I'm your Smart Fit AI coach. Ask me anything about your workout, nutrition, or recovery!",
-      isUser: false,
-    ));
-  }
-
-  Future<void> _send() async {
+  void _send() {
     final text = _controller.text.trim();
-    if (text.isEmpty || _sending) return;
+    if (text.isEmpty) return;
     _controller.clear();
-    setState(() {
-      _messages.add(_Msg(text: text, isUser: true));
-      _sending = true;
-    });
+    ref.read(chatProvider.notifier).sendMessage(text);
     _scrollToBottom();
-    try {
-      final reply = await UserService.instance.sendChatMessage(text);
-      if (mounted) {
-        setState(() {
-          _messages.add(_Msg(text: reply, isUser: false));
-          _sending = false;
-        });
-        _scrollToBottom();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _messages.add(const _Msg(
-            text: 'Error: Something went wrong.',
-            isUser: false,
-            isError: true,
-          ));
-          _sending = false;
-        });
-        _scrollToBottom();
-      }
-    }
   }
 
   void _scrollToBottom() {
@@ -115,6 +77,14 @@ class _AiChatSheetState extends State<_AiChatSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0D0D0D) : Colors.white;
     final height = MediaQuery.sizeOf(context).height * 0.88;
+    final chatState = ref.watch(chatProvider);
+
+    // Auto-scroll on new messages
+    ref.listen<ChatState>(chatProvider, (previous, next) {
+      if (previous?.messages.length != next.messages.length) {
+        _scrollToBottom();
+      }
+    });
 
     return Container(
       height: height,
@@ -170,6 +140,16 @@ class _AiChatSheetState extends State<_AiChatSheet> {
                 ),
                 IconButton(
                   icon: Icon(
+                    Icons.delete_outline_rounded,
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                  onPressed: () {
+                    ref.read(chatProvider.notifier).clearChat();
+                  },
+                  tooltip: 'Clear Chat',
+                ),
+                IconButton(
+                  icon: Icon(
                     Icons.close_rounded,
                     color: isDark ? Colors.white54 : Colors.black45,
                   ),
@@ -185,14 +165,14 @@ class _AiChatSheetState extends State<_AiChatSheet> {
           // Messages or loading/error
           Expanded(
             child: ListView.builder(
-                        controller: _scrollCtrl,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                        itemCount: _messages.length,
-                        itemBuilder: (_, i) =>
-                            _BubbleTile(msg: _messages[i], isDark: isDark),
-                      ),
+              controller: _scrollCtrl,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              itemCount: chatState.messages.length,
+              itemBuilder: (_, i) =>
+                  _BubbleTile(msg: chatState.messages[i], isDark: isDark),
+            ),
           ),
-          if (_sending)
+          if (chatState.isSending)
             Padding(
               padding: const EdgeInsets.only(left: 20, bottom: 4),
               child: Row(
@@ -221,20 +201,11 @@ class _AiChatSheetState extends State<_AiChatSheet> {
   }
 }
 
-// ── Message model ─────────────────────────────────────────────────────────────
-
-class _Msg {
-  const _Msg({required this.text, required this.isUser, this.isError = false});
-  final String text;
-  final bool isUser;
-  final bool isError;
-}
-
 // ── Bubble ────────────────────────────────────────────────────────────────────
 
 class _BubbleTile extends StatelessWidget {
   const _BubbleTile({required this.msg, required this.isDark});
-  final _Msg msg;
+  final ChatMessage msg;
   final bool isDark;
 
   @override
@@ -244,7 +215,7 @@ class _BubbleTile extends StatelessWidget {
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.78,
+          maxWidth: MediaQuery.sizeOf(context).width * 0.85,
         ),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 5),
@@ -268,19 +239,24 @@ class _BubbleTile extends StatelessWidget {
                   : const Radius.circular(18),
             ),
           ),
-          child: Text(
-            msg.text,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isUser
-                      ? Colors.white
-                      : msg.isError
-                          ? const Color(0xFFB80000)
-                          : (isDark
-                              ? Colors.white.withValues(alpha: 0.87)
-                              : const Color(0xFF1A1A1A)),
-                  height: 1.45,
+          child: msg.isError || isUser
+              ? Text(
+                  msg.text,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: isUser
+                            ? Colors.white
+                            : msg.isError
+                                ? const Color(0xFFB80000)
+                                : (isDark
+                                    ? Colors.white.withValues(alpha: 0.87)
+                                    : const Color(0xFF1A1A1A)),
+                        height: 1.45,
+                      ),
+                )
+              : TypingMarkdown(
+                  message: msg,
+                  isDark: isDark,
                 ),
-          ),
         ),
       ),
     );

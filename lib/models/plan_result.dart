@@ -23,6 +23,18 @@ class WorkoutExercise {
         repsMax: (json['reps_max'] as num?)?.toInt() ?? 12,
       );
 
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'body_part': bodyPart,
+        'target_muscle': targetMuscle,
+        'equipment': equipment,
+        'focus_zone': focusZone,
+        'movement_pattern': movementPattern,
+        'sets': sets,
+        'reps_min': repsMin,
+        'reps_max': repsMax,
+      };
+
   final String name;
   final String bodyPart;
   final String targetMuscle;
@@ -57,6 +69,14 @@ class WorkoutDay {
             .toList(),
       );
 
+  Map<String, dynamic> toJson() => {
+        'day_number': dayNumber,
+        'day_label': dayLabel,
+        'focus_zone': focusZone,
+        'note': note,
+        'exercises': exercises.map((e) => e.toJson()).toList(),
+      };
+
   final int dayNumber;
   final String dayLabel;
   final String focusZone;
@@ -80,6 +100,7 @@ class MealSlot {
     required this.mealTimeCategory,
     required this.ingredients,
     required this.instructions,
+    this.imageUrl,
   });
 
   factory MealSlot.fromJson(Map<String, dynamic> json) => MealSlot(
@@ -96,7 +117,25 @@ class MealSlot {
         mealTimeCategory: (json['meal_time_category'] as String?) ?? '',
         ingredients: (json['ingredients'] as String?) ?? '',
         instructions: (json['instructions'] as String?) ?? '',
+        imageUrl: json['image_url'] as String?,
       );
+
+  Map<String, dynamic> toJson() => {
+        'slot_name': slotName,
+        'target_calories': targetCalories,
+        'recipe_name': recipeName,
+        'calories_per_serving': caloriesPerServing,
+        'protein_g': proteinG,
+        'carbs_g': carbsG,
+        'fat_g': fatG,
+        'diet_type': dietType,
+        'health_score': healthScore,
+        'rating': rating,
+        'meal_time_category': mealTimeCategory,
+        'ingredients': ingredients,
+        'instructions': instructions,
+        'image_url': imageUrl,
+      };
 
   final String slotName;
   final double targetCalories;
@@ -111,6 +150,7 @@ class MealSlot {
   final String mealTimeCategory;
   final String ingredients;
   final String instructions;
+  final String? imageUrl;
 
   String get displayName => slotName.replaceAll('_', ' ').split(' ').map((w) {
         if (w.isEmpty) return w;

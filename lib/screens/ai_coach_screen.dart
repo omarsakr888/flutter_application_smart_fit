@@ -1,70 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/user_service.dart';
+import '../providers/chat_provider.dart';
 import '../theme/app_colors.dart';
 import '../utils/responsive_utils.dart';
+import '../widgets/typing_markdown.dart';
+import '../localization/app_strings.dart';
 
-class AiCoachScreen extends StatefulWidget {
+class AiCoachScreen extends ConsumerStatefulWidget {
   const AiCoachScreen({super.key});
 
   @override
-  State<AiCoachScreen> createState() => _AiCoachScreenState();
+  ConsumerState<AiCoachScreen> createState() => _AiCoachScreenState();
 }
 
-class _AiCoachScreenState extends State<AiCoachScreen> {
-  final _messages = <_ChatMessage>[];
+class _AiCoachScreenState extends ConsumerState<AiCoachScreen> {
   final _controller = TextEditingController();
   final _scrollCtrl = ScrollController();
 
-  bool _sending = false;
-
   @override
-  void initState() {
-    super.initState();
-    _startChat();
+  void dispose() {
+    _controller.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
-  void _startChat() {
-    _messages.add(const _ChatMessage(
-      text:
-          "Hi! I'm your Smart Fit AI coach. I can help you with your workout plan, nutrition, recovery, or any fitness question. What's on your mind?",
-      isUser: false,
-    ));
-  }
-
-  Future<void> _send() async {
+  void _send() {
     final text = _controller.text.trim();
-    if (text.isEmpty || _sending) return;
+    if (text.isEmpty) return;
 
     _controller.clear();
-    setState(() {
-      _messages.add(_ChatMessage(text: text, isUser: true));
-      _sending = true;
-    });
+    ref.read(chatProvider.notifier).sendMessage(text);
     _scrollToBottom();
-
-    try {
-      final reply = await UserService.instance.sendChatMessage(text);
-      if (mounted) {
-        setState(() {
-          _messages.add(_ChatMessage(text: reply, isUser: false));
-          _sending = false;
-        });
-        _scrollToBottom();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _messages.add(const _ChatMessage(
-            text: 'Something went wrong. Please try again.',
-            isUser: false,
-            isError: true,
-          ));
-          _sending = false;
-        });
-        _scrollToBottom();
-      }
-    }
   }
 
   void _scrollToBottom() {
@@ -80,15 +47,16 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    _scrollCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final chatState = ref.watch(chatProvider);
+
+    // Auto-scroll on new messages
+    ref.listen<ChatState>(chatProvider, (previous, next) {
+      if (previous?.messages.length != next.messages.length) {
+        _scrollToBottom();
+      }
+    });
 
     return Scaffold(
       backgroundColor:
@@ -134,73 +102,73 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              color: isDark ? Colors.white54 : Colors.black54,
+            ),
+            onPressed: () {
+              ref.read(chatProvider.notifier).clearChat();
+            },
+            tooltip: 'Clear Chat',
+          ),
+        ],
       ),
       body: Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        controller: _scrollCtrl,
-                        padding: EdgeInsetsDirectional.fromSTEB(
-                            context.widthPct(0.04), 16, context.widthPct(0.04), 8),
-                        itemCount: _messages.length,
-                        itemBuilder: (_, i) =>
-                            _BubbleTile(msg: _messages[i], isDark: isDark),
-                      ),
+        children: [
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollCtrl,
+              padding: EdgeInsetsDirectional.fromSTEB(
+                  context.widthPct(0.04), 16, context.widthPct(0.04), 8),
+              itemCount: chatState.messages.length,
+              itemBuilder: (_, i) =>
+                  _BubbleTile(msg: chatState.messages[i], isDark: isDark),
+            ),
+          ),
+          if (chatState.isSending)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 20, bottom: 4),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.teal,
                     ),
-                    if (_sending)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20, bottom: 4),
-                        child: Row(
-                          children: [
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.teal,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text('Coach is typing…',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                        color: isDark
-                                            ? Colors.white38
-                                            : Colors.grey)),
-                          ],
-                        ),
-                      ),
-                    _InputBar(
-                      controller: _controller,
-                      onSend: _send,
-                      isDark: isDark,
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text('Coach is typing…'.tr(context),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
+                              color: isDark
+                                  ? Colors.white38
+                                  : Colors.grey)),
+                ],
+              ),
+            ),
+          _InputBar(
+            controller: _controller,
+            onSend: _send,
+            isDark: isDark,
+          ),
+        ],
+      ),
     );
   }
 }
 
 // ── Messages ──────────────────────────────────────────────────────────────────
 
-class _ChatMessage {
-  const _ChatMessage({
-    required this.text,
-    required this.isUser,
-    this.isError = false,
-  });
-
-  final String text;
-  final bool isUser;
-  final bool isError;
-}
-
 class _BubbleTile extends StatelessWidget {
   const _BubbleTile({required this.msg, required this.isDark});
 
-  final _ChatMessage msg;
+  final ChatMessage msg;
   final bool isDark;
 
   @override
@@ -211,7 +179,7 @@ class _BubbleTile extends StatelessWidget {
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: context.isTablet ? context.widthPct(0.55) : context.widthPct(0.78),
+          maxWidth: context.isTablet ? context.widthPct(0.7) : context.widthPct(0.85),
         ),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
@@ -240,17 +208,22 @@ class _BubbleTile extends StatelessWidget {
                     ),
                   ],
           ),
-          child: Text(
-            msg.text,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isUser
-                      ? Colors.white
-                      : msg.isError
-                          ? const Color(0xFFB80000)
-                          : (isDark ? Colors.white.withValues(alpha: 0.87) : const Color(0xFF1A1A1A)),
-                  height: 1.45,
+          child: msg.isError || isUser 
+              ? Text(
+                  msg.text,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: isUser
+                            ? Colors.white
+                            : msg.isError
+                                ? const Color(0xFFB80000)
+                                : (isDark ? Colors.white.withValues(alpha: 0.87) : const Color(0xFF1A1A1A)),
+                        height: 1.45,
+                      ),
+                )
+              : TypingMarkdown(
+                  message: msg,
+                  isDark: isDark,
                 ),
-          ),
         ),
       ),
     );

@@ -10,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../utils/responsive_utils.dart';
 import '../widgets/ai_chat_fab.dart';
 import '../widgets/smart_fit_app_bar.dart';
+import '../localization/app_strings.dart';
 import '../widgets/smart_fit_drawer.dart';
 
 class NutritionScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
   int _hydrationCups = 0;
   static const _hydrationTarget = 8;
   bool _loading = true;
+  String? _errorMessage;
   Timer? _countdownTimer;
   Duration _nextMealIn = Duration.zero;
 
@@ -89,10 +91,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
       if (mounted) setState(() { _plan = plan; _loading = false; });
     } catch (_) {
       if (mounted) {
-        setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not load meal plan. Check your connection.')),
-        );
+        setState(() {
+          _loading = false;
+          _errorMessage = 'Could not load meal plan. Check your connection.'.tr(context);
+        });
       }
     }
   }
@@ -103,9 +105,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
       if (mounted) setState(() => _hydrationCups = cups);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not load hydration data.')),
-        );
+        setState(() => _errorMessage = 'Could not load hydration data.'.tr(context));
       }
     }
   }
@@ -118,9 +118,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     } catch (_) {
       if (mounted) {
         setState(() => _hydrationCups--);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not log hydration. Try again.')),
-        );
+        setState(() => _errorMessage = 'Could not log hydration. Try again.'.tr(context));
       }
     }
   }
@@ -138,7 +136,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     final confirmed = await showDialog<bool>(
       context: ctx,
       builder: (dlg) => AlertDialog(
-        title: Text('Log ${meal.title}'),
+        title: Text('Log ${meal.title}'.tr(context)),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -150,11 +148,11 @@ class _NutritionScreenState extends State<NutritionScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dlg, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dlg, true),
-            child: const Text('Log'),
+            child: Text('Log'.tr(context)),
           ),
         ],
       ),
@@ -170,10 +168,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
       );
     } catch (_) {
       if (mounted) {
-        setState(() => _loggedMeals.remove(index));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not log meal. Try again.')),
-        );
+        setState(() {
+          _loggedMeals.remove(index);
+          _errorMessage = 'Could not log meal. Try again.'.tr(context);
+        });
       }
     }
   }
@@ -187,7 +185,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
       final kcal = m.caloriesPerServing.round();
       final subtitle = isDark ? m.recipeName : '${m.recipeName} - $kcal kcal';
       final badge = isDark ? '$kcal kcal' : '${m.proteinG.round()}g protein';
-      return _Meal(m.displayName, subtitle, badge, Icons.restaurant_rounded, false);
+      return _Meal(
+        m.displayName,
+        subtitle,
+        badge,
+        Icons.restaurant_rounded,
+        false,
+        imageUrl: m.imageUrl,
+      );
     }).toList();
   }
 
@@ -253,6 +258,15 @@ class _NutritionScreenState extends State<NutritionScreen> {
                           ),
                         ],
                       ),
+                    if (_errorMessage != null)
+                      Padding(
+                        padding: EdgeInsets.only(top: isDark ? 0 : 16, bottom: 16),
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     if (!isDark) SizedBox(height: context.heightPct(0.06)),
                     _MacrosCard(
                       caloriesConsumed: caloriesConsumed,
@@ -312,13 +326,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
 }
 
 class _Meal {
-  const _Meal(this.title, this.subtitle, this.badge, this.icon, this.done);
+  const _Meal(this.title, this.subtitle, this.badge, this.icon, this.done, {this.imageUrl});
 
   final String title;
   final String subtitle;
   final String badge;
   final IconData icon;
   final bool done;
+  final String? imageUrl;
 }
 
 class _MacrosCard extends StatelessWidget {
@@ -674,7 +689,7 @@ class _MealTile extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(isDark ? 20 : 24, isDark ? 18 : 26, 22, isDark ? 18 : 26),
             child: Row(
               children: [
-                _MealIcon(icon: meal.icon, done: isLogged),
+                _buildMealImage(context, meal.imageUrl, meal.title, isLogged),
                 SizedBox(width: isDark ? 22 : 26),
                 Expanded(
                   child: Column(
@@ -734,35 +749,82 @@ class _MealTile extends StatelessWidget {
   }
 }
 
-class _MealIcon extends StatelessWidget {
-  const _MealIcon({
-    required this.icon,
-    required this.done,
-  });
+String _fallbackAssetFor(String slotTitle) {
+  final clean = slotTitle.toLowerCase();
+  if (clean.contains('breakfast')) return 'assets/images/breakfast.png';
+  if (clean.contains('lunch')) return 'assets/images/lunch.png';
+  if (clean.contains('dinner')) return 'assets/images/dinner.png';
+  if (clean.contains('snack')) return 'assets/images/snack.png';
+  if (clean.contains('protein')) return 'assets/images/protein_meal.png';
+  return 'assets/images/healthy_food.png';
+}
 
-  final IconData icon;
-  final bool done;
+Widget _buildMealImage(BuildContext context, String? imageUrl, String slotTitle, bool done) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final double size = isDark ? 76 : 86;
+  final fallbackAsset = _fallbackAssetFor(slotTitle);
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF102321) : AppColors.teal.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(isDark ? 8 : 15),
-      ),
-      child: SizedBox(
-        width: isDark ? 76 : 86,
-        height: isDark ? 76 : 86,
-        child: Icon(
-          icon,
-          color: isDark ? const Color(0xFF31D39E) : AppColors.teal,
-          size: isDark ? 38 : 42,
-        ),
-      ),
+  Widget imageWidget;
+  if (imageUrl != null && imageUrl.isNotEmpty) {
+    imageWidget = Image.network(
+      imageUrl,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      cacheWidth: size.round() * 2,
+      cacheHeight: size.round() * 2,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return SizedBox(
+          width: size,
+          height: size,
+          child: const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.teal),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Image.asset(
+          fallbackAsset,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+        );
+      },
+    );
+  } else {
+    imageWidget = Image.asset(
+      fallbackAsset,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
     );
   }
+
+  return Stack(
+    children: [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(isDark ? 8 : 15),
+        child: imageWidget,
+      ),
+      if (done)
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.teal.withValues(alpha: 0.65),
+              borderRadius: BorderRadius.circular(isDark ? 8 : 15),
+            ),
+            child: const Center(
+              child: Icon(Icons.check_rounded, color: Colors.white, size: 28),
+            ),
+          ),
+        ),
+    ],
+  );
 }
 
 class _MealBadge extends StatelessWidget {
@@ -815,7 +877,7 @@ class _LogButton extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
         ),
-        child: const Text('Log'),
+        child: Text('Log'.tr(context)),
       );
     }
 
@@ -823,7 +885,7 @@ class _LogButton extends StatelessWidget {
       onPressed: onTap,
       style: TextButton.styleFrom(foregroundColor: AppColors.teal),
       icon: const Icon(Icons.add_circle_outline_rounded, size: 19),
-      label: const Text('Log', style: TextStyle(fontWeight: FontWeight.w800)),
+      label: Text('Log'.tr(context), style: const TextStyle(fontWeight: FontWeight.w800)),
     );
   }
 }

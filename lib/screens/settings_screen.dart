@@ -12,6 +12,7 @@ import '../router/app_routes.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../localization/app_strings.dart';
 import '../utils/responsive_utils.dart';
 import '../widgets/ai_chat_fab.dart';
 
@@ -148,7 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 8),
               ListTile(
                 leading: const Icon(Icons.brightness_auto),
-                title: const Text('System Default'),
+                title: Text('System Default'.tr(context)),
                 trailing: scope.themeMode == ThemeMode.system ? const Icon(Icons.check, color: AppColors.teal) : null,
                 onTap: () {
                   scope.setThemeMode(ThemeMode.system);
@@ -157,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.light_mode),
-                title: const Text('Light Mode'),
+                title: Text('Light Mode'.tr(context)),
                 trailing: scope.themeMode == ThemeMode.light ? const Icon(Icons.check, color: AppColors.teal) : null,
                 onTap: () {
                   scope.setThemeMode(ThemeMode.light);
@@ -166,7 +167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.dark_mode),
-                title: const Text('Dark Mode'),
+                title: Text('Dark Mode'.tr(context)),
                 trailing: scope.themeMode == ThemeMode.dark ? const Icon(Icons.check, color: AppColors.teal) : null,
                 onTap: () {
                   scope.setThemeMode(ThemeMode.dark);
@@ -185,12 +186,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Log out?'),
-        content: const Text('You will be returned to the login screen.'),
+        title: Text('Log out?'.tr(context)),
+        content: Text('You will be returned to the login screen.'.tr(context)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app/app_scope.dart';
+import '../localization/app_strings.dart';
 import '../models/plan_result.dart';
+import '../providers/favorites_provider.dart';
 import '../router/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
@@ -20,8 +23,10 @@ class RecipeDetailScreen extends StatefulWidget {
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   final _checkedIngredients = <int>{};
   final _checkedSteps = <int>{};
-  bool _isFavorited = false;
+
   bool _loggingMeal = false;
+  bool _showSuccess = false;
+  String? _errorMessage;
 
   static const _ingredientsLight = [
     _Ingredient('Chicken breast (150g)', 'Grilled'),
@@ -63,25 +68,27 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   Future<void> _logMeal() async {
     if (_loggingMeal) return;
-    setState(() => _loggingMeal = true);
+    setState(() {
+      _loggingMeal = true;
+      _errorMessage = null;
+    });
     try {
       await UserService.instance.logMeal(
         widget.meal?.displayName ?? 'Meal',
         caloriesConsumed: widget.meal?.caloriesPerServing ?? 0,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${widget.meal?.displayName ?? 'Meal'} logged!'),
-            backgroundColor: AppColors.teal,
-          ),
-        );
+        setState(() {
+          _showSuccess = true;
+          _errorMessage = null;
+        });
+        Future.delayed(const Duration(seconds: 4), () {
+          if (mounted) setState(() => _showSuccess = false);
+        });
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not log meal. Try again.')),
-        );
+        setState(() => _errorMessage = 'Could not log meal. Try again.'.tr(context));
       }
     } finally {
       if (mounted) setState(() => _loggingMeal = false);
@@ -123,29 +130,26 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _TopBar(
-              isDark: isDark,
-              isFavorited: _isFavorited,
-              onBack: () {
-                if (context.canPop()) context.pop();
-                else context.go(AppRoutes.nutrition);
-              },
-              onLight: () => scope.setThemeBrightness(Brightness.light),
-              onDark: () => scope.setThemeBrightness(Brightness.dark),
-              onFavorite: () {
-                setState(() => _isFavorited = !_isFavorited);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(_isFavorited ? 'Added to favorites' : 'Removed from favorites'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-              onMore: () => showModalBottomSheet<void>(
-                context: context,
-                builder: (_) => _MoreSheet(recipeName: recipeName),
-              ),
-            ),
+            Consumer(builder: (context, ref, _) {
+              final isFav = meal != null && ref.watch(favoritesProvider).meals.any((m) => m.recipeName == meal.recipeName);
+              return _TopBar(
+                isDark: isDark,
+                isFavorited: isFav,
+                onBack: () {
+                  if (context.canPop()) context.pop();
+                  else context.go(AppRoutes.nutrition);
+                },
+                onLight: () => scope.setThemeBrightness(Brightness.light),
+                onDark: () => scope.setThemeBrightness(Brightness.dark),
+                onFavorite: () {
+                  if (meal != null) ref.read(favoritesProvider.notifier).toggleMeal(meal);
+                },
+                onMore: () => showModalBottomSheet<void>(
+                  context: context,
+                  builder: (_) => _MoreSheet(recipeName: recipeName),
+                ),
+              );
+            }),
             Divider(height: 1, color: isDark ? const Color(0xFF272729) : const Color(0xFFEDEFF0)),
             _StickyMacroBar(
               proteinG: proteinG ?? 38,
@@ -162,10 +166,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     if (isDark)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-                        child: _DarkHero(title: recipeName),
+                        child: _DarkHero(title: recipeName, imageUrl: meal?.imageUrl, slotName: meal?.slotName ?? ''),
                       )
                     else
-                      _LightHero(title: recipeName, dietType: dietType),
+                      _LightHero(title: recipeName, dietType: dietType, imageUrl: meal?.imageUrl, slotName: meal?.slotName ?? ''),
                     Padding(
                       padding: EdgeInsets.fromLTRB(20, isDark ? 24 : 32, 20, 0),
                       child: Column(
@@ -229,14 +233,23 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ),
               ),
             ),
-            _BottomActions(
-              meal: meal,
-              loggingMeal: _loggingMeal,
-              onLog: _logMeal,
-              onSwap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Meal swap coming soon.')),
-              ),
-            ),
+            Consumer(builder: (context, ref, _) {
+              final isFav = meal != null && ref.watch(favoritesProvider).meals.any((m) => m.recipeName == meal.recipeName);
+              return _BottomActions(
+                meal: meal,
+                loggingMeal: _loggingMeal,
+                onLog: _logMeal,
+                onSwap: () => ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Meal swap coming soon.'.tr(context))),
+                ),
+                isFavorited: isFav,
+                onFavorite: () {
+                  if (meal != null) ref.read(favoritesProvider.notifier).toggleMeal(meal);
+                },
+                errorMessage: _errorMessage,
+                showSuccess: _showSuccess,
+              );
+            }),
           ],
         ),
       ),
@@ -307,8 +320,8 @@ class _TopBar extends StatelessWidget {
               tooltip: isFavorited ? 'Remove from favorites' : 'Save to favorites',
               onPressed: onFavorite,
               icon: Icon(
-                isFavorited ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                color: isFavorited ? AppColors.teal : (isDark ? const Color(0xFF31D39E) : const Color(0xFF575B64)),
+                isFavorited ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                color: isFavorited ? Colors.redAccent : (isDark ? const Color(0xFF31D39E) : const Color(0xFF575B64)),
               ),
             ),
             IconButton(
@@ -345,7 +358,7 @@ class _MoreSheet extends StatelessWidget {
           const SizedBox(height: 16),
           ListTile(
             leading: const Icon(Icons.share_outlined),
-            title: const Text('Share Recipe'),
+            title: Text('Share Recipe'.tr(context)),
             onTap: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -355,7 +368,7 @@ class _MoreSheet extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.print_outlined),
-            title: const Text('Print Recipe'),
+            title: Text('Print Recipe'.tr(context)),
             onTap: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -365,7 +378,7 @@ class _MoreSheet extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.report_outlined),
-            title: const Text('Report an issue'),
+            title: Text('Report an issue'.tr(context)),
             onTap: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -431,31 +444,59 @@ class _MacroDot extends StatelessWidget {
 }
 
 class _LightHero extends StatelessWidget {
-  const _LightHero({required this.title, required this.dietType});
+  const _LightHero({required this.title, required this.dietType, this.imageUrl, required this.slotName});
   final String title;
   final String dietType;
+  final String? imageUrl;
+  final String slotName;
+
+  String _fallbackAsset() {
+    final clean = slotName.toLowerCase();
+    if (clean.contains('breakfast')) return 'assets/images/breakfast.png';
+    if (clean.contains('lunch')) return 'assets/images/lunch.png';
+    if (clean.contains('dinner')) return 'assets/images/dinner.png';
+    if (clean.contains('snack')) return 'assets/images/snack.png';
+    if (clean.contains('protein')) return 'assets/images/protein_meal.png';
+    return 'assets/images/healthy_food.png';
+  }
 
   @override
   Widget build(BuildContext context) {
+    Widget backgroundWidget;
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      backgroundWidget = Image.network(
+        imageUrl!,
+        fit: BoxFit.cover,
+        cacheWidth: 800,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const ColoredBox(
+            color: Color(0xFFEFF7F0),
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.teal),
+            ),
+          );
+        },
+        errorBuilder: (context, err, stack) {
+          return Image.asset(_fallbackAsset(), fit: BoxFit.cover);
+        },
+      );
+    } else {
+      backgroundWidget = Image.asset(_fallbackAsset(), fit: BoxFit.cover);
+    }
+
     return SizedBox(
       height: 282,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const ColoredBox(color: Color(0xFFEFF7F0)),
-          Align(
-            alignment: Alignment.topCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 60),
-              child: SizedBox(width: 150, height: 120, child: CustomPaint(painter: _BowlPainter())),
-            ),
-          ),
+          backgroundWidget,
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.54)],
+                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
               ),
             ),
           ),
@@ -488,40 +529,76 @@ class _LightHero extends StatelessWidget {
 }
 
 class _DarkHero extends StatelessWidget {
-  const _DarkHero({required this.title});
+  const _DarkHero({required this.title, this.imageUrl, required this.slotName});
   final String title;
+  final String? imageUrl;
+  final String slotName;
+
+  String _fallbackAsset() {
+    final clean = slotName.toLowerCase();
+    if (clean.contains('breakfast')) return 'assets/images/breakfast.png';
+    if (clean.contains('lunch')) return 'assets/images/lunch.png';
+    if (clean.contains('dinner')) return 'assets/images/dinner.png';
+    if (clean.contains('snack')) return 'assets/images/snack.png';
+    if (clean.contains('protein')) return 'assets/images/protein_meal.png';
+    return 'assets/images/healthy_food.png';
+  }
 
   @override
   Widget build(BuildContext context) {
+    Widget backgroundWidget;
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      backgroundWidget = Image.network(
+        imageUrl!,
+        fit: BoxFit.cover,
+        cacheWidth: 800,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const Center(child: CircularProgressIndicator(color: AppColors.teal));
+        },
+        errorBuilder: (context, err, stack) {
+          return Image.asset(_fallbackAsset(), fit: BoxFit.cover);
+        },
+      );
+    } else {
+      backgroundWidget = Image.asset(_fallbackAsset(), fit: BoxFit.cover);
+    }
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0xFF111112),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF2B2B2D)),
       ),
-      child: SizedBox(
-        height: 260,
-        child: Stack(
-          children: [
-            Center(child: SizedBox(width: 140, height: 120, child: CustomPaint(painter: _BowlPainter()))),
-            Positioned(
-              left: 22, right: 22, bottom: 18,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 10),
-                  const Wrap(
-                    spacing: 8,
-                    children: [
-                      _HeroTag(label: '15 min', icon: Icons.timer_outlined),
-                      _HeroTag(label: 'Easy Prep', icon: Icons.eco_rounded, filled: true),
-                    ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          height: 260,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              backgroundWidget,
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.75)],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+              Positioned(
+                left: 20, right: 20, bottom: 20,
+                child: Text(
+                  title, 
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -529,10 +606,10 @@ class _DarkHero extends StatelessWidget {
 }
 
 class _HeroTag extends StatelessWidget {
-  const _HeroTag({required this.label, required this.icon, this.filled = false});
+  const _HeroTag({required this.label, required this.icon});
   final String label;
   final IconData icon;
-  final bool filled;
+  final bool filled = false;
 
   @override
   Widget build(BuildContext context) {
@@ -590,7 +667,7 @@ class _NutritionCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text('kcal', style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
-                Text('PER SERVING', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: const Color(0xFF5F6268), letterSpacing: 0.7)),
+                Text('PER SERVING'.tr(context), style: Theme.of(context).textTheme.titleSmall?.copyWith(color: const Color(0xFF5F6268), letterSpacing: 0.7)),
               ],
             ),
             const SizedBox(height: 22),
@@ -684,7 +761,7 @@ class _DarkNutritionCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Text('Total Calories', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: const Color(0xFF7E8088)))),
+                Expanded(child: Text('Total Calories'.tr(context), style: Theme.of(context).textTheme.titleMedium?.copyWith(color: const Color(0xFF7E8088)))),
                 Text('Daily Goal\n2,400 kcal', textAlign: TextAlign.right, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
               ],
             ),
@@ -721,9 +798,9 @@ class _DarkNutritionCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('PROTEIN', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: const Color(0xFF7E8088), letterSpacing: 1)),
-                Text('CARBS', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: const Color(0xFF7E8088), letterSpacing: 1)),
-                Text('FAT', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: const Color(0xFF7E8088), letterSpacing: 1)),
+                Text('PROTEIN'.tr(context), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: const Color(0xFF7E8088), letterSpacing: 1)),
+                Text('CARBS'.tr(context), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: const Color(0xFF7E8088), letterSpacing: 1)),
+                Text('FAT'.tr(context), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: const Color(0xFF7E8088), letterSpacing: 1)),
               ],
             ),
           ],
@@ -989,11 +1066,19 @@ class _BottomActions extends StatelessWidget {
     required this.loggingMeal,
     required this.onLog,
     required this.onSwap,
+    required this.isFavorited,
+    required this.onFavorite,
+    required this.errorMessage,
+    required this.showSuccess,
   });
   final MealSlot? meal;
   final bool loggingMeal;
   final VoidCallback onLog;
   final VoidCallback onSwap;
+  final bool isFavorited;
+  final VoidCallback onFavorite;
+  final String? errorMessage;
+  final bool showSuccess;
 
   @override
   Widget build(BuildContext context) {
@@ -1008,46 +1093,68 @@ class _BottomActions extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.paddingOf(context).bottom),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            _ActionIconButton(icon: Icons.favorite_border_rounded, label: isDark ? null : 'Favorite', onTap: onSwap),
-            const SizedBox(width: 12),
-            Expanded(
-              child: SizedBox(
-                height: 50,
-                child: FilledButton.icon(
-                  onPressed: loggingMeal ? null : onLog,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: isDark ? const Color(0xFF31D39E) : AppColors.teal,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isDark ? 8 : 9)),
-                  ),
-                  icon: loggingMeal
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.check_circle_outline_rounded, size: 18),
-                  label: Text(meal != null ? 'Log ${meal!.displayName}' : 'Log Meal'),
-                ),
+            if (errorMessage != null) ...[
+              Text(
+                errorMessage!,
+                style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(width: 12),
-            if (isDark)
-              Expanded(
-                child: SizedBox(
-                  height: 50,
-                  child: OutlinedButton.icon(
-                    onPressed: onSwap,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0xFF45464B)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              const SizedBox(height: 8),
+            ],
+            Row(
+              children: [
+                _ActionIconButton(
+                  icon: isFavorited ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  iconColor: isFavorited ? Colors.red : null,
+                  label: isDark ? null : 'Favorite',
+                  onTap: onFavorite,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: FilledButton.icon(
+                      onPressed: (loggingMeal || showSuccess) ? null : onLog,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: showSuccess
+                            ? Colors.green
+                            : (isDark ? const Color(0xFF31D39E) : AppColors.teal),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isDark ? 8 : 9)),
+                      ),
+                      icon: loggingMeal
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Icon(showSuccess ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded, size: 18),
+                      label: Text(showSuccess
+                          ? 'Meal logged!'.tr(context)
+                          : (meal != null ? 'Log ${meal!.displayName}' : 'Log Meal')),
                     ),
-                    icon: const Icon(Icons.swap_horiz_rounded, size: 18),
-                    label: const Text('Swap'),
                   ),
                 ),
-              )
-            else
-              _ActionIconButton(icon: Icons.swap_horiz_rounded, label: 'Swap', onTap: onSwap),
+                const SizedBox(width: 12),
+                if (isDark)
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: OutlinedButton.icon(
+                        onPressed: onSwap,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Color(0xFF45464B)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                        label: Text('Swap'.tr(context)),
+                      ),
+                    ),
+                  )
+                else
+                  _ActionIconButton(icon: Icons.swap_horiz_rounded, label: 'Swap', onTap: onSwap),
+              ],
+            ),
           ],
         ),
       ),
@@ -1056,10 +1163,11 @@ class _BottomActions extends StatelessWidget {
 }
 
 class _ActionIconButton extends StatelessWidget {
-  const _ActionIconButton({required this.icon, required this.label, required this.onTap});
+  const _ActionIconButton({required this.icon, required this.label, required this.onTap, this.iconColor});
   final IconData icon;
   final String? label;
   final VoidCallback onTap;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1075,7 +1183,7 @@ class _ActionIconButton extends StatelessWidget {
               backgroundColor: isDark ? const Color(0xFF222225) : Colors.transparent,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            icon: Icon(icon, color: isDark ? Colors.white70 : const Color(0xFF5D6068)),
+            icon: Icon(icon, color: iconColor ?? (isDark ? Colors.white70 : const Color(0xFF5D6068))),
           ),
           if (label != null)
             Text(label!, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: const Color(0xFF5D6068))),
@@ -1083,54 +1191,4 @@ class _ActionIconButton extends StatelessWidget {
       ),
     );
   }
-}
-
-class _BowlPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final bowlPaint = Paint()..color = Colors.white;
-    final shadow = Paint()..color = Colors.black.withValues(alpha: 0.08);
-    canvas.drawOval(Rect.fromCenter(center: Offset(cx, size.height * 0.68), width: size.width * 0.9, height: size.height * 0.22), shadow);
-    canvas.drawArc(
-      Rect.fromLTWH(size.width * 0.1, size.height * 0.36, size.width * 0.8, size.height * 0.48),
-      0, 3.14, false,
-      bowlPaint..style = PaintingStyle.fill,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.18, size.height * 0.5, size.width * 0.64, size.height * 0.28),
-        const Radius.circular(40),
-      ),
-      bowlPaint,
-    );
-    canvas.drawArc(
-      Rect.fromLTWH(size.width * 0.14, size.height * 0.34, size.width * 0.72, size.height * 0.22),
-      0, 3.14, false,
-      Paint()..color = const Color(0xFFE8ECEC)..strokeWidth = 5..style = PaintingStyle.stroke,
-    );
-    final greens = Paint()..color = const Color(0xFF69C63B)..strokeWidth = 10..strokeCap = StrokeCap.round;
-    for (final p in [
-      Offset(size.width * 0.24, size.height * 0.38),
-      Offset(size.width * 0.36, size.height * 0.28),
-      Offset(size.width * 0.52, size.height * 0.34),
-      Offset(size.width * 0.68, size.height * 0.3),
-      Offset(size.width * 0.78, size.height * 0.42),
-    ]) {
-      canvas.drawCircle(p, 13, Paint()..color = const Color(0xFF69C63B));
-      canvas.drawLine(p.translate(-10, 10), p.translate(10, -10), greens);
-    }
-    final tomato = Paint()..color = const Color(0xFFFF3D3D);
-    for (final p in [
-      Offset(size.width * 0.44, size.height * 0.36),
-      Offset(size.width * 0.62, size.height * 0.42),
-    ]) {
-      canvas.drawCircle(p, 13, tomato);
-      canvas.drawCircle(p.translate(-4, -2), 2, Paint()..color = Colors.white);
-      canvas.drawCircle(p.translate(5, 4), 2, Paint()..color = Colors.white);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

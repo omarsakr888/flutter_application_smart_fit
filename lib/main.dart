@@ -6,8 +6,10 @@ import 'app/app_scope.dart';
 import 'router/app_router.dart';
 import 'theme/smart_fit_theme.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 void main() {
-  runApp(const SmartFitApp());
+  runApp(const ProviderScope(child: SmartFitApp()));
 }
 
 class SmartFitApp extends StatefulWidget {

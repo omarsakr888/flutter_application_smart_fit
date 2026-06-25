@@ -14,6 +14,7 @@ import '../theme/app_colors.dart';
 import '../widgets/ai_chat_fab.dart';
 import '../widgets/laser_scanner.dart';
 import '../theme/smart_fit_theme.dart';
+import '../localization/app_strings.dart';
 
 class InBodyScanScreen extends StatefulWidget {
   const InBodyScanScreen({super.key});
@@ -138,7 +139,7 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
         _uploading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload failed: $e')),
+        SnackBar(content: Text('Upload failed: $e'.tr(context))),
       );
     }
   }
@@ -176,7 +177,7 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Confirmation failed: $e')),
+        SnackBar(content: Text('Confirmation failed: $e'.tr(context))),
       );
     } finally {
       if (mounted) setState(() => _confirming = false);
@@ -254,12 +255,6 @@ class _InBodyScanScreenState extends State<InBodyScanScreen> {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            Text(
-                              'This may take 30–60 seconds on CPU',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: isDark ? Colors.white38 : Colors.grey,
-                              ),
-                            ),
                           ],
                         ),
                       )
@@ -614,7 +609,7 @@ class _UploadState extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 14),
           ),
           icon: const Icon(Icons.file_upload_outlined, size: 30),
-          label: const Text('Or upload from gallery'),
+          label: Text('Or upload from gallery'.tr(context)),
         ),
       ],
     );
@@ -937,6 +932,7 @@ class _MetricTileState extends State<_MetricTile> {
   void initState() {
     super.initState();
     widget.metric.controller.addListener(_onTextChanged);
+    _focusNode.addListener(_onFocusChanged);
   }
 
   @override
@@ -951,8 +947,13 @@ class _MetricTileState extends State<_MetricTile> {
   @override
   void dispose() {
     widget.metric.controller.removeListener(_onTextChanged);
+    _focusNode.removeListener(_onFocusChanged);
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _onFocusChanged() {
+    setState(() {});
   }
 
   void _onTextChanged() {
@@ -979,6 +980,8 @@ class _MetricTileState extends State<_MetricTile> {
       isEdited,
     );
     
+    final isFocused = _focusNode.hasFocus;
+    
     return GestureDetector(
       onTap: () => _focusNode.requestFocus(),
       child: DecoratedBox(
@@ -986,9 +989,12 @@ class _MetricTileState extends State<_MetricTile> {
           color: isDark ? const Color(0xFF2A3130) : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isEdited
+            color: isFocused
               ? AppColors.teal
-              : statusColor.withValues(alpha: 0.55),
+              : isEdited
+                ? AppColors.teal.withValues(alpha: 0.6)
+                : statusColor.withValues(alpha: 0.55),
+            width: isFocused ? 2 : 1,
           ),
         ),
         child: Padding(
@@ -1010,10 +1016,10 @@ class _MetricTileState extends State<_MetricTile> {
                                 ),
                           ),
                         ),
-                        if (_tooltipFor(widget.metric.key) != null) ...[
+                        if (_tooltipFor(widget.metric.key, context) != null) ...[
                           const SizedBox(width: 6),
                           Tooltip(
-                            message: _tooltipFor(widget.metric.key)!,
+                            message: _tooltipFor(widget.metric.key, context)!,
                             triggerMode: TooltipTriggerMode.tap,
                             preferBelow: false,
                             margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -1046,20 +1052,47 @@ class _MetricTileState extends State<_MetricTile> {
                 ),
               ),
               SizedBox(
-                width: 60,
+                width: 75,
                 child: TextFormField(
                   controller: widget.metric.controller,
                   focusNode: _focusNode,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.titleMedium?.copyWith(
                         color: isDark ? Colors.white : const Color(0xFF1D2425),
                         fontWeight: FontWeight.w800,
                       ),
-                  decoration: const InputDecoration(
-                    contentPadding: EdgeInsets.zero,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) return 'Req';
+                    final v = value.trim();
+                    if (widget.metric.key == 'Gender') {
+                       if (v.toLowerCase() != 'male' && v.toLowerCase() != 'female' && v != '1' && v != '0') return 'M/F';
+                    } else {
+                       final numVal = double.tryParse(v);
+                       if (numVal == null) return 'Invalid';
+                       if (numVal < 0) return '>=0';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     isDense: true,
-                    border: InputBorder.none,
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF1D2425) : const Color(0xFFF3F6F5),
+                    errorStyle: const TextStyle(fontSize: 10, height: 1.1),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
+                    ),
                   ),
                 ),
               ),
@@ -1093,17 +1126,31 @@ class _MetricTileState extends State<_MetricTile> {
     );
   }
 
-  String? _tooltipFor(String key) {
+  String? _tooltipFor(String key, BuildContext context) {
     switch (key) {
+      case 'Age':
+      case 'Gender':
       case 'Height':
       case 'Weight':
-        return 'Found at the top of your InBody printout, usually under personal details.';
+        return 'Found at the top of your InBody printout, usually under personal details.'.tr(context);
+      case '50kHz-Whole_Body_Phase_Angle':
+        return 'Measures cellular health and integrity.'.tr(context);
+      case 'ECW/TBW':
+        return 'Represents body water balance and recovery status.'.tr(context);
       case 'SMM_(Skeletal_Muscle_Mass)':
-        return 'Found in the Muscle-Fat Analysis section (usually the middle bar).';
+        return 'Skeletal Muscle Mass used to estimate strength capacity.'.tr(context);
+      case 'BMR_(Basal_Metabolic_Rate)':
+        return 'Estimated calories burned at rest.'.tr(context);
+      case 'FFM_of_Trunk':
+        return 'Fat-Free Mass of the trunk area.'.tr(context);
+      case 'TBW_(Total_Body_Water)':
+        return 'Total fluid in the body.'.tr(context);
       case 'BFM_(Body_Fat_Mass)':
-        return 'Found in the Muscle-Fat Analysis section (usually the bottom bar).';
+        return 'Total mass of fat in the body.'.tr(context);
+      case 'PBF_(Percent_Body_Fat)':
+        return 'Percentage of total body weight that is fat.'.tr(context);
       default:
-        return null;
+        return 'InBody metric value.'.tr(context);
     }
   }
 

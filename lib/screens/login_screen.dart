@@ -30,7 +30,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscure = true;
   bool _busy = false;
-  String? _authError;
+  String? _emailError;
+  String? _passwordError;
+  String? _generalError;
 
   @override
   void dispose() {
@@ -49,14 +51,14 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _snack(Object message) {
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(content: Text('$message')),
-    );
-  }
+
 
   Future<void> _onEmailLogin(Locale l) async {
-    setState(() => _authError = null);
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+      _generalError = null;
+    });
     if (!_formKey.currentState!.validate()) return;
     
     final email = _email.text.trim();
@@ -65,7 +67,16 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         await AuthService.instance.login(email, pass);
       } catch (e) {
-        setState(() => _authError = e.toString());
+        final err = e.toString().toLowerCase();
+        setState(() {
+          if (err.contains('user-not-found') || err.contains('invalid-email')) {
+            _emailError = _isAr(l) ? 'البريد الإلكتروني غير صحيح' : 'Invalid email or user not found';
+          } else if (err.contains('wrong-password') || err.contains('invalid-credential')) {
+            _passwordError = _isAr(l) ? 'كلمة المرور غير صحيحة' : 'Incorrect password';
+          } else {
+            _generalError = e.toString();
+          }
+        });
         return;
       }
       if (!mounted) return;
@@ -96,16 +107,18 @@ class _LoginScreenState extends State<LoginScreen> {
           if (!mounted) return;
           context.go(AppRoutes.homeDashboard);
         } else {
-          _snack(_isAr(l) ? 'Apple: تم تسجيل الدخول' : 'Apple: signed in');
+          // Apple ID already linked, or login succeeded without name/email
+          if (!mounted) return;
+          context.go(AppRoutes.homeDashboard);
         }
       } on StateError catch (e) {
-        setState(() => _authError = e.message);
+        setState(() => _generalError = e.message);
       } on UnsupportedError {
-        setState(() => _authError = _isAr(l)
+        setState(() => _generalError = _isAr(l)
             ? 'Apple غير متاح على المتصفح — استخدم Google أو البريد الإلكتروني.'
             : 'Apple Sign-In is not available on web. Use Google or email.');
       } catch (e) {
-        setState(() => _authError = e.toString());
+        setState(() => _generalError = e.toString());
       }
     });
   }
@@ -227,15 +240,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? (_isAr(l) ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter your email')
-                          : null,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return _isAr(l) ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter your email';
+                        }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
+                          return _isAr(l) ? 'بريد إلكتروني غير صالح' : 'Invalid email address';
+                        }
+                        return null;
+                      },
                       decoration: InputDecoration(
                         hintText: LoginStrings.emailHint(l),
                         hintStyle: TextStyle(color: ext.mutedText.withValues(alpha: 0.75)),
                         filled: true,
                         fillColor: fieldFill,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        errorText: _emailError,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -269,9 +289,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: _obscure,
                       autofillHints: const [AutofillHints.password],
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: (v) => v == null || v.isEmpty
-                          ? (_isAr(l) ? 'الرجاء إدخال كلمة المرور' : 'Please enter your password')
-                          : null,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return _isAr(l) ? 'الرجاء إدخال كلمة المرور' : 'Please enter your password';
+                        }
+                        if (v.length < 8) {
+                          return _isAr(l) ? 'يجب أن لا تقل كلمة المرور عن 8 أحرف' : 'Password must be at least 8 characters';
+                        }
+                        return null;
+                      },
                       decoration: InputDecoration(
                         hintText: '••••••••',
                         hintStyle: TextStyle(color: ext.mutedText.withValues(alpha: 0.5)),
@@ -288,7 +314,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
                         ),
                         errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 12),
-                        errorText: _authError,
+                        errorText: _passwordError,
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.redAccent),
@@ -310,7 +336,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Align(
                       alignment: AlignmentDirectional.centerEnd,
                       child: TextButton(
-                        onPressed: () => _snack(
+                        onPressed: () => setState(() => _generalError =
                           _isAr(l)
                               ? 'إعادة التعيين قريبًا'
                               : 'Password recovery — connect your reset flow.',
@@ -399,6 +425,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
+                    if (_generalError != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _generalError!,
+                        style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                     const SizedBox(height: 32),
                     Center(
                       child: Text.rich(

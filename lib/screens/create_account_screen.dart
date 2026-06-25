@@ -30,7 +30,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool _obscureConfirm = true;
   bool _agreePrivacy = true;
   bool _busy = false;
-  String? _authError;
+  String? _emailError;
+  String? _passwordError;
+  String? _generalError;
+  String? _privacyError;
 
   @override
   void dispose() {
@@ -50,30 +53,41 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     }
   }
 
-  void _snack(Object message) {
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(content: Text('$message')),
-    );
-  }
 
   bool _isAr(Locale l) => l.languageCode.toLowerCase() == 'ar';
 
   Future<void> _onCreate(Locale l) async {
-    setState(() => _authError = null);
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+      _generalError = null;
+      _privacyError = null;
+    });
     if (!_formKey.currentState!.validate()) return;
     
     final email = _email.text.trim();
     final pass = _password.text;
 
     if (!_agreePrivacy) {
-      _snack(SignupStrings.acceptPrivacy(l));
+      setState(() => _privacyError = SignupStrings.acceptPrivacy(l));
       return;
     }
     await _runGuarded(() async {
       try {
         await AuthService.instance.register(email, pass);
       } catch (e) {
-        setState(() => _authError = e.toString());
+        final err = e.toString().toLowerCase();
+        setState(() {
+          if (err.contains('email-already-in-use')) {
+            _emailError = _isAr(l) ? 'البريد الإلكتروني مستخدم بالفعل' : 'Email already in use';
+          } else if (err.contains('invalid-email')) {
+            _emailError = _isAr(l) ? 'بريد إلكتروني غير صالح' : 'Invalid email';
+          } else if (err.contains('weak-password')) {
+            _passwordError = _isAr(l) ? 'كلمة المرور ضعيفة جداً' : 'Password is too weak';
+          } else {
+            _generalError = e.toString();
+          }
+        });
         return;
       }
       if (!mounted) return;
@@ -96,11 +110,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         if (!mounted) return;
         context.push(AppRoutes.profileSetup);
       } on StateError catch (e) {
-        setState(() => _authError = e.message);
+        setState(() => _generalError = e.message);
       } on UnsupportedError catch (e) {
-        setState(() => _authError = e.toString());
+        setState(() => _generalError = e.toString());
       } catch (e) {
-        setState(() => _authError = e.toString());
+        setState(() => _generalError = e.toString());
       }
     });
   }
@@ -204,10 +218,19 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? (_isAr(l) ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter your email')
-                          : null,
-                      decoration: _fieldDecoration(hintText: SignupStrings.emailHint(l)),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return _isAr(l) ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter your email';
+                        }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
+                          return _isAr(l) ? 'بريد إلكتروني غير صالح' : 'Invalid email address';
+                        }
+                        return null;
+                      },
+                      decoration: _fieldDecoration(
+                        hintText: SignupStrings.emailHint(l),
+                        errorText: _emailError,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -221,11 +244,18 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       controller: _password,
                       obscureText: _obscure,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: (v) => v == null || v.isEmpty
-                          ? (_isAr(l) ? 'الرجاء إدخال كلمة المرور' : 'Please enter a password')
-                          : null,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return _isAr(l) ? 'الرجاء إدخال كلمة المرور' : 'Please enter a password';
+                        }
+                        if (v.length < 8) {
+                          return _isAr(l) ? 'يجب أن لا تقل كلمة المرور عن 8 أحرف' : 'Password must be at least 8 characters';
+                        }
+                        return null;
+                      },
                       decoration: _fieldDecoration(
                         hintText: '••••••••',
+                        errorText: _passwordError,
                         suffixPass: IconButton(
                           tooltip: _obscure ? 'Show password' : 'Hide password',
                           onPressed: () => setState(() => _obscure = !_obscure),
@@ -259,7 +289,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       },
                       decoration: _fieldDecoration(
                         hintText: '••••••••',
-                        errorText: _authError,
                         suffixPass: IconButton(
                           tooltip: _obscureConfirm ? 'Show password' : 'Hide password',
                           onPressed: () =>
@@ -322,6 +351,14 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         ),
                       ),
                     ),
+                    if (_privacyError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _privacyError!,
+                        style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     SizedBox(
                       height: 54,
@@ -393,6 +430,14 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         ),
                       ],
                     ),
+                    if (_generalError != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _generalError!,
+                        style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                     const SizedBox(height: 32),
                     Wrap(
                       alignment: WrapAlignment.center,
@@ -401,7 +446,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       runSpacing: 4,
                       children: [
                         TextButton(
-                          onPressed: () => _snack(SignupStrings.linkComingSoon(l)),
+                          onPressed: () => setState(() => _generalError = SignupStrings.linkComingSoon(l)),
                           style: TextButton.styleFrom(
                             foregroundColor: linkStyle?.color,
                             visualDensity: VisualDensity.compact,
@@ -419,7 +464,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         ),
                         Text('|', style: TextStyle(color: ext.mutedText)),
                         TextButton(
-                          onPressed: () => _snack(SignupStrings.linkComingSoon(l)),
+                          onPressed: () => setState(() => _generalError = SignupStrings.linkComingSoon(l)),
                           style: TextButton.styleFrom(
                             foregroundColor: linkStyle?.color,
                             visualDensity: VisualDensity.compact,
@@ -437,7 +482,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         ),
                         Text('|', style: TextStyle(color: ext.mutedText)),
                         TextButton(
-                          onPressed: () => _snack(SignupStrings.linkComingSoon(l)),
+                          onPressed: () => setState(() => _generalError = SignupStrings.linkComingSoon(l)),
                           style: TextButton.styleFrom(
                             foregroundColor: linkStyle?.color,
                             visualDensity: VisualDensity.compact,

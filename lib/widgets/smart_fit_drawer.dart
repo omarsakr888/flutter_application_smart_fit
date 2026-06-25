@@ -129,6 +129,16 @@ class _SmartFitDrawerState extends State<SmartFitDrawer> {
                     },
                   ),
                   _DrawerTile(
+                    icon: Icons.favorite_rounded,
+                    title: isAr ? 'المفضلة' : 'Favorites',
+                    color: iconColor,
+                    textColor: textColor,
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.go(AppRoutes.favorites);
+                    },
+                  ),
+                  _DrawerTile(
                     icon: Icons.person_rounded,
                     title: isAr ? 'ملفي الشخصي' : 'My Profile',
                     color: iconColor,

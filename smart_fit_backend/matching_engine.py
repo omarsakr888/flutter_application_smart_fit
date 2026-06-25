@@ -59,6 +59,7 @@ _MEAL_DISPLAY_COLS = [
     "Name", "Calories_PS", "Protein_PS", "Carbs_PS", "Fat_PS",
     "Diet_Type", "Goal_Label", "Health_Score", "AggregatedRating",
     "Meal_Time_Category", "RecipeIngredientParts", "RecipeInstructions",
+    "Images",
 ]
 
 # Columns to keep when returning exercise data
@@ -86,6 +87,7 @@ class MealSlot:
     meal_time_category: str
     ingredients:        str
     instructions:       str
+    image_url:          Optional[str] = None
 
 
 @dataclass
@@ -286,6 +288,8 @@ class MealMatcher:
                 continue
 
             used_indices.add(meal_row.name)  # .name is the DataFrame row index
+            image_val = meal_row.get("Images")
+            image_url = _extract_image_url(image_val) if image_val is not None else None
             slots.append(
                 MealSlot(
                     slot_name=slot_name,
@@ -301,6 +305,7 @@ class MealMatcher:
                     meal_time_category=str(meal_row.get("Meal_Time_Category", "N/A")),
                     ingredients=_safe_str(meal_row.get("RecipeIngredientParts")),
                     instructions=_safe_str(meal_row.get("RecipeInstructions")),
+                    image_url=image_url,
                 )
             )
 
@@ -647,6 +652,17 @@ def _goal_to_csv_label(goal: str) -> str:
     return "Keto" if goal in keto_goals else "General"
 
 
+def _extract_image_url(val: Any) -> Optional[str]:
+    import re
+    if val is None or not isinstance(val, str):
+        return None
+    val_str = val.strip()
+    if val_str == "character(0)" or not val_str:
+        return None
+    urls = re.findall(r'"(https?://[^"]+)"', val_str)
+    return urls[0] if urls else None
+
+
 def _placeholder_slot(slot_name: str, target_cal: float) -> MealSlot:
     return MealSlot(
         slot_name=slot_name,
@@ -662,6 +678,7 @@ def _placeholder_slot(slot_name: str, target_cal: float) -> MealSlot:
         meal_time_category="N/A",
         ingredients="",
         instructions="Please consult a nutritionist for a personalised meal suggestion.",
+        image_url=None,
     )
 
 

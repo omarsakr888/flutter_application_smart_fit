@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/user_profile.dart';
+import '../localization/app_strings.dart';
 import '../router/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
@@ -449,7 +450,7 @@ class _EmptyChartsCard extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               icon: const Icon(Icons.document_scanner_outlined, size: 18),
-              label: const Text('Start InBody Scan'),
+              label: Text('Start InBody Scan'.tr(context)),
             ),
           ],
         ),

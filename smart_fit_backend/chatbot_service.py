@@ -42,7 +42,7 @@ class ChatbotService:
 
         try:
             model_with_sys = genai.GenerativeModel(
-                model_name='gemini-1.5-flash',
+                model_name='gemini-2.5-flash',
                 system_instruction=system_prompt
             )
 
@@ -71,6 +71,8 @@ class ChatbotService:
                 resp_msg = "AI Coach is unavailable: Your Google Cloud project was denied access (Error 403). Please verify billing and API restrictions."
             elif "401" in error_str or "api key not valid" in error_str:
                 resp_msg = "AI Coach is unavailable: The provided Gemini API Key is invalid."
+            elif "429" in error_str or "quota" in error_str or "rate limit" in error_str:
+                resp_msg = "AI Coach is unavailable: The Gemini API Key has exceeded its free tier quota (Error 429). Please verify billing details or wait for the quota to reset."
             else:
                 resp_msg = "Chatbot is running in test mode. AI integration is active but Gemini threw an error."
             return {

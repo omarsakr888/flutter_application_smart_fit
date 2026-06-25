@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:string_similarity/string_similarity.dart';
 
 import '../models/plan_result.dart';
+import '../models/exercise_view_data.dart';
 import '../router/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/responsive_utils.dart';
+import '../utils/gif_resolver.dart' as resolver;
+import '../utils/gif_resolver.dart' show showExpandedGif;
 import '../widgets/ai_chat_fab.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/favorites_provider.dart';
+import '../localization/app_strings.dart';
 import '../widgets/smart_fit_app_bar.dart';
 import '../widgets/smart_fit_drawer.dart';
 
@@ -20,26 +25,102 @@ class WorkoutHubScreen extends StatefulWidget {
 
 class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
   PlanResult? _plan;
+
   final _checkedExercises = <int>{};
   bool _completing = false;
+  bool _showSuccess = false;
+  String? _unlockedAchievement;
+  String? _errorMessage;
   bool _loading = true;
 
   static const _fallbackDark = [
-    _Exercise('Bench Press', '4 x 8–10 reps', 'CHEST', Icons.fitness_center_rounded, true),
-    _Exercise('Incline Press', '3 x 10–12 reps', 'CHEST', Icons.downhill_skiing_rounded, true),
-    _Exercise('Cable Fly', '3 x 12–15 reps', 'CHEST', Icons.flutter_dash_rounded, false),
-    _Exercise('Shoulder Press', '3 x 8–10 reps', 'SHOULDERS', Icons.fitness_center_rounded, false),
-    _Exercise('Lateral Raises', '4 x 12–15 reps', 'SHOULDERS', Icons.waving_hand_rounded, false),
-    _Exercise('Tricep Extension', '3 x 10–12 reps', 'TRICEPS', Icons.bolt_rounded, false),
+    _Exercise(
+      'Bench Press',
+      '4 x 8–10 reps',
+      'CHEST',
+      Icons.fitness_center_rounded,
+      true,
+    ),
+    _Exercise(
+      'Incline Press',
+      '3 x 10–12 reps',
+      'CHEST',
+      Icons.downhill_skiing_rounded,
+      true,
+    ),
+    _Exercise(
+      'Cable Fly',
+      '3 x 12–15 reps',
+      'CHEST',
+      Icons.flutter_dash_rounded,
+      false,
+    ),
+    _Exercise(
+      'Shoulder Press',
+      '3 x 8–10 reps',
+      'SHOULDERS',
+      Icons.fitness_center_rounded,
+      false,
+    ),
+    _Exercise(
+      'Lateral Raises',
+      '4 x 12–15 reps',
+      'SHOULDERS',
+      Icons.waving_hand_rounded,
+      false,
+    ),
+    _Exercise(
+      'Tricep Extension',
+      '3 x 10–12 reps',
+      'TRICEPS',
+      Icons.bolt_rounded,
+      false,
+    ),
   ];
 
   static const _fallbackLight = [
-    _Exercise('Bench Press', '3 sets - 10 reps', 'CHEST', Icons.fitness_center_rounded, true),
-    _Exercise('Incline Press', '3 sets - 12 reps', 'CHEST', Icons.trending_up_rounded, true),
-    _Exercise('Cable Fly', '3 sets - 15 reps', 'CHEST', Icons.flutter_dash_rounded, false),
-    _Exercise('Overhead Press', '4 sets - 8 reps', 'SHOULDERS', Icons.upload_rounded, false),
-    _Exercise('Lateral Raises', '3 sets - 20 reps', 'SHOULDERS', Icons.waving_hand_rounded, false),
-    _Exercise('Tricep Pushdown', '3 sets - 12 reps', 'ARMS', Icons.fitness_center_rounded, false),
+    _Exercise(
+      'Bench Press',
+      '3 sets - 10 reps',
+      'CHEST',
+      Icons.fitness_center_rounded,
+      true,
+    ),
+    _Exercise(
+      'Incline Press',
+      '3 sets - 12 reps',
+      'CHEST',
+      Icons.trending_up_rounded,
+      true,
+    ),
+    _Exercise(
+      'Cable Fly',
+      '3 sets - 15 reps',
+      'CHEST',
+      Icons.flutter_dash_rounded,
+      false,
+    ),
+    _Exercise(
+      'Overhead Press',
+      '4 sets - 8 reps',
+      'SHOULDERS',
+      Icons.upload_rounded,
+      false,
+    ),
+    _Exercise(
+      'Lateral Raises',
+      '3 sets - 20 reps',
+      'SHOULDERS',
+      Icons.waving_hand_rounded,
+      false,
+    ),
+    _Exercise(
+      'Tricep Pushdown',
+      '3 sets - 12 reps',
+      'ARMS',
+      Icons.fitness_center_rounded,
+      false,
+    ),
   ];
 
   @override
@@ -51,13 +132,18 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
   Future<void> _fetch() async {
     try {
       final plan = await UserService.instance.getPlan();
-      if (mounted) setState(() { _plan = plan; _loading = false; });
+      if (mounted)
+        setState(() {
+          _plan = plan;
+          _loading = false;
+        });
     } catch (_) {
       if (mounted) {
-        setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not load workout plan. Check your connection.')),
-        );
+        setState(() {
+          _loading = false;
+          _errorMessage = 'Could not load workout plan. Check your connection.'
+              .tr(context);
+        });
       }
     }
   }
@@ -76,23 +162,23 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
       );
       if (mounted) {
         if (newAchievements.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Achievement unlocked: ${newAchievements.join(', ')}!'),
-              backgroundColor: AppColors.teal,
-            ),
-          );
+          _unlockedAchievement = newAchievements.join(', ');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Workout logged!')),
-          );
+          _unlockedAchievement = null;
         }
-        setState(() => _checkedExercises.clear());
+        setState(() {
+          _checkedExercises.clear();
+          _showSuccess = true;
+          _errorMessage = null;
+        });
+        Future.delayed(const Duration(seconds: 4), () {
+          if (mounted) setState(() => _showSuccess = false);
+        });
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to log workout. Try again.')),
+        setState(
+          () => _errorMessage = 'Failed to log workout. Try again.'.tr(context),
         );
       }
     } finally {
@@ -106,8 +192,13 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
     final day = plan.workoutSplit.first;
     return day.exercises.map((e) {
       final subtitle = '${e.sets} × ${e.repsMin}–${e.repsMax} reps';
-      return _Exercise(e.name, subtitle, e.bodyPart.toUpperCase(),
-          Icons.fitness_center_rounded, false);
+      return _Exercise(
+        e.name,
+        subtitle,
+        e.bodyPart.toUpperCase(),
+        Icons.fitness_center_rounded,
+        false,
+      );
     }).toList();
   }
 
@@ -128,7 +219,9 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
     return Scaffold(
       appBar: const SmartFitAppBar(),
       drawer: const SmartFitDrawer(),
-      backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF7FCF8),
+      backgroundColor: isDark
+          ? theme.scaffoldBackgroundColor
+          : const Color(0xFFF7FCF8),
       bottomNavigationBar: const _BottomNav(),
       floatingActionButton: const AiChatFab(),
       body: SafeArea(
@@ -157,9 +250,14 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const _DateStrip(),
-                    SizedBox(height: isDark ? context.heightPct(0.07) : context.heightPct(0.08)),
+                    SizedBox(
+                      height: isDark
+                          ? context.heightPct(0.07)
+                          : context.heightPct(0.08),
+                    ),
                     if (isDark)
                       _WorkoutSummaryCard(
+                        workoutDay: _plan?.workoutSplit.firstOrNull,
                         dayLabel: dayLabel,
                         completed: completed,
                         total: exercises.length,
@@ -167,18 +265,25 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
                       )
                     else
                       _LightTitleBlock(
+                        workoutDay: _plan?.workoutSplit.firstOrNull,
                         dayLabel: dayLabel,
                         completed: completed,
                         total: exercises.length,
                         intensityMultiplier: intensity,
                       ),
-                    SizedBox(height: isDark ? context.heightPct(0.04) : context.heightPct(0.035)),
+                    SizedBox(
+                      height: isDark
+                          ? context.heightPct(0.04)
+                          : context.heightPct(0.035),
+                    ),
                     for (var i = 0; i < exercises.length; i++) ...[
                       _ExerciseTile(
                         exercise: exercises[i],
-                        focused: !_checkedExercises.contains(i) &&
+                        focused:
+                            !_checkedExercises.contains(i) &&
                             _checkedExercises.length == i,
                         isChecked: _checkedExercises.contains(i),
+                        dayLabel: dayLabel,
                         onToggle: () => setState(() {
                           if (!_checkedExercises.remove(i)) {
                             _checkedExercises.add(i);
@@ -187,9 +292,33 @@ class _WorkoutHubScreenState extends State<WorkoutHubScreen> {
                       ),
                       SizedBox(height: context.heightPct(0.02)),
                     ],
-                    SizedBox(height: context.heightPct(0.025)),
+                    if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    if (_showSuccess && _unlockedAchievement != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Text(
+                          'Achievement unlocked: $_unlockedAchievement!',
+                          style: TextStyle(
+                            color: AppColors.teal,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     _CompleteWorkoutButton(
                       completing: _completing,
+                      showSuccess: _showSuccess,
                       checkedCount: _checkedExercises.length,
                       total: exercises.length,
                       onPressed: () => _completeWorkout(exercises),
@@ -319,7 +448,9 @@ class _LightDay extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected ? AppColors.teal : Colors.white,
             borderRadius: BorderRadius.circular(15),
-            border: selected ? null : Border.all(color: const Color(0xFFE4E7E7)),
+            border: selected
+                ? null
+                : Border.all(color: const Color(0xFFE4E7E7)),
             boxShadow: selected
                 ? null
                 : [
@@ -370,12 +501,14 @@ class _LightDay extends StatelessWidget {
 
 class _LightTitleBlock extends StatelessWidget {
   const _LightTitleBlock({
+    this.workoutDay,
     required this.dayLabel,
     required this.completed,
     required this.total,
     required this.intensityMultiplier,
   });
 
+  final WorkoutDay? workoutDay;
   final String dayLabel;
   final int completed;
   final int total;
@@ -390,17 +523,52 @@ class _LightTitleBlock extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                dayLabel,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  height: 1,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      dayLabel,
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                  if (workoutDay != null)
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final isFav = ref
+                            .watch(favoritesProvider)
+                            .workouts
+                            .any(
+                              (w) =>
+                                  w.dayLabel == workoutDay!.dayLabel &&
+                                  w.focusZone == workoutDay!.focusZone,
+                            );
+                        return IconButton(
+                          icon: Icon(
+                            isFav
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            color: isFav ? Colors.redAccent : Colors.grey,
+                          ),
+                          onPressed: () => ref
+                              .read(favoritesProvider.notifier)
+                              .toggleWorkout(workoutDay!),
+                        );
+                      },
+                    ),
+                ],
               ),
               const SizedBox(height: 18),
               Row(
                 children: [
-                  const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF676C72), size: 28),
+                  const Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: Color(0xFF676C72),
+                    size: 28,
+                  ),
                   const SizedBox(width: 10),
                   Text(
                     '$completed/$total completed',
@@ -422,12 +590,14 @@ class _LightTitleBlock extends StatelessWidget {
 
 class _WorkoutSummaryCard extends StatelessWidget {
   const _WorkoutSummaryCard({
+    this.workoutDay,
     required this.dayLabel,
     required this.completed,
     required this.total,
     required this.intensityMultiplier,
   });
 
+  final WorkoutDay? workoutDay;
   final String dayLabel;
   final int completed;
   final int total;
@@ -464,7 +634,11 @@ class _WorkoutSummaryCard extends StatelessWidget {
             const SizedBox(height: 14),
             Row(
               children: [
-                const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF9CA3AF), size: 22),
+                const Icon(
+                  Icons.check_circle_outline_rounded,
+                  color: Color(0xFF9CA3AF),
+                  size: 22,
+                ),
                 const SizedBox(width: 12),
                 Text(
                   '$completed/$total completed',
@@ -502,14 +676,21 @@ class _IntensityPill extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.teal.withValues(alpha: 0.14) : AppColors.teal.withValues(alpha: 0.12),
+        color: isDark
+            ? AppColors.teal.withValues(alpha: 0.14)
+            : AppColors.teal.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: isDark ? AppColors.teal.withValues(alpha: 0.35) : AppColors.teal.withValues(alpha: 0.2),
+          color: isDark
+              ? AppColors.teal.withValues(alpha: 0.35)
+              : AppColors.teal.withValues(alpha: 0.2),
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: isDark ? 18 : 24, vertical: isDark ? 8 : 14),
+        padding: EdgeInsets.symmetric(
+          horizontal: isDark ? 18 : 24,
+          vertical: isDark ? 8 : 14,
+        ),
         child: Text(
           '${multiplier.toStringAsFixed(2)}x Intensity',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -522,34 +703,9 @@ class _IntensityPill extends StatelessWidget {
   }
 }
 
-const _availableGifs = [
-  'Chest_Supported_Dumbbell_Curl',
-  'Degree_Leg_Press',
-  'Dumbbell_Preacher_Curl',
-  'Hanging_Knee_Raise',
-  'Incline_Bench_Press',
-  'Incline_Dumbbell_Shoulder_Press',
-  'Lat_Pulldown',
-  'Lateral_Raise',
-  'Leg_Press_Calf_Raise',
-  'Lying_Leg_Press',
-  'Lying_Triceps_Extension',
-  'Oblique_Knee_Raise',
-  'Prone_Triceps_Extension',
-  'Seated_Overhead_Triceps_Extension',
-  'Smith_Machine_Incline_Press',
-  'Standing_Barbell_Curl',
-  'Standing_Front_Raise',
-];
-
-String? _findGifPath(String exerciseName) {
-  final options = _availableGifs.map((e) => e.replaceAll('_', ' ').toLowerCase()).toList();
-  final bestMatch = StringSimilarity.findBestMatch(exerciseName.toLowerCase(), options);
-  if (bestMatch.bestMatch.rating! >= 0.5) {
-    return 'assets/gifs/${_availableGifs[bestMatch.bestMatchIndex]}.gif';
-  }
-  return null;
-}
+/// Full catalogue of all available GIF asset names (without extension).
+/// Used as a global fallback when no muscle-group-specific match qualifies.
+// GIF mapping catalogs and local _findGifPath helper removed; using shared resolver.dart utility instead.
 
 class _ExerciseTile extends StatelessWidget {
   const _ExerciseTile({
@@ -557,19 +713,39 @@ class _ExerciseTile extends StatelessWidget {
     required this.focused,
     required this.isChecked,
     required this.onToggle,
+    required this.dayLabel,
   });
 
   final _Exercise exercise;
   final bool focused;
   final bool isChecked;
   final VoidCallback onToggle;
+  final String dayLabel;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gifPath = resolver.findGifPath(
+      exercise.title,
+      muscleTag: exercise.tag,
+    );
 
     return GestureDetector(
-      onTap: onToggle,
+      onTap: () {
+        context.push(
+          AppRoutes.exerciseDetail,
+          extra: ExerciseViewData(
+            name: exercise.title,
+            setsRepsLabel: exercise.subtitle,
+            targetMuscle: exercise.tag,
+            notes:
+                'Perform the exercise with a slow tempo. Keep your core engaged and maintain stable breathing throughout the movement.'
+                    .tr(context),
+            dayLabel: dayLabel,
+            gifPath: gifPath,
+          ),
+        );
+      },
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF121212) : Colors.white,
@@ -578,8 +754,10 @@ class _ExerciseTile extends StatelessWidget {
             color: isChecked
                 ? AppColors.teal.withValues(alpha: isDark ? 0.55 : 0.35)
                 : focused
-                    ? (isDark ? AppColors.teal.withValues(alpha: 0.35) : AppColors.teal.withValues(alpha: 0.2))
-                    : (isDark ? const Color(0xFF2B2B2D) : const Color(0xFFE8ECEB)),
+                ? (isDark
+                      ? AppColors.teal.withValues(alpha: 0.35)
+                      : AppColors.teal.withValues(alpha: 0.2))
+                : (isDark ? const Color(0xFF2B2B2D) : const Color(0xFFE8ECEB)),
             width: isChecked || focused ? 1.4 : 1,
           ),
           boxShadow: isDark
@@ -601,63 +779,49 @@ class _ExerciseTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               isDark
-                  ? _DarkExerciseContent(exercise: exercise, focused: focused, isChecked: isChecked)
-                  : _LightExerciseContent(exercise: exercise, isChecked: isChecked),
+                  ? _DarkExerciseContent(
+                      exercise: exercise,
+                      focused: focused,
+                      isChecked: isChecked,
+                      onToggle: onToggle,
+                    )
+                  : _LightExerciseContent(
+                      exercise: exercise,
+                      isChecked: isChecked,
+                      onToggle: onToggle,
+                    ),
               const SizedBox(height: 18),
-              Builder(
-                builder: (context) {
-                  final gifPath = _findGifPath(exercise.title);
-                  if (gifPath != null) {
-                    return Container(
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF18181A) : const Color(0xFFF4F7F6),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE4E9E7),
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Image.asset(gifPath, fit: BoxFit.cover, width: double.infinity),
-                    );
-                  }
-                  return Container(
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF18181A) : const Color(0xFFF4F7F6),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE4E9E7),
-                      ),
+              GestureDetector(
+                onTap: () => showExpandedGif(context, gifPath, exercise.title),
+                child: Container(
+                  height: 160,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF18181A)
+                        : const Color(0xFFF4F7F6),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF2A2A2E)
+                          : const Color(0xFFE4E9E7),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.play_circle_outline_rounded,
-                          color: isDark ? const Color(0xFF2DB994) : AppColors.teal,
-                          size: 26,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    gifPath,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.fitness_center_rounded,
+                          color: AppColors.teal,
+                          size: 40,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Exercise Instruction Placeholder',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: isDark ? Colors.white54 : const Color(0xFF5A605E),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                        ),
-                        Text(
-                          'No GIF matched for "${exercise.title}"',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: isDark ? Colors.white30 : const Color(0xFF8A908E),
-                                fontSize: 11,
-                              ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                      );
+                    },
+                  ),
+                ),
               ),
             ],
           ),
@@ -672,11 +836,13 @@ class _DarkExerciseContent extends StatelessWidget {
     required this.exercise,
     required this.focused,
     required this.isChecked,
+    required this.onToggle,
   });
 
   final _Exercise exercise;
   final bool focused;
   final bool isChecked;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -686,7 +852,9 @@ class _DarkExerciseContent extends StatelessWidget {
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
-            color: focused ? AppColors.teal.withValues(alpha: 0.18) : const Color(0xFF242428),
+            color: focused
+                ? AppColors.teal.withValues(alpha: 0.18)
+                : const Color(0xFF242428),
             borderRadius: BorderRadius.circular(14),
           ),
           child: SizedBox(
@@ -694,7 +862,9 @@ class _DarkExerciseContent extends StatelessWidget {
             height: 68,
             child: Icon(
               exercise.icon,
-              color: focused ? const Color(0xFFFF8C34) : (isChecked ? Colors.amber : Colors.white70),
+              color: focused
+                  ? const Color(0xFFFF8C34)
+                  : (isChecked ? Colors.amber : Colors.white70),
               size: 34,
             ),
           ),
@@ -731,10 +901,22 @@ class _DarkExerciseContent extends StatelessWidget {
             ],
           ),
         ),
-        Icon(
-          isChecked ? Icons.check_circle_outline_rounded : Icons.circle_outlined,
-          color: isChecked ? const Color(0xFF31D39E) : const Color(0xFF4A4B55),
-          size: 34,
+        GestureDetector(
+          onTap: onToggle,
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            key: ValueKey('toggle_${exercise.title}'),
+            padding: const EdgeInsets.all(8.0),
+            child: Icon(
+              isChecked
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.circle_outlined,
+              color: isChecked
+                  ? const Color(0xFF31D39E)
+                  : const Color(0xFF4A4B55),
+              size: 34,
+            ),
+          ),
         ),
       ],
     );
@@ -742,30 +924,49 @@ class _DarkExerciseContent extends StatelessWidget {
 }
 
 class _LightExerciseContent extends StatelessWidget {
-  const _LightExerciseContent({required this.exercise, required this.isChecked});
+  const _LightExerciseContent({
+    required this.exercise,
+    required this.isChecked,
+    required this.onToggle,
+  });
 
   final _Exercise exercise;
   final bool isChecked;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: isChecked ? const Color(0xFF68B9A8) : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: isChecked ? null : Border.all(color: const Color(0xFFB6C3BE), width: 2.5),
-          ),
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            child: isChecked
-                ? const Icon(Icons.check_rounded, color: Colors.white, size: 26)
-                : const SizedBox.shrink(),
+        GestureDetector(
+          onTap: onToggle,
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            key: ValueKey('toggle_${exercise.title}'),
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: isChecked ? const Color(0xFF68B9A8) : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                border: isChecked
+                    ? null
+                    : Border.all(color: const Color(0xFFB6C3BE), width: 2.5),
+              ),
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: isChecked
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ),
           ),
         ),
-        const SizedBox(width: 26),
+        const SizedBox(width: 18),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -813,16 +1014,22 @@ class _Tag extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xFF2A2A2F)
-            : (active ? AppColors.teal.withValues(alpha: 0.11) : const Color(0xFFE4E5E7)),
+            : (active
+                  ? AppColors.teal.withValues(alpha: 0.11)
+                  : const Color(0xFFE4E5E7)),
         borderRadius: BorderRadius.circular(5),
-        border: isDark || !active ? null : Border.all(color: AppColors.teal.withValues(alpha: 0.28)),
+        border: isDark || !active
+            ? null
+            : Border.all(color: AppColors.teal.withValues(alpha: 0.28)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         child: Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: isDark ? const Color(0xFFB7B8BE) : (active ? AppColors.teal : const Color(0xFF62666C)),
+            color: isDark
+                ? const Color(0xFFB7B8BE)
+                : (active ? AppColors.teal : const Color(0xFF62666C)),
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -834,12 +1041,14 @@ class _Tag extends StatelessWidget {
 class _CompleteWorkoutButton extends StatelessWidget {
   const _CompleteWorkoutButton({
     required this.completing,
+    required this.showSuccess,
     required this.checkedCount,
     required this.total,
     required this.onPressed,
   });
 
   final bool completing;
+  final bool showSuccess;
   final int checkedCount;
   final int total;
   final VoidCallback onPressed;
@@ -847,19 +1056,25 @@ class _CompleteWorkoutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final label = checkedCount == 0
-        ? 'Complete Workout'
-        : 'Complete Workout ($checkedCount/$total)';
+    final label = showSuccess
+        ? 'Workout logged!'.tr(context)
+        : checkedCount == 0
+        ? 'Complete Workout'.tr(context)
+        : 'Complete Workout ($checkedCount/$total)'.tr(context);
 
     return SizedBox(
       height: isDark ? 82 : 88,
       child: FilledButton(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.teal,
+          backgroundColor: showSuccess ? Colors.green : AppColors.teal,
           foregroundColor: Colors.white,
           elevation: isDark ? 12 : 10,
-          shadowColor: AppColors.teal.withValues(alpha: 0.3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shadowColor: (showSuccess ? Colors.green : AppColors.teal).withValues(
+            alpha: 0.3,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
         onPressed: completing ? null : onPressed,
         child: completing
@@ -867,7 +1082,9 @@ class _CompleteWorkoutButton extends StatelessWidget {
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2.5, color: Colors.white),
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -880,9 +1097,9 @@ class _CompleteWorkoutButton extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -899,17 +1116,41 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = [
-      _NavSpec(Icons.home_outlined, 'Home', false, () => context.go(AppRoutes.homeDashboard)),
+      _NavSpec(
+        Icons.home_outlined,
+        'Home',
+        false,
+        () => context.go(AppRoutes.homeDashboard),
+      ),
       _NavSpec(Icons.fitness_center_rounded, 'Workout', true, () {}),
-      _NavSpec(Icons.restaurant_rounded, 'Nutrition', false, () => context.go(AppRoutes.nutrition)),
-      _NavSpec(Icons.trending_up_rounded, 'Progress', false, () => context.go(AppRoutes.progress)),
-      _NavSpec(Icons.smart_toy_outlined, 'Coach', false, () => context.push(AppRoutes.aiCoach)),
+      _NavSpec(
+        Icons.restaurant_rounded,
+        'Nutrition',
+        false,
+        () => context.go(AppRoutes.nutrition),
+      ),
+      _NavSpec(
+        Icons.trending_up_rounded,
+        'Progress',
+        false,
+        () => context.go(AppRoutes.progress),
+      ),
+      _NavSpec(
+        Icons.smart_toy_outlined,
+        'Coach',
+        false,
+        () => context.push(AppRoutes.aiCoach),
+      ),
     ];
 
     return DecoratedBox(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF09090A) : Colors.white,
-        border: Border(top: BorderSide(color: isDark ? const Color(0xFF242426) : const Color(0xFFEDEFF0))),
+        border: Border(
+          top: BorderSide(
+            color: isDark ? const Color(0xFF242426) : const Color(0xFFEDEFF0),
+          ),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -917,9 +1158,7 @@ class _BottomNav extends StatelessWidget {
           height: isDark ? 92 : 84,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              for (final item in items) _NavItem(item: item),
-            ],
+            children: [for (final item in items) _NavItem(item: item)],
           ),
         ),
       ),
@@ -949,7 +1188,9 @@ class _NavItem extends StatelessWidget {
     final color = item.selected ? active : idle;
 
     return Material(
-      color: item.selected ? active.withValues(alpha: isDark ? 0.11 : 0.08) : Colors.transparent,
+      color: item.selected
+          ? active.withValues(alpha: isDark ? 0.11 : 0.08)
+          : Colors.transparent,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: item.onTap,

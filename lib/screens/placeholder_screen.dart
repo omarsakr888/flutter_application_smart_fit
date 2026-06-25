@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../router/app_routes.dart';
+import '../localization/app_strings.dart';
 import '../theme/app_colors.dart';
 
 /// Lightweight stub screen so routing works while you flesh out ~15 flows.
@@ -44,7 +45,7 @@ class PlaceholderScreen extends StatelessWidget {
             const SizedBox(height: 24),
             FilledButton(
               onPressed: () => context.pop(),
-              child: const Text('Back'),
+              child: Text('Back'.tr(context)),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
@@ -53,7 +54,7 @@ class PlaceholderScreen extends StatelessWidget {
                 foregroundColor: AppColors.teal,
                 side: const BorderSide(color: AppColors.teal),
               ),
-              child: const Text('Landing'),
+              child: Text('Landing'.tr(context)),
             ),
           ],
         ),

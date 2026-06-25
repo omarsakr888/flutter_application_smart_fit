@@ -16,7 +16,10 @@ import '../screens/ai_coach_screen.dart';
 import '../screens/progress_screen.dart';
 import '../screens/recipe_detail_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/favorites_screen.dart';
 import '../screens/workout_hub_screen.dart';
+import '../screens/exercise_detail_screen.dart';
+import '../models/exercise_view_data.dart';
 import 'app_routes.dart';
 
 GoRouter createAppRouter() {
@@ -96,6 +99,16 @@ GoRouter createAppRouter() {
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.favorites,
+        builder: (context, state) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.exerciseDetail,
+        builder: (context, state) => ExerciseDetailScreen(
+          exercise: state.extra is ExerciseViewData ? state.extra as ExerciseViewData : null,
+        ),
       ),
     ],
   );
